@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { cache } from 'react';
 import type { Job, Candidate, ApplicationStatus } from '@/types';
 
 // Tab names must match your Google Sheet exactly (case-sensitive).
@@ -40,7 +41,8 @@ function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
-export async function getJobs(): Promise<Job[]> {
+// cache() deduplicates calls within a single server render (e.g., generateMetadata + page).
+export const getJobs = cache(async function getJobs(): Promise<Job[]> {
   if (!isConfigured()) return [];
 
   const sheets = getSheets();
@@ -67,7 +69,7 @@ export async function getJobs(): Promise<Job[]> {
     isUrgent: row[12] === 'TRUE',
     isFeatured: row[13] === 'TRUE',
   }));
-}
+});
 
 export async function getCandidates(): Promise<Candidate[]> {
   if (!isConfigured()) return [];

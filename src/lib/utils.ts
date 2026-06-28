@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Job } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -26,4 +27,19 @@ export function timeAgo(dateString: string): string {
 
 export function truncate(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max).trimEnd() + '…';
+}
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function buildJobSlug(job: Pick<Job, 'id' | 'title'>): string {
+  const titlePart = slugify(job.title) || 'position';
+  return `${titlePart}-${job.id}`;
 }
