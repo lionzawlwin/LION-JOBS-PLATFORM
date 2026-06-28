@@ -7,6 +7,46 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform
 const WEBHOOK_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
 const MAKE_PUBLISH_URL = process.env.MAKE_PUBLISH_WEBHOOK_URL;
 
+// ── GitHub Actions trigger ────────────────────────────────────────
+//
+// Sends a "repository_dispatch" event to GitHub, which wakes the
+// .github/workflows/auto-post-job.yml workflow.
+// The full job payload is forwarded as client_payload so Python can
+// access every field without hitting the Sheets API again.
+//
+async function triggerGitHubActions(payload: object): Promise<void> {
+  const token = process.env.GITHUB_ACTIONS_TOKEN;
+  const repo  = process.env.GITHUB_REPO; // e.g. "lionzawlwin/LION-JOBS-PLATFORM"
+
+  if (!token || !repo) {
+    console.warn('[publish-job] GITHUB_ACTIONS_TOKEN or GITHUB_REPO not set — GH Actions skipped');
+    return;
+  }
+
+  const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+    method: 'POST',
+    headers: {
+      Accept:          'application/vnd.github.v3+json',
+      Authorization:   `Bearer ${token}`,
+      'Content-Type':  'application/json',
+      'User-Agent':    'lion-jobs-vercel-webhook/1.0',
+    },
+    body: JSON.stringify({
+      event_type:     'new-job-posted',   // must match the YAML "types:" filter
+      client_payload: payload,            // forwarded as github.event.client_payload
+    }),
+    signal: AbortSignal.timeout(8_000),   // 8 s max — Vercel free tier is 10 s
+  });
+
+  if (res.ok) {
+    // GitHub returns 204 No Content on success
+    console.log('[publish-job] GitHub Actions dispatch sent successfully');
+  } else {
+    const body = await res.text().catch(() => '');
+    console.error(`[publish-job] GitHub Actions dispatch failed: ${res.status} — ${body}`);
+  }
+}
+
 // ── Auth helper ───────────────────────────────────────────────────
 function isAuthorized(req: NextRequest): boolean {
   if (!WEBHOOK_SECRET) return false;
@@ -109,6 +149,13 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // ── Trigger GitHub Actions (non-blocking) ────────────────────
+  // Fires the auto-post-job.yml workflow in the background.
+  // We do not await this or let it affect the HTTP response.
+  triggerGitHubActions(payload).catch((err) =>
+    console.error('[publish-job] GitHub Actions trigger error:', err),
+  );
 
   // ── Forward to Make.com distribution scenario ─────────────────
   if (!MAKE_PUBLISH_URL) {
