@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, MessageSquare } from 'lucide-react';
 
+// ── Icons ────────────────────────────────────────────────────────
 function WhatsAppIcon() {
   return (
     <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -28,30 +29,95 @@ function TelegramIcon() {
   );
 }
 
-const CHANNELS = [
+function FacebookIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  );
+}
+
+// ── Deep link logic ───────────────────────────────────────────────
+// On mobile: fires the native app URI scheme. If the app isn't installed,
+// document stays visible and after 1500ms we open the web fallback in a new tab.
+// If the app opens, the tab goes to background (document.hidden = true) and
+// we cancel the timer — no fallback fires.
+// On desktop: skips the custom scheme entirely (avoids browser error dialogs)
+// and goes straight to the web URL.
+function openDeepLink(deepLink: string, fallbackUrl: string) {
+  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  if (!isMobile) {
+    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  // Try to hand off to the native app
+  window.location.href = deepLink;
+
+  // Fallback: if we're still in the foreground after 1.5s, the app isn't installed
+  const timer = setTimeout(() => {
+    if (!document.hidden) {
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+    }
+  }, 1500);
+
+  // App opened successfully → tab goes to background → cancel the fallback
+  document.addEventListener('visibilitychange', function handler() {
+    if (document.hidden) clearTimeout(timer);
+    document.removeEventListener('visibilitychange', handler);
+  });
+}
+
+// ── Channel config ────────────────────────────────────────────────
+// deepLink: native app URI scheme (mobile only)
+// fallbackUrl: web URL (used on desktop always, or on mobile when app absent)
+// Set deepLink to null for channels whose web URL already handles smart routing (wa.me)
+type Channel = {
+  id:          string;
+  label:       string;
+  deepLink:    string | null;
+  fallbackUrl: string;
+  bg:          string;
+  icon:        () => React.JSX.Element;
+};
+
+const CHANNELS: Channel[] = [
   {
-    id: 'whatsapp',
-    label: 'WhatsApp',
-    href: 'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
-    bg: '#25D366',
-    icon: WhatsAppIcon,
+    id:          'whatsapp',
+    label:       'WhatsApp',
+    deepLink:    null,   // wa.me already routes to the app or web automatically
+    fallbackUrl: 'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
+    bg:          '#25D366',
+    icon:        WhatsAppIcon,
   },
   {
-    id: 'viber',
-    label: 'Viber',
-    href: 'viber://chat?number=%2B959979333333',
-    bg: '#7360F2',
-    icon: ViberIcon,
+    id:          'viber',
+    label:       'Viber',
+    deepLink:    'viber://chat?number=%2B959979333333',
+    fallbackUrl: 'https://www.viber.com/download/',
+    bg:          '#7360F2',
+    icon:        ViberIcon,
   },
   {
-    id: 'telegram',
-    label: 'Telegram',
-    href: 'https://t.me/+959979333333',
-    bg: '#229ED9',
-    icon: TelegramIcon,
+    id:          'telegram',
+    label:       'Telegram',
+    deepLink:    'tg://resolve?domain=lionjobsagency',
+    fallbackUrl: 'https://t.me/lionjobsagency',
+    bg:          '#229ED9',
+    icon:        TelegramIcon,
+  },
+  {
+    id:          'facebook',
+    label:       'Facebook',
+    deepLink:    'fb://page/1Ddo52GnoS',
+    fallbackUrl: 'https://www.facebook.com/1Ddo52GnoS',
+    bg:          '#1877F2',
+    icon:        FacebookIcon,
   },
 ];
 
+// ── Widget ────────────────────────────────────────────────────────
 export function SocialFloatWidget() {
   const [open, setOpen] = useState(false);
 
@@ -67,19 +133,36 @@ export function SocialFloatWidget() {
             transition={{ duration: 0.18, ease: 'easeOut' }}
             className="flex flex-col items-end gap-2"
           >
-            {CHANNELS.map(({ id, label, href, bg, icon: Icon }) => (
-              <a
-                key={id}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
-                style={{ backgroundColor: bg }}
-              >
-                <Icon />
-                {label}
-              </a>
-            ))}
+            {CHANNELS.map(({ id, label, deepLink, fallbackUrl, bg, icon: Icon }) =>
+              deepLink ? (
+                // Deep-link button — tries app first, falls back to web
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={`Contact us on ${label}`}
+                  onClick={() => openDeepLink(deepLink, fallbackUrl)}
+                  className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
+                  style={{ backgroundColor: bg }}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              ) : (
+                // Plain anchor — wa.me handles its own smart routing
+                <a
+                  key={id}
+                  href={fallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Contact us on ${label}`}
+                  className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
+                  style={{ backgroundColor: bg }}
+                >
+                  <Icon />
+                  {label}
+                </a>
+              )
+            )}
           </motion.div>
         )}
       </AnimatePresence>
