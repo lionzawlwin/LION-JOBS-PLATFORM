@@ -176,6 +176,48 @@ export async function appendJob(data: {
   return id;
 }
 
+// ── deleteJob ──────────────────────────────────────────────────────
+// Finds the row by job ID and deletes it from the Jobs sheet.
+export async function deleteJob(jobId: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const sheets        = getSheets();
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+
+  // Get the numeric sheetId for the Jobs tab (required by batchUpdate deleteDimension)
+  const meta  = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = meta.data.sheets?.find((s) => s.properties?.title === JOBS_TAB);
+  if (sheet?.properties?.sheetId === undefined) {
+    throw new Error(`Sheet tab "${JOBS_TAB}" not found`);
+  }
+  const numericSheetId = sheet.properties.sheetId;
+
+  // Find which row holds this job ID (column A, data starts at row 2)
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${JOBS_TAB}!A2:A`,
+  });
+  const rowIndex = data.values?.findIndex((row) => row[0] === jobId) ?? -1;
+  if (rowIndex === -1) throw new Error(`Job "${jobId}" not found in sheet`);
+
+  // Delete the row (startIndex is 0-based; row 0 = header, so data row 0 → startIndex 1)
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId:    numericSheetId,
+            dimension:  'ROWS',
+            startIndex: rowIndex + 1,
+            endIndex:   rowIndex + 2,
+          },
+        },
+      }],
+    },
+  });
+}
+
 export async function updateCandidateStage(
   candidateId: string,
   stage: ApplicationStatus,

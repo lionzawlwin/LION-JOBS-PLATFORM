@@ -2,6 +2,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
 import { PostJobForm } from '@/components/dashboard/PostJobForm';
+import { JobsPanel } from '@/components/dashboard/JobsPanel';
 import { LayoutDashboard, Info } from 'lucide-react';
 
 export const metadata = {
@@ -39,6 +40,9 @@ export default function DashboardPage() {
 
           {/* Post a Job */}
           <PostJobForm />
+
+          {/* Manage / Delete Jobs */}
+          <JobsPanel />
 
           {/* Candidate Board */}
           <KanbanBoard />

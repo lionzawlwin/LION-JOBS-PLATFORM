@@ -6,7 +6,7 @@ import type { Job, JobFilters } from '@/types';
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useJobs(fallbackData?: Job[]) {
-  const { data, error, isLoading } = useSWR<Job[]>('/api/jobs', fetcher, {
+  const { data, error, isLoading, mutate } = useSWR<Job[]>('/api/jobs', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60_000,
     // Server-pre-fetched jobs show immediately; SWR refreshes silently in background
@@ -18,6 +18,7 @@ export function useJobs(fallbackData?: Job[]) {
     // Only show loading spinner when there's no data at all (no SSR seed)
     loading: isLoading && !fallbackData,
     error: error ? 'Failed to load jobs. Please try again.' : null,
+    mutate,
   };
 }
 
