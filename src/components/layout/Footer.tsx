@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { Briefcase, MapPin, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Briefcase, MapPin, Phone, Mail } from 'lucide-react';
 
 const CONTACT = {
   address: 'No. 29, Room 3A, 2nd Floor, Kyay Tine Su 1st Street, Pain Nae Kone Ward, Insein Township, Yangon.',
   phone:  '09979333333',
   phone2: '09428954289',
   email: 'lionzawlwin@gmail.com',
-  whatsapp: 'https://wa.me/959428954289',
 };
 
 export function Footer() {
@@ -26,15 +25,6 @@ export function Footer() {
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               Myanmar&apos;s trusted recruitment agency. We connect the right talent with the right opportunity — fast, fair, and free for candidates.
             </p>
-            <a
-              href={CONTACT.whatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 transition-colors"
-            >
-              <MessageCircle size={15} />
-              Chat on WhatsApp · +959428954289
-            </a>
           </div>
 
           {/* Quick Links */}

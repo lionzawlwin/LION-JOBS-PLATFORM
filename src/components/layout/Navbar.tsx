@@ -2,12 +2,10 @@
 
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Briefcase, Menu, X, MessageCircle } from 'lucide-react';
+import { Sun, Moon, Briefcase, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const WHATSAPP = 'https://wa.me/959428954289';
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -43,14 +41,6 @@ export function Navbar() {
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <a
-            href={WHATSAPP}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100 transition-colors dark:border-green-700/30 dark:bg-green-900/20 dark:text-green-400"
-          >
-            <MessageCircle size={14} /> WhatsApp
-          </a>
           <Link
             href="/#jobs"
             className={cn(buttonVariants({ size: 'sm' }), 'bg-brand-600 hover:bg-brand-700 text-white rounded-xl')}
@@ -91,15 +81,6 @@ export function Navbar() {
             <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               Dashboard
             </Link>
-            <a
-              href={WHATSAPP}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
-              className="rounded-xl px-3 py-2.5 text-sm font-medium text-green-600 hover:bg-green-50 flex items-center gap-2"
-            >
-              <MessageCircle size={15} /> Chat on WhatsApp
-            </a>
           </nav>
         </div>
       )}

@@ -79,6 +79,13 @@ export const LION_LINKS = {
   // ── Community / channel links ─────────────────────────────────
   // Used in: JoinCommunity, SocialFloatWidget
 
+  whatsappChannel: {
+    // chat.whatsapp.com is a universal smart link — no custom scheme needed
+    androidIntent: null,
+    iosScheme:     null,
+    webUrl:        'https://chat.whatsapp.com/CJLUa4aXrndGrio0v8vRcQ',
+  },
+
   telegramChannel: {
     androidIntent: 'intent://resolve?domain=lionjobsagency#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2Flionjobsagency;end',
     iosScheme:     'tg://resolve?domain=lionjobsagency',
