@@ -1,19 +1,31 @@
 import { google } from 'googleapis';
 import type { Job, Candidate, ApplicationStatus } from '@/types';
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? '';
+// Tab names must match your Google Sheet exactly (case-sensitive).
+// Override via env vars to avoid touching code when the sheet is renamed.
+const JOBS_TAB = process.env.GOOGLE_JOBS_TAB ?? 'Jobs';
+const CANDIDATES_TAB = process.env.GOOGLE_CANDIDATES_TAB ?? 'Candidates';
 
 function isConfigured(): boolean {
   return Boolean(
-    SHEET_ID &&
+    process.env.GOOGLE_SHEET_ID &&
       process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
       process.env.GOOGLE_PRIVATE_KEY,
   );
 }
 
+function parsePrivateKey(raw: string): string {
+  return raw
+    .replace(/^["']|["']$/g, '')  // strip accidental surrounding quotes
+    .replace(/\\n/g, '\n')         // unescape literal \n from .env.local format
+    .trim();                        // remove stray whitespace / \r\n at boundaries
+}
+
 function getSheets() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const key = process.env.GOOGLE_PRIVATE_KEY
+    ? parsePrivateKey(process.env.GOOGLE_PRIVATE_KEY)
+    : undefined;
 
   if (!email || !key) {
     throw new Error(
@@ -33,8 +45,8 @@ export async function getJobs(): Promise<Job[]> {
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: 'Jobs!A2:N',
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${JOBS_TAB}!A2:N`,
   });
 
   if (!data.values?.length) return [];
@@ -62,8 +74,8 @@ export async function getCandidates(): Promise<Candidate[]> {
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: 'Candidates!A2:J',
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!A2:J`,
   });
 
   if (!data.values?.length) return [];
@@ -90,8 +102,8 @@ export async function updateCandidateStage(
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: 'Candidates!A2:A',
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!A2:A`,
   });
 
   if (!data.values) return;
@@ -100,8 +112,8 @@ export async function updateCandidateStage(
   if (rowIndex === -1) return;
 
   await sheets.spreadsheets.values.update({
-    spreadsheetId: SHEET_ID,
-    range: `Candidates!H${rowIndex + 2}`,
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!H${rowIndex + 2}`,
     valueInputOption: 'RAW',
     requestBody: { values: [[stage]] },
   });
