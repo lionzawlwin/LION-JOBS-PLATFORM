@@ -30,9 +30,25 @@ export function JobGrid({ jobs, loading, error }: Props) {
 
   if (jobs.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-muted/30 p-12 text-center">
-        <p className="text-lg font-medium text-foreground">No roles match your filters</p>
-        <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or clearing filters.</p>
+      <div className="glass-card rounded-2xl p-12 text-center">
+        {/* Briefcase illustration */}
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-muted/60">
+          <svg
+            viewBox="0 0 64 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-11 w-11 text-muted-foreground/40"
+          >
+            <rect x="8" y="24" width="48" height="32" rx="5" stroke="currentColor" strokeWidth="3" />
+            <path d="M22 24V20a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <path d="M8 38h48" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <path d="M28 38v4h8v-4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <p className="text-base font-semibold text-foreground">No roles found</p>
+        <p className="mt-1.5 text-sm text-muted-foreground max-w-xs mx-auto">
+          No positions match your current filters. Try broadening your search or clearing a filter.
+        </p>
       </div>
     );
   }

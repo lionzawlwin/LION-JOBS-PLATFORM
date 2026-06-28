@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Padauk } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { SocialFloatWidget } from '@/components/ui/SocialFloatWidget';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
@@ -41,6 +42,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
           <SocialFloatWidget />
+          <Toaster
+            position="bottom-right"
+            richColors
+            toastOptions={{
+              classNames: {
+                toast: 'rounded-xl shadow-lg',
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

@@ -41,9 +41,20 @@ function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
+// ── Jobs column mapping (A=0 … N=13) ────────────────────────────
+// Row 1 of the "Jobs" sheet tab MUST contain these headers (paste verbatim):
+//   ID | Title | Company | Location | Category | Type | SalaryMin | SalaryMax |
+//   Currency | Description | Requirements | PostedAt | IsUrgent | IsFeatured
+//
+// Data rows start at row 2.  Requirements are pipe-separated: "3+ yrs React|BSc CS"
+// IsUrgent / IsFeatured must be the text TRUE or FALSE (all caps).
+
 // cache() deduplicates calls within a single server render (e.g., generateMetadata + page).
 export const getJobs = cache(async function getJobs(): Promise<Job[]> {
-  if (!isConfigured()) return [];
+  if (!isConfigured()) {
+    console.warn('[sheets] getJobs: Google Sheets env vars not configured — returning empty list.');
+    return [];
+  }
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
@@ -51,28 +62,42 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
     range: `${JOBS_TAB}!A2:N`,
   });
 
-  if (!data.values?.length) return [];
+  if (!data.values?.length) {
+    console.warn(`[sheets] getJobs: No data rows found in ${JOBS_TAB}!A2:N — check that row 1 is a header row and data starts at row 2.`);
+    return [];
+  }
 
-  return data.values.map((row, i) => ({
-    id: row[0] || `job-${i}`,
-    title: row[1] || '',
-    company: row[2] || '',
-    location: row[3] || '',
-    category: (row[4] as Job['category']) || 'Other',
-    type: (row[5] as Job['type']) || 'Full-time',
-    salaryMin: Number(row[6]) || 0,
-    salaryMax: Number(row[7]) || 0,
-    currency: row[8] || 'USD',
-    description: row[9] || '',
-    requirements: row[10] ? row[10].split('|') : [],
-    postedAt: row[11] || new Date().toISOString(),
-    isUrgent: row[12] === 'TRUE',
-    isFeatured: row[13] === 'TRUE',
-  }));
+  return data.values
+    .filter((row) => row[0] && row[1])   // skip fully-blank rows
+    .map((row, i) => ({
+      id:           row[0] || `job-${i}`,
+      title:        row[1] || '',
+      company:      row[2] || '',
+      location:     row[3] || '',
+      category:     (row[4] as Job['category']) || 'Other',
+      type:         (row[5] as Job['type']) || 'Full-time',
+      salaryMin:    Number(row[6]) || 0,
+      salaryMax:    Number(row[7]) || 0,
+      currency:     row[8] || 'MMK',
+      description:  row[9] || '',
+      requirements: row[10] ? String(row[10]).split('|').map((r: string) => r.trim()).filter(Boolean) : [],
+      postedAt:     row[11] || new Date().toISOString(),
+      isUrgent:     String(row[12]).toUpperCase() === 'TRUE',
+      isFeatured:   String(row[13]).toUpperCase() === 'TRUE',
+    }));
 });
 
+// ── Candidates column mapping (A=0 … J=9) ────────────────────────
+// Row 1 of the "Candidates" sheet tab MUST contain these headers:
+//   ID | Name | Phone | Position | CVUrl | LinkedInUrl | MatchScore | Stage | AppliedAt | Notes
+//
+// Stage must be one of: Applied | Shortlisted | Interview | Hired
+
 export async function getCandidates(): Promise<Candidate[]> {
-  if (!isConfigured()) return [];
+  if (!isConfigured()) {
+    console.warn('[sheets] getCandidates: Google Sheets env vars not configured — returning empty list.');
+    return [];
+  }
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
@@ -82,18 +107,22 @@ export async function getCandidates(): Promise<Candidate[]> {
 
   if (!data.values?.length) return [];
 
-  return data.values.map((row, i) => ({
-    id: row[0] || `cand-${i}`,
-    name: row[1] || '',
-    phone: row[2] || '',
-    position: row[3] || '',
-    cvUrl: row[4] || undefined,
-    linkedinUrl: row[5] || undefined,
-    matchScore: Number(row[6]) || 0,
-    stage: (row[7] as ApplicationStatus) || 'Applied',
-    appliedAt: row[8] || new Date().toISOString(),
-    notes: row[9] || undefined,
-  }));
+  const VALID_STAGES = new Set(['Applied', 'Shortlisted', 'Interview', 'Hired']);
+
+  return data.values
+    .filter((row) => row[0] && row[1])
+    .map((row, i) => ({
+      id:          row[0] || `cand-${i}`,
+      name:        row[1] || '',
+      phone:       row[2] || '',
+      position:    row[3] || '',
+      cvUrl:       row[4] || undefined,
+      linkedinUrl: row[5] || undefined,
+      matchScore:  Number(row[6]) || 0,
+      stage:       (VALID_STAGES.has(row[7]) ? row[7] : 'Applied') as ApplicationStatus,
+      appliedAt:   row[8] || new Date().toISOString(),
+      notes:       row[9] || undefined,
+    }));
 }
 
 // ── appendJob ─────────────────────────────────────────────────────

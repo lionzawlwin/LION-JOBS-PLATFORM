@@ -1,9 +1,17 @@
 'use client';
 
 import useSWR from 'swr';
+import { toast } from 'sonner';
 import type { Candidate, ApplicationStatus } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const STAGE_LABELS: Record<ApplicationStatus, string> = {
+  Applied:     'Applied',
+  Shortlisted: 'Shortlisted',
+  Interview:   'Interview',
+  Hired:       '🎉 Hired',
+};
 
 export function useCandidates() {
   const { data, error, isLoading, mutate } = useSWR<Candidate[]>(
@@ -14,6 +22,9 @@ export function useCandidates() {
 
   async function updateStage(id: string, stage: ApplicationStatus) {
     const prev = data ?? [];
+    const candidate = prev.find((c) => c.id === id);
+
+    // Optimistic update
     const next = prev.map((c) => (c.id === id ? { ...c, stage } : c));
     mutate(next, false);
 
@@ -23,9 +34,20 @@ export function useCandidates() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage }),
       });
+
       if (!res.ok) throw new Error('Failed to update stage');
+
+      toast.success(`${candidate?.name ?? 'Candidate'} moved to ${STAGE_LABELS[stage]}`, {
+        description: 'Google Sheets updated.',
+        duration: 3000,
+      });
     } catch {
+      // Roll back on failure
       mutate(prev, false);
+      toast.error('Failed to update stage', {
+        description: 'Could not write to Google Sheets. Please try again.',
+        duration: 4000,
+      });
     }
   }
 

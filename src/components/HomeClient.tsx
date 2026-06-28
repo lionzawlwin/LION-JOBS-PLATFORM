@@ -44,22 +44,39 @@ export function HomeClient({ initialJobs }: Props) {
       <HeroSection onSearch={handleHeroSearch} />
       <StatsBar />
 
-      <section id="jobs" className="myanmar-pattern mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-            Open Positions
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            All roles are vetted and salary-verified by our agency team.
-          </p>
-        </div>
+      <section id="jobs" className="myanmar-pattern py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        <div className="mb-5 flex flex-col gap-3">
-          <SearchBar filters={filters} onChange={handleFilterChange} />
-          <JobFilters filters={filters} onChange={handleFilterChange} total={filtered.length} />
-        </div>
+          {/* Section header */}
+          <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-600">
+                Lion Jobs Agency
+              </p>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
+                Open Positions
+              </h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Every role is vetted and salary-verified by our team before it goes live.
+              </p>
+            </div>
+            {!loading && (
+              <span className="shrink-0 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
+                {filtered.length} {filtered.length === 1 ? 'role' : 'roles'} live
+              </span>
+            )}
+          </div>
 
-        <JobGrid jobs={filtered} loading={loading} error={error} />
+          {/* Search + filters */}
+          <div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4 backdrop-blur-sm shadow-sm">
+            <SearchBar filters={filters} onChange={handleFilterChange} />
+            <div className="border-t border-border/50 pt-3">
+              <JobFilters filters={filters} onChange={handleFilterChange} total={filtered.length} />
+            </div>
+          </div>
+
+          <JobGrid jobs={filtered} loading={loading} error={error} />
+        </div>
       </section>
 
       <JoinCommunity />

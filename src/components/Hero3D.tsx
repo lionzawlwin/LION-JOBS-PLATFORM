@@ -5,18 +5,15 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ── Camera sits at z=9, fov=50.
-// Visible half-width at z=0 ≈ tan(25°)×9 ≈ 4.2 units.
-// Text content lives within ±1.8 units of centre.
-// All objects sit at |x|>3.5 or |y|>2.5 — safely off the text column.
-// ─────────────────────────────────────────────────────────────────────
+// Camera at z=9, fov=50 → visible half-width at z=0 ≈ 4.2 units.
+// All objects sit at |x|>3.5 or |y|>2.5 — safely outside the hero text column.
+
 const GOLD     = '#D4AF37';
-const RUBY     = '#9B1C31';
 const SAPPHIRE = '#1B3A6B';
 const SAP_LT   = '#3B6FC7';
+const CREAM    = '#F8F4ED';
 
-// Shared material factory — emissive guarantees colour even under dim IBL
-function mat(color: string, metalness = 0.6, roughness = 0.25, emissiveIntensity = 0.07) {
+function mat(color: string, metalness = 0.52, roughness = 0.28, emissiveIntensity = 0.07) {
   return (
     <meshStandardMaterial
       color={color}
@@ -28,7 +25,118 @@ function mat(color: string, metalness = 0.6, roughness = 0.25, emissiveIntensity
   );
 }
 
-// ── Mouse-reactive parent group ───────────────────────────────────
+/** Gold briefcase — body + handle + clasp */
+function Briefcase({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0.1, 0.32, -0.06]}>
+      {/* Body */}
+      <mesh>
+        <boxGeometry args={[0.84, 0.58, 0.3]} />
+        {mat(GOLD, 0.62, 0.2, 0.12)}
+      </mesh>
+      {/* Handle */}
+      <mesh position={[0, 0.38, 0]}>
+        <boxGeometry args={[0.28, 0.1, 0.07]} />
+        {mat(GOLD, 0.7, 0.15, 0.14)}
+      </mesh>
+      {/* Horizontal strap / divider line */}
+      <mesh position={[0, 0.01, 0.152]}>
+        <boxGeometry args={[0.84, 0.045, 0.008]} />
+        {mat(SAPPHIRE, 0.8, 0.1, 0.16)}
+      </mesh>
+      {/* Centre clasp */}
+      <mesh position={[0, 0.04, 0.155]}>
+        <boxGeometry args={[0.09, 0.07, 0.01]} />
+        {mat(SAP_LT, 0.88, 0.08, 0.22)}
+      </mesh>
+    </group>
+  );
+}
+
+/** Floating CV / resume document */
+function Resume({ position, rotation }: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+}) {
+  return (
+    <group position={position} rotation={rotation ?? [0.05, -0.22, 0.06]}>
+      {/* Paper body */}
+      <mesh>
+        <boxGeometry args={[0.52, 0.68, 0.022]} />
+        <meshStandardMaterial color={CREAM} metalness={0.0} roughness={0.88} />
+      </mesh>
+      {/* Name / title header block */}
+      <mesh position={[0, 0.24, 0.014]}>
+        <boxGeometry args={[0.36, 0.068, 0.006]} />
+        {mat(SAPPHIRE, 0.2, 0.5, 0.06)}
+      </mesh>
+      {/* Thin divider */}
+      <mesh position={[0, 0.145, 0.014]}>
+        <boxGeometry args={[0.38, 0.007, 0.003]} />
+        {mat(SAP_LT, 0.1, 0.6, 0.04)}
+      </mesh>
+      {/* Body text lines */}
+      {([0, -0.07, -0.14, -0.21, -0.28] as number[]).map((y, i) => (
+        <mesh key={i} position={[i % 2 === 0 ? -0.02 : 0.02, y, 0.014]}>
+          <boxGeometry args={[i % 3 === 2 ? 0.27 : 0.34, 0.017, 0.003]} />
+          {mat(SAP_LT, 0.05, 0.7, 0.012)}
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Magnifying glass — circle (torus) + handle = job search */
+function SearchIcon({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0.1, 0.18, -(Math.PI / 4) - 0.08]}>
+      {/* Ring */}
+      <mesh>
+        <torusGeometry args={[0.26, 0.054, 16, 36]} />
+        {mat(SAP_LT, 0.62, 0.22, 0.13)}
+      </mesh>
+      {/* Handle */}
+      <mesh position={[0.22, -0.22, 0]}>
+        <cylinderGeometry args={[0.038, 0.038, 0.34, 8]} />
+        {mat(SAP_LT, 0.62, 0.22, 0.11)}
+      </mesh>
+    </group>
+  );
+}
+
+/** Small floating briefcase (accent piece, bottom-left) */
+function MiniBriefcase({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0.08, -0.28, 0.14]}>
+      <mesh>
+        <boxGeometry args={[0.38, 0.26, 0.14]} />
+        {mat(GOLD, 0.55, 0.25, 0.1)}
+      </mesh>
+      <mesh position={[0, 0.18, 0]}>
+        <boxGeometry args={[0.13, 0.05, 0.06]} />
+        {mat(GOLD, 0.65, 0.18, 0.12)}
+      </mesh>
+    </group>
+  );
+}
+
+/** Small floating document fragment (bottom-right accent) */
+function MiniDoc({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0.1, 0.4, -0.1]}>
+      <mesh>
+        <boxGeometry args={[0.3, 0.4, 0.014]} />
+        <meshStandardMaterial color={CREAM} metalness={0} roughness={0.88} />
+      </mesh>
+      <mesh position={[0, 0.1, 0.009]}>
+        <boxGeometry args={[0.2, 0.04, 0.004]} />
+        {mat(SAPPHIRE, 0.18, 0.6, 0.05)}
+      </mesh>
+    </group>
+  );
+}
+
+/** Mouse-reactive parent group */
 function Scene() {
   const group = useRef<THREE.Group>(null!);
   const mouse = useRef<[number, number]>([0, 0]);
@@ -47,100 +155,86 @@ function Scene() {
   useFrame(() => {
     if (!group.current) return;
     group.current.rotation.y = THREE.MathUtils.lerp(
-      group.current.rotation.y, mouse.current[0] * 0.18, 0.04,
+      group.current.rotation.y, mouse.current[0] * 0.14, 0.04,
     );
     group.current.rotation.x = THREE.MathUtils.lerp(
-      group.current.rotation.x, mouse.current[1] * 0.09, 0.04,
+      group.current.rotation.x, mouse.current[1] * 0.07, 0.04,
     );
   });
 
   return (
     <group ref={group}>
 
-      {/* ── LEFT EDGE: golden octahedron — Shwedagon pagoda shape ── */}
-      <Float speed={0.9} rotationIntensity={0.35} floatIntensity={0.8}>
-        <mesh position={[-5.0, 0.6, -2.5]}>
-          <octahedronGeometry args={[0.55, 0]} />
-          {mat(GOLD, 0.65, 0.2, 0.12)}
-        </mesh>
+      {/* LEFT EDGE: gold briefcase — primary symbol of employment */}
+      <Float speed={0.8} rotationIntensity={0.22} floatIntensity={0.72}>
+        <Briefcase position={[-4.7, 0.3, -2.2]} />
       </Float>
 
-      {/* ── RIGHT EDGE: ruby torus — halo / ring ──────────────────── */}
-      <Float speed={0.75} rotationIntensity={0.45} floatIntensity={0.7}>
-        <mesh position={[4.8, -0.3, -2.5]} rotation={[Math.PI / 3, 0.2, 0]}>
-          <torusGeometry args={[0.55, 0.14, 16, 48]} />
-          {mat(RUBY, 0.65, 0.22, 0.10)}
-        </mesh>
+      {/* RIGHT EDGE: floating resume / CV */}
+      <Float speed={0.95} rotationIntensity={0.28} floatIntensity={0.78}>
+        <Resume position={[4.6, 0.1, -2.2]} />
       </Float>
 
-      {/* ── TOP RIGHT: sapphire icosahedron — crystalline gem ────── */}
-      <Float speed={1.3} rotationIntensity={0.8} floatIntensity={1.1}>
-        <mesh position={[2.8, 3.2, -1.5]}>
-          <icosahedronGeometry args={[0.28, 0]} />
-          {mat(SAPPHIRE, 0.7, 0.18, 0.09)}
-        </mesh>
+      {/* TOP RIGHT: magnifying glass — job search */}
+      <Float speed={1.2} rotationIntensity={0.48} floatIntensity={1.0}>
+        <SearchIcon position={[2.8, 3.1, -1.8]} />
       </Float>
 
-      {/* ── BOTTOM LEFT: small sapphire cube ─────────────────────── */}
-      <Float speed={1.0} rotationIntensity={1.1} floatIntensity={0.6}>
-        <mesh position={[-4.0, -2.8, -1.0]} rotation={[0.5, 0.4, 0.3]}>
-          <boxGeometry args={[0.28, 0.28, 0.28]} />
-          {mat(SAP_LT, 0.6, 0.25, 0.08)}
-        </mesh>
+      {/* BOTTOM LEFT: small briefcase accent */}
+      <Float speed={0.72} rotationIntensity={0.38} floatIntensity={0.6}>
+        <MiniBriefcase position={[-3.8, -2.7, -1.6]} />
       </Float>
 
-      {/* ── TOP LEFT: small gold diamond ─────────────────────────── */}
-      <Float speed={0.85} rotationIntensity={0.5} floatIntensity={0.9}>
-        <mesh position={[-3.2, 2.6, -1.5]}>
-          <octahedronGeometry args={[0.2, 0]} />
-          {mat(GOLD, 0.5, 0.3, 0.15)}
-        </mesh>
+      {/* BOTTOM RIGHT: small doc fragment */}
+      <Float speed={1.05} rotationIntensity={0.55} floatIntensity={0.82}>
+        <MiniDoc position={[3.9, -2.9, -1.9]} />
       </Float>
 
-      {/* ── BOTTOM RIGHT: ruby tetrahedron ───────────────────────── */}
-      <Float speed={1.15} rotationIntensity={0.7} floatIntensity={0.75}>
-        <mesh position={[3.8, -2.5, -1.2]}>
-          <tetrahedronGeometry args={[0.22, 0]} />
-          {mat(RUBY, 0.55, 0.28, 0.12)}
-        </mesh>
+      {/* TOP LEFT: small search accent */}
+      <Float speed={0.88} rotationIntensity={0.6} floatIntensity={0.9}>
+        <group position={[-3.0, 3.0, -2.0]} rotation={[0, 0.2, Math.PI / 4]}>
+          <mesh>
+            <torusGeometry args={[0.18, 0.038, 12, 28]} />
+            {mat(SAP_LT, 0.6, 0.24, 0.12)}
+          </mesh>
+          <mesh position={[0.15, -0.15, 0]}>
+            <cylinderGeometry args={[0.026, 0.026, 0.22, 7]} />
+            {mat(SAP_LT, 0.6, 0.24, 0.10)}
+          </mesh>
+        </group>
       </Float>
 
-      {/* ── Micro gold particle spheres (all at screen edges) ─────── */}
+      {/* Micro gold spheres — scattered "talent pool" dots */}
       {(
         [
-          [-3.8,  1.8, -0.5],
-          [ 5.5,  1.2, -3.0],
-          [-5.5, -1.5, -3.0],
-          [ 2.0,  4.0, -2.0],
-          [-1.5, -3.8, -1.5],
-          [ 4.5,  3.0, -2.5],
+          [-5.3,  1.6, -3.2],
+          [ 5.9,  1.9, -3.4],
+          [-5.0, -1.3, -2.8],
+          [ 1.6,  4.3, -2.6],
+          [-1.9, -3.6, -2.1],
+          [ 5.3, -1.1, -3.1],
+          [-2.4,  3.6, -2.9],
+          [ 4.2,  2.8, -2.6],
         ] as [number, number, number][]
       ).map(([x, y, z], i) => (
-        <Float key={i} speed={0.9 + i * 0.12} floatIntensity={0.35 + i * 0.06} rotationIntensity={0}>
+        <Float key={i} speed={0.7 + i * 0.11} floatIntensity={0.28} rotationIntensity={0}>
           <mesh position={[x, y, z]}>
-            <sphereGeometry args={[0.065 + (i % 3) * 0.025, 8, 8]} />
+            <sphereGeometry args={[0.048 + (i % 3) * 0.016, 8, 8]} />
             <meshStandardMaterial
-              color="#F5D76E"
-              metalness={0.85}
+              color={i % 3 === 0 ? GOLD : SAP_LT}
+              metalness={0.82}
               roughness={0.1}
-              emissive="#F5D76E"
-              emissiveIntensity={0.18}
+              emissive={i % 3 === 0 ? GOLD : SAP_LT}
+              emissiveIntensity={0.16}
             />
           </mesh>
         </Float>
       ))}
 
-      {/* ── Very faint background wireframe (pure atmosphere) ──────── */}
-      <mesh>
-        <sphereGeometry args={[6.5, 12, 12]} />
-        <meshBasicMaterial color={GOLD} wireframe transparent opacity={0.015} />
-      </mesh>
-
     </group>
   );
 }
 
-// Memoised to prevent Canvas remount on parent re-renders
 const Hero3D = memo(function Hero3D() {
   return (
     <Canvas
@@ -149,15 +243,9 @@ const Hero3D = memo(function Hero3D() {
       dpr={[1, 1.5]}
       style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
     >
-      {/*
-        Environment provides Image-Based Lighting (IBL) — this is what makes
-        metallic and semi-metallic materials reflect realistic colour.
-        Without it, high-metalness objects look pitch-black in a dark scene.
-        "sunset" gives warm golden tones that match the Myanmar palette.
-      */}
+      {/* IBL — critical for metallic PBR; without it, metals appear black */}
       <Environment preset="sunset" />
 
-      {/* Additional scene lights for directional colour accents */}
       <ambientLight intensity={0.4} />
       <directionalLight position={[4, 6, 4]}  intensity={1.8} color="#FFF3B0" />
       <pointLight       position={[-5, 3, 2]}  intensity={2.0} color="#D4AF37" />
