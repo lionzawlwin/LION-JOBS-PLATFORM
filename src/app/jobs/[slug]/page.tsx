@@ -147,7 +147,7 @@ export default async function JobDetailPage(
                 Apply Now — It&apos;s Free
               </Link>
               <a
-                href={`https://wa.me/959979333333?text=${encodeURIComponent(`Hi Lion Jobs! I'm interested in: ${job.title} at ${job.company}`)}`}
+                href={`https://wa.me/959428954289?text=${encodeURIComponent(`Hi Lion Jobs! I'm interested in: ${job.title} at ${job.company}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-5 py-2.5 text-sm font-semibold text-green-700 transition-colors hover:bg-green-100 dark:border-green-700/30 dark:bg-green-900/20 dark:text-green-400"
@@ -233,7 +233,7 @@ export default async function JobDetailPage(
               <div className="rounded-2xl border border-border bg-card p-5 text-center">
                 <p className="text-xs text-muted-foreground">Need help? Our recruiters are online.</p>
                 <a
-                  href="https://wa.me/959979333333"
+                  href="https://wa.me/959428954289"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"

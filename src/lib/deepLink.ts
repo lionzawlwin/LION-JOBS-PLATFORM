@@ -72,7 +72,7 @@ export function openDeepLink(
 //
 // Numeric Facebook Page ID : 61553739861091
 // Telegram username        : lionjobsagency
-// Phone number             : +959979333333
+// Phone number             : +959428954289
 //
 export const LION_LINKS = {
 

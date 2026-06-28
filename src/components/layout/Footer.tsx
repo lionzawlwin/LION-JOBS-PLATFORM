@@ -3,9 +3,10 @@ import { Briefcase, MapPin, Phone, Mail, MessageCircle } from 'lucide-react';
 
 const CONTACT = {
   address: 'No. 29, Room 3A, 2nd Floor, Kyay Tine Su 1st Street, Pain Nae Kone Ward, Insein Township, Yangon.',
-  phone: '09979333333',
+  phone:  '09979333333',
+  phone2: '09428954289',
   email: 'lionzawlwin@gmail.com',
-  whatsapp: 'https://wa.me/959979333333',
+  whatsapp: 'https://wa.me/959428954289',
 };
 
 export function Footer() {
@@ -32,7 +33,7 @@ export function Footer() {
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 transition-colors"
             >
               <MessageCircle size={15} />
-              Chat on WhatsApp
+              Chat on WhatsApp · +959428954289
             </a>
           </div>
 
@@ -86,6 +87,15 @@ export function Footer() {
                 >
                   <Phone size={15} className="shrink-0 text-brand-600" />
                   {CONTACT.phone}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`tel:${CONTACT.phone2}`}
+                  className="flex items-center gap-2.5 text-muted-foreground hover:text-brand-600 transition-colors"
+                >
+                  <Phone size={15} className="shrink-0 text-brand-600" />
+                  {CONTACT.phone2}
                 </a>
               </li>
               <li>

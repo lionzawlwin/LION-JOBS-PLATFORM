@@ -45,7 +45,7 @@ function buildPayload(job: Job) {
     // Links for Make.com to embed in messages
     url: `${SITE_URL}/jobs/${slug}`,
     applyUrl: `${SITE_URL}/apply/${job.id}`,
-    applyWhatsApp: `https://wa.me/959979333333?text=${encodeURIComponent(
+    applyWhatsApp: `https://wa.me/959428954289?text=${encodeURIComponent(
       `ကျွန်တော်/ကျွန်မ "${job.title}" ရာထူးအတွက် လျှောက်ထားလိုပါသည်`,
     )}`,
 

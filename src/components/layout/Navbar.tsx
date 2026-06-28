@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const WHATSAPP = 'https://wa.me/959979333333';
+const WHATSAPP = 'https://wa.me/959428954289';
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
