@@ -7,6 +7,7 @@ import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { JobGrid } from '@/components/jobs/JobGrid';
 import { useJobs, filterJobs } from '@/hooks/useJobs';
+import { JoinCommunity } from '@/components/JoinCommunity';
 import type { Job, JobCategory, JobFilters as FiltersType } from '@/types';
 
 const DEFAULT_FILTERS: FiltersType = {
@@ -60,6 +61,8 @@ export function HomeClient({ initialJobs }: Props) {
 
         <JobGrid jobs={filtered} loading={loading} error={error} />
       </section>
+
+      <JoinCommunity />
     </>
   );
 }

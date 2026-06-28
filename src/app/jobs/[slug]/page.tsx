@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { JobPostingSchema } from '@/components/seo/JobPostingSchema';
+import { JoinCommunity } from '@/components/JoinCommunity';
 import { getJobs } from '@/lib/sheets';
 import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
 
@@ -269,6 +270,8 @@ export default async function JobDetailPage(
             </section>
           )}
         </div>
+
+        <JoinCommunity />
       </main>
 
       <Footer />
