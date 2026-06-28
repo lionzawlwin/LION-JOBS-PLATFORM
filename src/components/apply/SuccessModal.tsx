@@ -144,7 +144,7 @@ export function SuccessModal({ open, jobTitle, onClose }: SuccessModalProps) {
                   type="button"
                   className={btnBase}
                   style={{ backgroundColor: '#229ED9' }}
-                  onClick={(e) => openDeepLink(e, LION_LINKS.telegramDM)}
+                  onClick={(e) => openDeepLink(e, LION_LINKS.telegramFollowUpChat)}
                 >
                   <TelegramIcon /> Telegram
                 </button>
