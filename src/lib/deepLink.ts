@@ -71,7 +71,7 @@ export function openDeepLink(
 // Update handles/IDs here and all components get the fix automatically.
 //
 // Numeric Facebook Page ID : 61553739861091
-// Telegram username        : lionjobsagency
+// Telegram username        : unitedmaxicanstates
 // Phone number             : +959428954289
 //
 export const LION_LINKS = {
@@ -87,9 +87,9 @@ export const LION_LINKS = {
   },
 
   telegramChannel: {
-    androidIntent: 'intent://resolve?domain=lionjobsagency#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2Flionjobsagency;end',
-    iosScheme:     'tg://resolve?domain=lionjobsagency',
-    webUrl:        'https://t.me/lionjobsagency',
+    androidIntent: 'intent://resolve?domain=unitedmaxicanstates#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2Funitedmaxicanstates;end',
+    iosScheme:     'tg://resolve?domain=unitedmaxicanstates',
+    webUrl:        'https://t.me/unitedmaxicanstates',
   },
 
   viberCommunity: {
