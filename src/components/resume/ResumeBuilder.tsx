@@ -19,8 +19,14 @@ type Edu = {
 type Lang = { id: string; language: string; level: string };
 
 type ResumeData = {
-  name: string; phone: string; email: string; address: string;
-  linkedin: string; objective: string;
+  name: string;
+  fatherName: string;
+  nrcNo: string;
+  phone: string;
+  email: string;
+  address: string;      // full address
+  linkedin: string;
+  objective: string;
   work: Work[];
   education: Edu[];
   skills: string[];
@@ -33,7 +39,9 @@ const newEdu   = (): Edu  => ({ id: uid(), school: '', degree: '', field: '', st
 const newLang  = (): Lang => ({ id: uid(), language: '', level: 'Intermediate' });
 
 const INITIAL: ResumeData = {
-  name: '', phone: '', email: '', address: '', linkedin: '', objective: '',
+  name: '', fatherName: '', nrcNo: '',
+  phone: '', email: '', address: '',
+  linkedin: '', objective: '',
   work: [], education: [], skills: [], languages: [],
 };
 
@@ -118,13 +126,14 @@ function RemoveBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-// ── Resume Preview (print-faithful) ─────────────────────────────
+// ── Resume preview template (A4-faithful inline styles) ──────────
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: '18px' }}>
       <div style={{
-        fontWeight: '700', fontSize: '9px', letterSpacing: '1.5px', color: '#4f46e5',
-        textTransform: 'uppercase', borderBottom: '1.5px solid #e0e7ff', paddingBottom: '3px', marginBottom: '6px',
+        fontWeight: '700', fontSize: '9px', letterSpacing: '1.5px', color: '#1B3A6B',
+        textTransform: 'uppercase', borderBottom: '1.5px solid #BFDBFE',
+        paddingBottom: '3px', marginBottom: '6px',
       }}>
         {title}
       </div>
@@ -144,17 +153,32 @@ function ResumePreview({ data }: { data: ResumeData }) {
         color: '#1a1a1a',
         fontFamily: "'Arial', 'Helvetica', sans-serif",
         fontSize: '11px',
-        lineHeight: '1.55',
+        lineHeight: '1.6',
         padding: '22mm 18mm',
         minHeight: '297mm',
+        width: '210mm',
         boxSizing: 'border-box',
       }}
     >
-      {/* Header */}
-      <div style={{ borderBottom: '2.5px solid #4f46e5', paddingBottom: '12px', marginBottom: '4px' }}>
+      {/* ── Header ── */}
+      <div style={{ borderBottom: '2.5px solid #1B3A6B', paddingBottom: '12px', marginBottom: '6px' }}>
         <div style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px' }}>
           {data.name || 'Your Full Name'}
         </div>
+
+        {/* Father Name + NRC row */}
+        {(data.fatherName || data.nrcNo) && (
+          <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '18px', fontSize: '10.5px', color: '#334155' }}>
+            {data.fatherName && (
+              <span><span style={{ color: '#64748b' }}>Father&apos;s Name:</span> <strong>{data.fatherName}</strong></span>
+            )}
+            {data.nrcNo && (
+              <span><span style={{ color: '#64748b' }}>NRC No.:</span> <strong>{data.nrcNo}</strong></span>
+            )}
+          </div>
+        )}
+
+        {/* Contact row */}
         {hasContact && (
           <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '10px', color: '#475569' }}>
             {data.phone   && <span>📱 {data.phone}</span>}
@@ -180,7 +204,7 @@ function ResumePreview({ data }: { data: ResumeData }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <div>
                   <span style={{ fontWeight: '700', fontSize: '12px', color: '#0f172a' }}>{w.position || 'Job Title'}</span>
-                  <span style={{ marginLeft: '8px', color: '#4f46e5', fontWeight: '600', fontSize: '11px' }}>
+                  <span style={{ marginLeft: '8px', color: '#1B3A6B', fontWeight: '600', fontSize: '11px' }}>
                     @ {w.company || 'Company'}
                   </span>
                 </div>
@@ -189,7 +213,7 @@ function ResumePreview({ data }: { data: ResumeData }) {
                 </span>
               </div>
               {w.description && (
-                <p style={{ marginTop: '4px', color: '#475569', paddingLeft: '10px', borderLeft: '2px solid #c7d2fe' }}>
+                <p style={{ marginTop: '4px', color: '#475569', paddingLeft: '10px', borderLeft: '2px solid #BFDBFE' }}>
                   {w.description}
                 </p>
               )}
@@ -208,7 +232,7 @@ function ResumePreview({ data }: { data: ResumeData }) {
                   <span style={{ fontWeight: '700', fontSize: '12px', color: '#0f172a' }}>
                     {e.degree || 'Degree'}{e.field ? ` in ${e.field}` : ''}
                   </span>
-                  <span style={{ marginLeft: '8px', color: '#4f46e5', fontWeight: '600', fontSize: '11px' }}>
+                  <span style={{ marginLeft: '8px', color: '#1B3A6B', fontWeight: '600', fontSize: '11px' }}>
                     {e.school || 'School / University'}
                   </span>
                 </div>
@@ -227,8 +251,8 @@ function ResumePreview({ data }: { data: ResumeData }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
             {data.skills.map((s) => (
               <span key={s} style={{
-                background: '#eef2ff', color: '#4338ca', borderRadius: '4px',
-                padding: '2px 9px', fontSize: '10px', fontWeight: '600', border: '1px solid #c7d2fe',
+                background: '#EFF4FF', color: '#1B3A6B', borderRadius: '4px',
+                padding: '2px 9px', fontSize: '10px', fontWeight: '600', border: '1px solid #BFDBFE',
               }}>
                 {s}
               </span>
@@ -252,7 +276,10 @@ function ResumePreview({ data }: { data: ResumeData }) {
       )}
 
       {/* Footer */}
-      <div style={{ marginTop: '30px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', fontSize: '9px', color: '#94a3b8', textAlign: 'center' }}>
+      <div style={{
+        marginTop: '30px', borderTop: '1px solid #e2e8f0', paddingTop: '8px',
+        fontSize: '9px', color: '#94a3b8', textAlign: 'center',
+      }}>
         Resume prepared with Lion Jobs Agency · lionjobsagency.com
       </div>
     </div>
@@ -265,8 +292,8 @@ export function ResumeBuilder() {
   const [showPreview, setShowPreview] = useState(false);
   const [skillInput, setSkillInput] = useState('');
 
-  function patch(patch: Partial<ResumeData>) {
-    setData((prev) => ({ ...prev, ...patch }));
+  function patch(p: Partial<ResumeData>) {
+    setData((prev) => ({ ...prev, ...p }));
   }
 
   // Work
@@ -299,38 +326,94 @@ export function ResumeBuilder() {
     patch({ languages: data.languages.map((l) => l.id === id ? { ...l, [field]: value } : l) });
   }
 
-  function handlePrint() { window.print(); }
+  // Print — opens a clean new window containing only the resume,
+  // then triggers the browser print dialog (Save as PDF works perfectly).
+  function handlePrint() {
+    const el = document.getElementById('resume-preview');
+    if (!el) return;
+
+    const win = window.open('', '_blank', 'width=900,height=1100');
+    if (!win) return;
+
+    win.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resume — ${data.name || 'CV'}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @page { size: A4; margin: 0; }
+    body { background: #fff; }
+  </style>
+</head>
+<body>${el.outerHTML}</body>
+</html>`);
+
+    win.document.close();
+    win.focus();
+    // Short delay lets fonts/images settle before the dialog opens
+    setTimeout(() => {
+      win.print();
+      win.close();
+    }, 600);
+  }
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
 
       {/* ── Form Panel ── */}
-      <div className={cn('flex-1 space-y-5 lg:max-w-[540px] no-print', showPreview && 'hidden lg:block')}>
+      <div className={cn('flex-1 space-y-5 lg:max-w-[560px]', showPreview && 'hidden lg:block')}>
 
         {/* Personal Info */}
         <SectionCard title="Personal Information" icon={User}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            {/* Full Name — full width */}
             <div className="sm:col-span-2">
               <Field label="Full Name" required>
                 <Input value={data.name} onChange={(e) => patch({ name: e.target.value })} placeholder="e.g. Aung Ko Ko" />
               </Field>
             </div>
+
+            {/* Father's Name */}
+            <Field label="Father's Name">
+              <Input value={data.fatherName} onChange={(e) => patch({ fatherName: e.target.value })} placeholder="e.g. U Kyaw Zin" />
+            </Field>
+
+            {/* NRC No. */}
+            <Field label="National ID Card No. (NRC)">
+              <Input value={data.nrcNo} onChange={(e) => patch({ nrcNo: e.target.value })} placeholder="e.g. 12/MAKHANA(N)123456" />
+            </Field>
+
+            {/* Phone */}
             <Field label="Phone Number">
               <Input value={data.phone} onChange={(e) => patch({ phone: e.target.value })} placeholder="+959 77 000 0000" type="tel" />
             </Field>
+
+            {/* Email */}
             <Field label="Email Address">
               <Input value={data.email} onChange={(e) => patch({ email: e.target.value })} placeholder="you@example.com" type="email" />
             </Field>
+
+            {/* Full Address — full width */}
             <div className="sm:col-span-2">
-              <Field label="Location">
-                <Input value={data.address} onChange={(e) => patch({ address: e.target.value })} placeholder="Yangon, Myanmar" />
+              <Field label="Full Address">
+                <Input
+                  value={data.address}
+                  onChange={(e) => patch({ address: e.target.value })}
+                  placeholder="No. 123, Bogyoke Road, Kyauktada Township, Yangon, Myanmar"
+                />
               </Field>
             </div>
+
+            {/* LinkedIn */}
             <div className="sm:col-span-2">
               <Field label="LinkedIn URL">
                 <Input value={data.linkedin} onChange={(e) => patch({ linkedin: e.target.value })} placeholder="linkedin.com/in/your-profile" />
               </Field>
             </div>
+
+            {/* Summary */}
             <div className="sm:col-span-2">
               <Field label="Professional Summary">
                 <Textarea
@@ -341,6 +424,7 @@ export function ResumeBuilder() {
                 />
               </Field>
             </div>
+
           </div>
         </SectionCard>
 
@@ -367,12 +451,7 @@ export function ResumeBuilder() {
                     <Input value={w.endDate} onChange={(e) => setWork(w.id, 'endDate', e.target.value)} placeholder="Dec 2023" disabled={w.current} />
                   </Field>
                   <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={w.current}
-                      onChange={(e) => setWork(w.id, 'current', e.target.checked)}
-                      className="rounded border-border"
-                    />
+                    <input type="checkbox" checked={w.current} onChange={(e) => setWork(w.id, 'current', e.target.checked)} className="rounded border-border" />
                     Currently working here
                   </label>
                 </div>
@@ -420,12 +499,7 @@ export function ResumeBuilder() {
                     <Input value={e.endDate} onChange={(ev) => setEdu(e.id, 'endDate', ev.target.value)} placeholder="2022" disabled={e.current} />
                   </Field>
                   <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={e.current}
-                      onChange={(ev) => setEdu(e.id, 'current', ev.target.checked)}
-                      className="rounded border-border"
-                    />
+                    <input type="checkbox" checked={e.current} onChange={(ev) => setEdu(e.id, 'current', ev.target.checked)} className="rounded border-border" />
                     Currently studying
                   </label>
                 </div>
@@ -451,18 +525,9 @@ export function ResumeBuilder() {
           {data.skills.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {data.skills.map((s) => (
-                <span
-                  key={s}
-                  className="flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-400"
-                >
+                <span key={s} className="flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-400">
                   {s}
-                  <button
-                    onClick={() => delSkill(s)}
-                    aria-label={`Remove ${s}`}
-                    className="text-brand-400 transition-colors hover:text-brand-700 dark:hover:text-brand-300"
-                  >
-                    ×
-                  </button>
+                  <button onClick={() => delSkill(s)} aria-label={`Remove ${s}`} className="text-brand-400 transition-colors hover:text-brand-700 dark:hover:text-brand-300">×</button>
                 </span>
               ))}
             </div>
@@ -473,49 +538,53 @@ export function ResumeBuilder() {
         <SectionCard title="Languages" icon={Globe}>
           {data.languages.map((l) => (
             <div key={l.id} className="flex items-center gap-3">
-              <Input
-                value={l.language}
-                onChange={(e) => setLang(l.id, 'language', e.target.value)}
-                placeholder="e.g. English"
-                className="flex-1"
-              />
+              <Input value={l.language} onChange={(e) => setLang(l.id, 'language', e.target.value)} placeholder="e.g. English" className="flex-1" />
               <SelectLevel value={l.level} onChange={(v) => setLang(l.id, 'level', v)} />
               <RemoveBtn onClick={() => delLang(l.id)} />
             </div>
           ))}
           <AddButton onClick={addLang} label="Add Language" />
         </SectionCard>
+
       </div>
 
       {/* ── Preview Panel ── */}
       <div className={cn('flex-1 lg:sticky lg:top-20 lg:self-start', !showPreview && 'hidden lg:block')}>
+
         {/* Action bar */}
-        <div className="no-print mb-4 flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-muted-foreground">Resume Preview</p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Resume Preview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Click Print → Save as PDF in the dialog</p>
+          </div>
           <Button
             onClick={handlePrint}
             size="sm"
             className="gap-1.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/20"
           >
-            <Printer size={14} /> Download PDF
+            <Printer size={14} /> Print / Save PDF
           </Button>
         </div>
 
-        {/* Preview container */}
-        <div className="overflow-auto rounded-xl border border-border shadow-sm print:overflow-visible print:rounded-none print:border-none print:shadow-none">
-          <ResumePreview data={data} />
+        {/* Scrollable preview — A4 scaled to fit the panel */}
+        <div className="overflow-auto rounded-xl border border-border shadow-sm bg-muted/20">
+          <div style={{ transform: 'scale(0.62)', transformOrigin: 'top center', width: '210mm', marginLeft: 'auto', marginRight: 'auto' }}>
+            <ResumePreview data={data} />
+          </div>
         </div>
+
       </div>
 
       {/* Mobile toggle */}
-      <div className="no-print fixed bottom-24 right-5 z-40 lg:hidden sm:right-6">
+      <div className="fixed bottom-24 right-5 z-40 lg:hidden sm:right-6">
         <button
           onClick={() => setShowPreview((v) => !v)}
           className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-lg transition-colors hover:bg-accent"
         >
-          {showPreview ? <><EyeOff size={15} /> Edit</>  : <><Eye size={15} /> Preview</>}
+          {showPreview ? <><EyeOff size={15} /> Edit</> : <><Eye size={15} /> Preview</>}
         </button>
       </div>
+
     </div>
   );
 }
