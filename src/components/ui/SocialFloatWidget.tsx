@@ -37,32 +37,41 @@ function FacebookIcon() {
   );
 }
 
-// ── Deep link logic ───────────────────────────────────────────────
-// On mobile: fires the native app URI scheme. If the app isn't installed,
-// document stays visible and after 1500ms we open the web fallback in a new tab.
-// If the app opens, the tab goes to background (document.hidden = true) and
-// we cancel the timer — no fallback fires.
-// On desktop: skips the custom scheme entirely (avoids browser error dialogs)
-// and goes straight to the web URL.
-function openDeepLink(deepLink: string, fallbackUrl: string) {
+// ── Deep link click handler ───────────────────────────────────────
+// Called from onClick on an <a href={deepLink}> element.
+//
+// Root cause of the "page refresh" bug: window.location.href = 'tg://...'
+// makes the browser treat it as a navigation, causing a reload cycle.
+// Fix: render a real <a href={deepLink}> and let the browser fire the URI
+// scheme natively. Native anchor clicks with custom schemes do NOT navigate
+// the current page — the OS intercepts them directly.
+//
+// On mobile: let the href fire naturally (don't preventDefault).
+//   • App installed → OS opens the app, tab goes to background (document.hidden).
+//   • App absent → scheme fails silently; after 1500ms, open web fallback.
+// On desktop: prevent the custom scheme (avoids "cannot open" error dialogs)
+//   and open the web URL directly instead.
+function handleDeepLinkClick(
+  e: React.MouseEvent<HTMLAnchorElement>,
+  fallbackUrl: string,
+) {
   const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
   if (!isMobile) {
+    e.preventDefault();
     window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
     return;
   }
 
-  // Try to hand off to the native app
-  window.location.href = deepLink;
-
-  // Fallback: if we're still in the foreground after 1.5s, the app isn't installed
+  // Mobile: do NOT preventDefault — let the anchor fire the URI scheme natively.
+  // Set up the fallback timer in case the app isn't installed.
   const timer = setTimeout(() => {
     if (!document.hidden) {
       window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
     }
   }, 1500);
 
-  // App opened successfully → tab goes to background → cancel the fallback
+  // App opened → tab goes to background → cancel the fallback
   document.addEventListener('visibilitychange', function handler() {
     if (document.hidden) clearTimeout(timer);
     document.removeEventListener('visibilitychange', handler);
@@ -135,18 +144,21 @@ export function SocialFloatWidget() {
           >
             {CHANNELS.map(({ id, label, deepLink, fallbackUrl, bg, icon: Icon }) =>
               deepLink ? (
-                // Deep-link button — tries app first, falls back to web
-                <button
+                // Deep-link anchor — href fires the URI scheme natively (no page reload).
+                // onClick sets up the fallback timer; on desktop it prevents default
+                // and redirects to the web URL instead.
+                <a
                   key={id}
-                  type="button"
+                  href={deepLink}
+                  rel="noopener noreferrer"
                   aria-label={`Contact us on ${label}`}
-                  onClick={() => openDeepLink(deepLink, fallbackUrl)}
+                  onClick={(e) => handleDeepLinkClick(e, fallbackUrl)}
                   className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
                   style={{ backgroundColor: bg }}
                 >
                   <Icon />
                   {label}
-                </button>
+                </a>
               ) : (
                 // Plain anchor — wa.me handles its own smart routing
                 <a
