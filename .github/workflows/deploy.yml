@@ -6,8 +6,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# All three vars are read automatically by the Vercel CLI from the environment.
-# No --token flag needed on any command.
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -26,16 +24,23 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: Verify secrets are present
+        run: |
+          [ -n "$VERCEL_TOKEN" ]      || { echo "VERCEL_TOKEN secret is empty"; exit 1; }
+          [ -n "$VERCEL_ORG_ID" ]     || { echo "VERCEL_ORG_ID secret is empty"; exit 1; }
+          [ -n "$VERCEL_PROJECT_ID" ] || { echo "VERCEL_PROJECT_ID secret is empty"; exit 1; }
+          echo "All three Vercel secrets are set."
+
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=preview
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
       - name: Build
-        run: vercel build
+        run: vercel build --token="$VERCEL_TOKEN"
 
       - name: Deploy preview
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt)
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
           echo "url=$url" >> $GITHUB_OUTPUT
 
       - name: Comment preview URL on PR
@@ -65,11 +70,18 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: Verify secrets are present
+        run: |
+          [ -n "$VERCEL_TOKEN" ]      || { echo "VERCEL_TOKEN secret is empty"; exit 1; }
+          [ -n "$VERCEL_ORG_ID" ]     || { echo "VERCEL_ORG_ID secret is empty"; exit 1; }
+          [ -n "$VERCEL_PROJECT_ID" ] || { echo "VERCEL_PROJECT_ID secret is empty"; exit 1; }
+          echo "All three Vercel secrets are set."
+
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build
-        run: vercel build --prod
+        run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy to production
-        run: vercel deploy --prebuilt --prod
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
