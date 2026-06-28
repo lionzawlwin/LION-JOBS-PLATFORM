@@ -30,6 +30,9 @@ export function Navbar() {
           <Link href="/#jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Find Jobs
           </Link>
+          <Link href="/resume-builder" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Resume Builder
+          </Link>
           <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Dashboard
           </Link>
@@ -81,6 +84,9 @@ export function Navbar() {
           <nav className="flex flex-col gap-1 px-4 py-3">
             <Link href="/#jobs" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               Find Jobs
+            </Link>
+            <Link href="/resume-builder" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              Resume Builder
             </Link>
             <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               Dashboard

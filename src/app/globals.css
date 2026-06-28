@@ -201,3 +201,11 @@ body {
     @apply font-sans;
   }
 }
+
+/* ── Print styles (resume builder) ──────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  #resume-preview { width: 100% !important; min-height: 0 !important; }
+}
