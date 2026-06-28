@@ -93,9 +93,11 @@ export const LION_LINKS = {
   },
 
   viberCommunity: {
-    // S.browser_fallback_url is double-encoded (% → %25) as required by the intent spec
-    androidIntent: 'intent://invite?g2=AQA9D%2F4QWxGo0lbDjm%2BjVbAxdDgw3i0Ns1mic8G%2Bu6DIWheU45OXcSbwFtaYkd04#Intent;scheme=viber;package=com.viber.voip;S.browser_fallback_url=https%3A%2F%2Finvite.viber.com%2F%3Fg2%3DAQA9D%252F4QWxGo0lbDjm%252BjVbAxdDgw3i0Ns1mic8G%252Bu6DIWheU45OXcSbwFtaYkd04;end',
-    iosScheme:     'viber://invite?g2=AQA9D%2F4QWxGo0lbDjm%2BjVbAxdDgw3i0Ns1mic8G%2Bu6DIWheU45OXcSbwFtaYkd04',
+    // invite.viber.com is a universal smart link (like chat.whatsapp.com) —
+    // it detects the platform and redirects into the app automatically.
+    // Custom viber:// schemes for community invites are unreliable.
+    androidIntent: null,
+    iosScheme:     null,
     webUrl:        'https://invite.viber.com/?g2=AQA9D%2F4QWxGo0lbDjm%2BjVbAxdDgw3i0Ns1mic8G%2Bu6DIWheU45OXcSbwFtaYkd04',
   },
 
