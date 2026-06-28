@@ -5,10 +5,13 @@ import { CheckCircle2, X, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { openDeepLink, LION_LINKS } from '@/lib/deepLink';
 
-const PHONE = '959979333333';
-const FOLLOW_UP_MSG = encodeURIComponent('Hi Lion Jobs! I just applied for a position and wanted to follow up.');
+const PHONE           = '959979333333';
+const FOLLOW_UP_MSG   = encodeURIComponent('Hi Lion Jobs! I just applied for a position and wanted to follow up.');
+const WA_FOLLOWUP_URL = `https://wa.me/${PHONE}?text=${FOLLOW_UP_MSG}`;
 
+// ── Icons ────────────────────────────────────────────────────────
 function WhatsAppIcon() {
   return (
     <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -33,10 +36,22 @@ function TelegramIcon() {
   );
 }
 
+function MessengerIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.193 14.963-3.056-3.259-5.963 3.259 6.559-6.963 3.13 3.259 5.889-3.259-6.559 6.963z"/>
+    </svg>
+  );
+}
+
+// ── Shared button style ───────────────────────────────────────────
+const btnBase =
+  'flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80 cursor-pointer';
+
 interface SuccessModalProps {
-  open: boolean;
+  open:     boolean;
   jobTitle: string;
-  onClose: () => void;
+  onClose:  () => void;
 }
 
 export function SuccessModal({ open, jobTitle, onClose }: SuccessModalProps) {
@@ -95,37 +110,54 @@ export function SuccessModal({ open, jobTitle, onClose }: SuccessModalProps) {
               has been received. Our team will review it and reach out within 48 hours.
             </p>
 
-            {/* Social follow-up row */}
+            {/* ── Social follow-up — 2×2 grid ──────────────────────── */}
             <div className="mt-5 space-y-2">
-              <p className="text-center text-xs font-medium text-muted-foreground">Follow up via</p>
-              <div className="flex gap-2">
-                <a
-                  href={`https://wa.me/${PHONE}?text=${FOLLOW_UP_MSG}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              <p className="text-center text-xs font-medium text-muted-foreground">
+                Follow up via
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* WhatsApp */}
+                <button
+                  type="button"
+                  className={btnBase}
                   style={{ backgroundColor: '#25D366' }}
+                  onClick={(e) =>
+                    openDeepLink(e, { androidIntent: null, iosScheme: null, webUrl: WA_FOLLOWUP_URL })
+                  }
                 >
                   <WhatsAppIcon /> WhatsApp
-                </a>
-                <a
-                  href={`viber://chat?number=%2B${PHONE}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                </button>
+
+                {/* Viber */}
+                <button
+                  type="button"
+                  className={btnBase}
                   style={{ backgroundColor: '#7360F2' }}
+                  onClick={(e) => openDeepLink(e, LION_LINKS.viberDM)}
                 >
                   <ViberIcon /> Viber
-                </a>
-                <a
-                  href={`https://t.me/+${PHONE}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                </button>
+
+                {/* Telegram */}
+                <button
+                  type="button"
+                  className={btnBase}
                   style={{ backgroundColor: '#229ED9' }}
+                  onClick={(e) => openDeepLink(e, LION_LINKS.telegramDM)}
                 >
                   <TelegramIcon /> Telegram
-                </a>
+                </button>
+
+                {/* Messenger */}
+                <button
+                  type="button"
+                  className={btnBase}
+                  style={{ backgroundColor: '#0084FF' }}
+                  onClick={(e) => openDeepLink(e, LION_LINKS.messenger)}
+                >
+                  <MessengerIcon /> Messenger
+                </button>
               </div>
             </div>
 
