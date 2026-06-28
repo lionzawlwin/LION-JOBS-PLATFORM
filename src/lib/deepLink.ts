@@ -70,10 +70,10 @@ export function openDeepLink(
 // Single source of truth for every social button on the site.
 // Update handles/IDs here and all components get the fix automatically.
 //
-// Numeric Facebook Page ID : 61553739861091
-// Telegram channel         : lionjobsagency (public channel)
-// Telegram follow-up chat  : unitedmaxicanstates (post-application DM)
-// Phone number             : +959428954289
+// Numeric Facebook Page ID  : 61553739861091
+// Telegram channel          : lionjobsagency (public channel — JoinCommunity, SocialFloatWidget)
+// Telegram follow-up chat   : unitedmaxicanstates (post-application — SuccessModal)
+// Business phone / Viber DM : +959428954289
 //
 export const LION_LINKS = {
 
@@ -115,17 +115,11 @@ export const LION_LINKS = {
   },
 
   // ── Direct message / follow-up links ─────────────────────────
-  // Used in: SuccessModal
-
-  telegramDM: {
-    androidIntent: 'intent://msg?to=%2B959979333333#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2F%2B959979333333;end',
-    iosScheme:     'tg://msg?to=%2B959979333333',
-    webUrl:        'https://t.me/+959979333333',
-  },
+  // Used in: SuccessModal (Viber, Messenger buttons)
 
   viberDM: {
-    androidIntent: 'intent://chat?number=%2B959979333333#Intent;scheme=viber;package=com.viber.voip;S.browser_fallback_url=https%3A%2F%2Fwww.viber.com%2Fdownload%2F;end',
-    iosScheme:     'viber://chat?number=%2B959979333333',
+    androidIntent: 'intent://chat?number=%2B959428954289#Intent;scheme=viber;package=com.viber.voip;S.browser_fallback_url=https%3A%2F%2Fwww.viber.com%2Fdownload%2F;end',
+    iosScheme:     'viber://chat?number=%2B959428954289',
     webUrl:        'https://www.viber.com/download/',
   },
 
