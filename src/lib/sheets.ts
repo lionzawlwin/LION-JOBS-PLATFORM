@@ -1,6 +1,16 @@
 import { google } from 'googleapis';
 import type { Job, Candidate, ApplicationStatus } from '@/types';
 
+const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? '';
+
+function isConfigured(): boolean {
+  return Boolean(
+    SHEET_ID &&
+      process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
+      process.env.GOOGLE_PRIVATE_KEY,
+  );
+}
+
 function getSheets() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -18,10 +28,8 @@ function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? '';
-
 export async function getJobs(): Promise<Job[]> {
-  if (!SHEET_ID) throw new Error('GOOGLE_SHEET_ID is not configured.');
+  if (!isConfigured()) return [];
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
@@ -50,7 +58,7 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getCandidates(): Promise<Candidate[]> {
-  if (!SHEET_ID) throw new Error('GOOGLE_SHEET_ID is not configured.');
+  if (!isConfigured()) return [];
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
@@ -78,7 +86,7 @@ export async function updateCandidateStage(
   candidateId: string,
   stage: ApplicationStatus,
 ): Promise<void> {
-  if (!SHEET_ID) throw new Error('GOOGLE_SHEET_ID is not configured.');
+  if (!isConfigured()) return;
 
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
