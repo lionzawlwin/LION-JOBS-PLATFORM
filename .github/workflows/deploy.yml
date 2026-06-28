@@ -21,15 +21,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
       - name: Verify secrets are present
         run: |
-          [ -n "$VERCEL_TOKEN" ]      || { echo "VERCEL_TOKEN secret is empty"; exit 1; }
-          [ -n "$VERCEL_ORG_ID" ]     || { echo "VERCEL_ORG_ID secret is empty"; exit 1; }
-          [ -n "$VERCEL_PROJECT_ID" ] || { echo "VERCEL_PROJECT_ID secret is empty"; exit 1; }
-          echo "All three Vercel secrets are set."
+          [ -n "$VERCEL_TOKEN" ]      || { echo "::error::VERCEL_TOKEN secret is empty"; exit 1; }
+          [ -n "$VERCEL_ORG_ID" ]     || { echo "::error::VERCEL_ORG_ID secret is empty"; exit 1; }
+          [ -n "$VERCEL_PROJECT_ID" ] || { echo "::error::VERCEL_PROJECT_ID secret is empty"; exit 1; }
+          echo "All three Vercel secrets are present."
+
+      - name: Verify Vercel auth (token smoke-test)
+        run: vercel whoami --token="$VERCEL_TOKEN"
 
       - name: Pull Vercel environment
         run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
@@ -67,15 +75,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
       - name: Verify secrets are present
         run: |
-          [ -n "$VERCEL_TOKEN" ]      || { echo "VERCEL_TOKEN secret is empty"; exit 1; }
-          [ -n "$VERCEL_ORG_ID" ]     || { echo "VERCEL_ORG_ID secret is empty"; exit 1; }
-          [ -n "$VERCEL_PROJECT_ID" ] || { echo "VERCEL_PROJECT_ID secret is empty"; exit 1; }
-          echo "All three Vercel secrets are set."
+          [ -n "$VERCEL_TOKEN" ]      || { echo "::error::VERCEL_TOKEN secret is empty"; exit 1; }
+          [ -n "$VERCEL_ORG_ID" ]     || { echo "::error::VERCEL_ORG_ID secret is empty"; exit 1; }
+          [ -n "$VERCEL_PROJECT_ID" ] || { echo "::error::VERCEL_PROJECT_ID secret is empty"; exit 1; }
+          echo "All three Vercel secrets are present."
+
+      - name: Verify Vercel auth (token smoke-test)
+        run: vercel whoami --token="$VERCEL_TOKEN"
 
       - name: Pull Vercel environment
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
