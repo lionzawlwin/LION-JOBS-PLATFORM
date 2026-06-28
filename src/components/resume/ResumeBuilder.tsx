@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Printer, Eye, EyeOff, User, Briefcase, GraduationCap, Wrench, Globe } from 'lucide-react';
+import { Plus, Trash2, Printer, Download, Loader2, Eye, EyeOff, User, Briefcase, GraduationCap, Wrench, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -291,6 +291,7 @@ export function ResumeBuilder() {
   const [data, setData] = useState<ResumeData>(INITIAL);
   const [showPreview, setShowPreview] = useState(false);
   const [skillInput, setSkillInput] = useState('');
+  const [downloading, setDownloading] = useState(false);
 
   function patch(p: Partial<ResumeData>) {
     setData((prev) => ({ ...prev, ...p }));
@@ -326,8 +327,7 @@ export function ResumeBuilder() {
     patch({ languages: data.languages.map((l) => l.id === id ? { ...l, [field]: value } : l) });
   }
 
-  // Print — opens a clean new window containing only the resume,
-  // then triggers the browser print dialog (Save as PDF works perfectly).
+  // Print — opens a clean new window with the resume and triggers the browser print dialog.
   function handlePrint() {
     const el = document.getElementById('resume-preview');
     if (!el) return;
@@ -351,11 +351,52 @@ export function ResumeBuilder() {
 
     win.document.close();
     win.focus();
-    // Short delay lets fonts/images settle before the dialog opens
     setTimeout(() => {
       win.print();
       win.close();
     }, 600);
+  }
+
+  // Download PDF — renders the resume to a canvas via html2canvas then saves as .pdf
+  async function handleDownloadPDF() {
+    const el = document.getElementById('resume-preview');
+    if (!el) return;
+
+    setDownloading(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const pdfW = pdf.internal.pageSize.getWidth();   // 210
+      const pdfH = pdf.internal.pageSize.getHeight();  // 297
+      const imgH = (canvas.height * pdfW) / canvas.width;
+
+      if (imgH <= pdfH) {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfW, imgH);
+      } else {
+        // Content taller than one page: scale to fit height
+        const imgW = (canvas.width * pdfH) / canvas.height;
+        pdf.addImage(imgData, 'PNG', (pdfW - imgW) / 2, 0, imgW, pdfH);
+      }
+
+      pdf.save(`${data.name || 'Resume'}.pdf`);
+    } catch (err) {
+      console.error('[ResumeBuilder] PDF generation failed:', err);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -552,18 +593,32 @@ export function ResumeBuilder() {
       <div className={cn('flex-1 lg:sticky lg:top-20 lg:self-start', !showPreview && 'hidden lg:block')}>
 
         {/* Action bar */}
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-sm font-medium text-foreground">Resume Preview</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Click Print → Save as PDF in the dialog</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Print or save directly as a PDF file</p>
           </div>
-          <Button
-            onClick={handlePrint}
-            size="sm"
-            className="gap-1.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/20"
-          >
-            <Printer size={14} /> Print / Save PDF
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={handlePrint}
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xl"
+            >
+              <Printer size={14} /> Print
+            </Button>
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              size="sm"
+              className="gap-1.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/20"
+            >
+              {downloading
+                ? <><Loader2 size={14} className="animate-spin" /> Generating…</>
+                : <><Download size={14} /> Download PDF</>
+              }
+            </Button>
+          </div>
         </div>
 
         {/* Scrollable preview — A4 scaled to fit the panel */}

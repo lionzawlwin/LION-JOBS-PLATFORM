@@ -26,7 +26,7 @@ export default function ResumeBuilderPage() {
             </h1>
             <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
               Fill in your details on the left. Your resume updates instantly on the right.
-              Click <strong>Download PDF</strong> when you&apos;re ready — no account needed.
+              Click <strong>Print</strong> to open the print dialog, or <strong>Download PDF</strong> to save the file directly — no account needed.
             </p>
           </div>
 
