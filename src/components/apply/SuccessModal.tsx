@@ -7,7 +7,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { openDeepLink, LION_LINKS } from '@/lib/deepLink';
 
-const PHONE           = '959979333333';
+const PHONE           = '959428954289';
 const FOLLOW_UP_MSG   = encodeURIComponent('Hi Lion Jobs! I just applied for a position and wanted to follow up.');
 const WA_FOLLOWUP_URL = `https://wa.me/${PHONE}?text=${FOLLOW_UP_MSG}`;
 

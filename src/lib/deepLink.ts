@@ -114,9 +114,9 @@ export const LION_LINKS = {
   },
 
   messenger: {
-    androidIntent: 'intent://user-thread/61553739861091#Intent;scheme=fb-messenger;package=com.facebook.orca;S.browser_fallback_url=https%3A%2F%2Fm.me%2Flionjobsagency;end',
-    iosScheme:     'fb-messenger://user-thread/61553739861091',
-    webUrl:        'https://m.me/lionjobsagency',
+    androidIntent: 'intent://user-thread/158417810692706#Intent;scheme=fb-messenger;package=com.facebook.orca;S.browser_fallback_url=https%3A%2F%2Fm.me%2F158417810692706;end',
+    iosScheme:     'fb-messenger://user-thread/158417810692706',
+    webUrl:        'https://m.me/158417810692706',
   },
 
 } satisfies Record<string, DeepLinkConfig>;

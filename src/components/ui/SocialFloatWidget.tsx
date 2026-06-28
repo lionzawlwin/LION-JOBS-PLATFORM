@@ -47,7 +47,7 @@ type Channel = {
   icon:  () => React.JSX.Element;
 };
 
-const WA_WIDGET_URL = 'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.';
+const WA_WIDGET_URL = 'https://wa.me/959428954289?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.';
 
 const CHANNELS: Channel[] = [
   {
