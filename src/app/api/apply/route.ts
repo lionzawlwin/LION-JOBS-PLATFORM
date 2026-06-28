@@ -1,16 +1,18 @@
 import { z } from 'zod';
 import { forwardToMake } from '@/lib/makeWebhook';
+import { appendCandidate } from '@/lib/sheets';
 import type { NextRequest } from 'next/server';
 
 const applySchema = z
   .object({
-    fullName: z.string().min(2),
-    phone: z.string().min(7),
-    position: z.string().min(2),
-    jobId: z.string().optional(),
-    mode: z.enum(['cv', 'linkedin']),
-    cvBase64: z.string().optional(),
-    cvFileName: z.string().optional(),
+    fullName:    z.string().min(2),
+    email:       z.string().email().optional(),
+    phone:       z.string().min(7),
+    position:    z.string().min(2),
+    jobId:       z.string().optional(),
+    mode:        z.enum(['cv', 'linkedin']),
+    cvBase64:    z.string().optional(),
+    cvFileName:  z.string().optional(),
     linkedinUrl: z.string().url().optional(),
   })
   .refine(
@@ -35,21 +37,34 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: message }, { status: 422 });
   }
 
-  const { fullName, phone, position, jobId, cvBase64, cvFileName, linkedinUrl } = parsed.data;
+  const { fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl } = parsed.data;
 
+  // ── 1. Write directly to Google Sheets Pipeline tab ──────────────
+  // This is the primary persistence path. Make.com is secondary (notifications/CV storage).
   try {
-    await forwardToMake({ fullName, phone, position, jobId, cvBase64, cvFileName, linkedinUrl });
+    await appendCandidate({ fullName, email, phone, position, jobId, linkedinUrl, cvFileName });
+    console.log(`[apply] Candidate "${fullName}" appended to Pipeline sheet.`);
   } catch (err) {
-    // Log server-side but don't leak internals to client
-    console.error('[apply] Make.com webhook error:', err);
-    // If Make.com is not yet configured, treat it as success in dev
-    if (process.env.NODE_ENV !== 'production') {
-      return Response.json({ ok: true, dev: true });
-    }
+    // Log full error server-side — this is the most important failure to surface.
+    console.error('[apply] CRITICAL — Google Sheets append failed:', err);
+    console.error('[apply] Candidate data that failed to save:', {
+      fullName, email, phone, position, jobId,
+    });
+    // Return 502 so the client knows the submission did not save.
     return Response.json(
-      { error: 'Could not submit your application right now. Please try again later.' },
+      { error: 'Could not save your application. Please try again or contact us directly.' },
       { status: 502 },
     );
+  }
+
+  // ── 2. Forward to Make.com (CV storage / notifications) ──────────
+  // Non-critical: if Make.com is down or unconfigured we still return success
+  // because the data is already in Google Sheets.
+  try {
+    await forwardToMake({ fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl });
+  } catch (err) {
+    console.error('[apply] Make.com webhook error (non-critical — sheet write succeeded):', err);
+    // Intentionally NOT returning an error response here.
   }
 
   return Response.json({ ok: true });

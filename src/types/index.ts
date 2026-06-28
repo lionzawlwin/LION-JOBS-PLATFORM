@@ -57,6 +57,7 @@ export interface JobFilters {
 
 export interface ApplicationPayload {
   fullName: string;
+  email?: string;
   phone: string;
   position: string;
   jobId?: string;

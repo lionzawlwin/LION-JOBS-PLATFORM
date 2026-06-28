@@ -13,12 +13,19 @@ interface CVUploadProps {
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
+const ALLOWED_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+]);
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Strip the data URI prefix — send only the raw base64 payload
       resolve(result.split(',')[1]);
     };
     reader.onerror = () => reject(new Error('Failed to read file'));
@@ -34,8 +41,8 @@ export function CVUpload({ onChange, onClear, fileName, error }: CVUploadProps) 
   const handleFile = useCallback(
     async (file: File) => {
       setLocalError(null);
-      if (file.type !== 'application/pdf') {
-        setLocalError('Only PDF files are accepted.');
+      if (!ALLOWED_TYPES.has(file.type)) {
+        setLocalError('Only PDF, Word (.doc/.docx), or image files (JPG, PNG) are accepted.');
         return;
       }
       if (file.size > MAX_BYTES) {
@@ -55,7 +62,6 @@ export function CVUpload({ onChange, onClear, fileName, error }: CVUploadProps) 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
-    // Reset so the same file can be re-selected after clearing
     e.target.value = '';
   };
 
@@ -87,11 +93,10 @@ export function CVUpload({ onChange, onClear, fileName, error }: CVUploadProps) 
 
   return (
     <div className="space-y-1.5">
-      {/* Hidden native input — works in all WebViews */}
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
         onChange={handleInputChange}
         className="sr-only"
         tabIndex={-1}
@@ -118,7 +123,7 @@ export function CVUpload({ onChange, onClear, fileName, error }: CVUploadProps) 
         <span className="text-sm text-muted-foreground">
           <span className="font-medium text-brand-600">Click to upload</span> or drag &amp; drop
           <br />
-          <span className="text-xs">PDF only · max 5 MB</span>
+          <span className="text-xs">PDF, Word, or Photo · max 5 MB</span>
         </span>
       </button>
 

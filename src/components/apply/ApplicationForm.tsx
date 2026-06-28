@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 // ── Zod schemas ──────────────────────────────────────────────────
 const baseSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Enter a valid email address'),
   phone: z
     .string()
     .min(7, 'Enter a valid phone number')
@@ -72,6 +73,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
     defaultValues: {
       mode: 'cv',
       fullName: '',
+      email: '',
       phone: '',
       position: defaultPosition,
       cvBase64: '',
@@ -84,7 +86,6 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
 
   function handleModeSwitch(next: 'cv' | 'linkedin') {
     setMode(next);
-    // Re-set mode in the form so the discriminated union resolves correctly
     setValue('mode', next);
   }
 
@@ -134,6 +135,23 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
           />
           {errors.fullName && (
             <p className="text-xs text-danger">{errors.fullName.message}</p>
+          )}
+        </div>
+
+        {/* Email */}
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email Address <span className="text-danger">*</span></Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="e.g. aungkoko@email.com"
+            autoComplete="email"
+            inputMode="email"
+            {...register('email')}
+            className={cn(errors.email && 'border-danger focus-visible:ring-danger/30')}
+          />
+          {errors.email && (
+            <p className="text-xs text-danger">{errors.email.message}</p>
           )}
         </div>
 

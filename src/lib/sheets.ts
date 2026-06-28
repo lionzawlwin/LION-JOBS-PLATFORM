@@ -208,6 +208,64 @@ export async function getCandidates(): Promise<Candidate[]> {
     }));
 }
 
+// ── appendCandidate ───────────────────────────────────────────────
+// Appends a new row to the Pipeline tab. Builds a full 24-column array,
+// padding unused fields with "" so column alignment is never off.
+export async function appendCandidate(data: {
+  fullName:    string;
+  email?:      string;
+  phone:       string;
+  position:    string;   // maps to job_title (col F)
+  jobId?:      string;
+  linkedinUrl?: string;
+  cvFileName?:  string;
+}): Promise<string> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const id        = `cand-${Date.now()}`;
+  const now       = new Date().toISOString();
+  const sheets    = getSheets();
+
+  // Build the 24-column row aligned to CANDIDATE_COL indices 0–23.
+  // Any field we can't populate at submit time is left as "".
+  const row: string[] = [
+    id,                              // 0  candidate_id
+    data.fullName,                   // 1  full_name
+    data.email       ?? '',          // 2  email
+    data.phone,                      // 3  phone
+    data.jobId       ?? '',          // 4  job_id
+    data.position,                   // 5  job_title
+    '',                              // 6  company          (filled later by recruiter)
+    'Applied',                       // 7  stage
+    now,                             // 8  applied_at
+    now,                             // 9  stage_updated_at
+    '',                              // 10 assigned_to
+    '',                              // 11 interview_date
+    '',                              // 12 interview_location
+    '',                              // 13 salary_expected
+    '',                              // 14 salary_offered
+    '',                              // 15 notice_period
+    'Website',                       // 16 source
+    '',                              // 17 rating
+    data.linkedinUrl ?? '',          // 18 cv_url  (LinkedIn URL if provided)
+    '',                              // 19 offer_date
+    '',                              // 20 start_date
+    '',                              // 21 webhook_sent
+    data.cvFileName  ? `CV uploaded: ${data.cvFileName}` : '',  // 22 notes
+    now,                             // 23 last_updated
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:   process.env.GOOGLE_SHEET_ID!,
+    range:           `${CANDIDATES_TAB}!A:X`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody:     { values: [row] },
+  });
+
+  return id;
+}
+
 // ── appendJob ─────────────────────────────────────────────────────
 // Appends a new row to the Jobs tab in the new column order (A=job_id … T=notes).
 // Formula columns R(17) and S(18) are left blank — the sheet's COUNTIF formulas
