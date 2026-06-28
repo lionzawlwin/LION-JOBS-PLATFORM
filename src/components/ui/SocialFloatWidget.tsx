@@ -37,92 +37,104 @@ function FacebookIcon() {
   );
 }
 
-// ── Deep link click handler ───────────────────────────────────────
-// Called from onClick on an <a href={deepLink}> element.
+// ── Platform ──────────────────────────────────────────────────────
+function getOS(): 'android' | 'ios' | 'other' {
+  if (typeof navigator === 'undefined') return 'other';
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'android';
+  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+  return 'other';
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+// Android Chrome: use intent:// URL — Chrome's native app-launch mechanism.
+//   Handles app-not-installed fallback internally via browser_fallback_url.
+//   Does NOT open extra tabs; if app missing, current tab navigates to fallback.
 //
-// Root cause of the "page refresh" bug: window.location.href = 'tg://...'
-// makes the browser treat it as a navigation, causing a reload cycle.
-// Fix: render a real <a href={deepLink}> and let the browser fire the URI
-// scheme natively. Native anchor clicks with custom schemes do NOT navigate
-// the current page — the OS intercepts them directly.
+// iOS Safari/Chrome: use the custom URI scheme (tg://, fb://, viber://).
+//   A JS timer opens the web fallback in a new tab if the app doesn't take over.
 //
-// On mobile: let the href fire naturally (don't preventDefault).
-//   • App installed → OS opens the app, tab goes to background (document.hidden).
-//   • App absent → scheme fails silently; after 1500ms, open web fallback.
-// On desktop: prevent the custom scheme (avoids "cannot open" error dialogs)
-//   and open the web URL directly instead.
-function handleDeepLinkClick(
-  e: React.MouseEvent<HTMLAnchorElement>,
+// Desktop: open the web URL directly, no custom scheme attempted.
+function navigateDeepLink(
+  androidIntent: string | null,
+  iosScheme: string | null,
   fallbackUrl: string,
 ) {
-  const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  const os = getOS();
 
-  if (!isMobile) {
-    e.preventDefault();
-    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+  if (os === 'android' && androidIntent) {
+    window.location.href = androidIntent;
     return;
   }
 
-  // Mobile: do NOT preventDefault — let the anchor fire the URI scheme natively.
-  // Set up the fallback timer in case the app isn't installed.
-  const timer = setTimeout(() => {
-    if (!document.hidden) {
-      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-    }
-  }, 1500);
+  if (os === 'ios' && iosScheme) {
+    window.location.href = iosScheme;
+    const timer = setTimeout(() => {
+      if (!document.hidden) {
+        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+      }
+    }, 1500);
+    document.addEventListener('visibilitychange', function handler() {
+      if (document.hidden) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handler);
+    });
+    return;
+  }
 
-  // App opened → tab goes to background → cancel the fallback
-  document.addEventListener('visibilitychange', function handler() {
-    if (document.hidden) clearTimeout(timer);
-    document.removeEventListener('visibilitychange', handler);
-  });
+  window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
 }
 
 // ── Channel config ────────────────────────────────────────────────
-// deepLink: native app URI scheme (mobile only)
-// fallbackUrl: web URL (used on desktop always, or on mobile when app absent)
-// Set deepLink to null for channels whose web URL already handles smart routing (wa.me)
+// androidIntent: Chrome Intent URL — most reliable way to launch apps on Android.
+//   Format: intent://<path>#Intent;scheme=<scheme>;package=<pkg>;S.browser_fallback_url=<encoded_url>;end
+// iosScheme: custom URI scheme for iOS (tg://, fb://, viber://)
+// fallbackUrl: web URL used on desktop, and embedded inside the androidIntent fallback
 type Channel = {
-  id:          string;
-  label:       string;
-  deepLink:    string | null;
-  fallbackUrl: string;
-  bg:          string;
-  icon:        () => React.JSX.Element;
+  id:            string;
+  label:         string;
+  androidIntent: string | null;
+  iosScheme:     string | null;
+  fallbackUrl:   string;
+  bg:            string;
+  icon:          () => React.JSX.Element;
 };
 
 const CHANNELS: Channel[] = [
   {
-    id:          'whatsapp',
-    label:       'WhatsApp',
-    deepLink:    null,   // wa.me already routes to the app or web automatically
-    fallbackUrl: 'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
-    bg:          '#25D366',
-    icon:        WhatsAppIcon,
+    id:            'whatsapp',
+    label:         'WhatsApp',
+    androidIntent: null,  // wa.me is a smart universal link — handles both platforms itself
+    iosScheme:     null,
+    fallbackUrl:   'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
+    bg:            '#25D366',
+    icon:          WhatsAppIcon,
   },
   {
-    id:          'viber',
-    label:       'Viber',
-    deepLink:    'viber://chat?number=%2B959979333333',
-    fallbackUrl: 'https://www.viber.com/download/',
-    bg:          '#7360F2',
-    icon:        ViberIcon,
+    id:            'viber',
+    label:         'Viber',
+    androidIntent: 'intent://chat?number=%2B959979333333#Intent;scheme=viber;package=com.viber.voip;S.browser_fallback_url=https%3A%2F%2Fwww.viber.com%2Fdownload%2F;end',
+    iosScheme:     'viber://chat?number=%2B959979333333',
+    fallbackUrl:   'https://www.viber.com/download/',
+    bg:            '#7360F2',
+    icon:          ViberIcon,
   },
   {
-    id:          'telegram',
-    label:       'Telegram',
-    deepLink:    'tg://resolve?domain=lionjobsagency',
-    fallbackUrl: 'https://t.me/lionjobsagency',
-    bg:          '#229ED9',
-    icon:        TelegramIcon,
+    id:            'telegram',
+    label:         'Telegram',
+    androidIntent: 'intent://resolve?domain=lionjobsagency#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2Flionjobsagency;end',
+    iosScheme:     'tg://resolve?domain=lionjobsagency',
+    fallbackUrl:   'https://t.me/lionjobsagency',
+    bg:            '#229ED9',
+    icon:          TelegramIcon,
   },
   {
-    id:          'facebook',
-    label:       'Facebook',
-    deepLink:    'fb://page/1Ddo52GnoS',
-    fallbackUrl: 'https://www.facebook.com/1Ddo52GnoS',
-    bg:          '#1877F2',
-    icon:        FacebookIcon,
+    id:            'facebook',
+    label:         'Facebook',
+    androidIntent: 'intent://page/1Ddo52GnoS#Intent;scheme=fb;package=com.facebook.katana;S.browser_fallback_url=https%3A%2F%2Fwww.facebook.com%2F1Ddo52GnoS;end',
+    iosScheme:     'fb://page/1Ddo52GnoS',
+    fallbackUrl:   'https://www.facebook.com/1Ddo52GnoS',
+    bg:            '#1877F2',
+    icon:          FacebookIcon,
   },
 ];
 
@@ -142,17 +154,21 @@ export function SocialFloatWidget() {
             transition={{ duration: 0.18, ease: 'easeOut' }}
             className="flex flex-col items-end gap-2"
           >
-            {CHANNELS.map(({ id, label, deepLink, fallbackUrl, bg, icon: Icon }) =>
-              deepLink ? (
-                // Deep-link anchor — href fires the URI scheme natively (no page reload).
-                // onClick sets up the fallback timer; on desktop it prevents default
-                // and redirects to the web URL instead.
+            {CHANNELS.map(({ id, label, androidIntent, iosScheme, fallbackUrl, bg, icon: Icon }) => {
+              const hasDeepLink = Boolean(androidIntent || iosScheme);
+
+              return hasDeepLink ? (
+                // Deep-link button — always prevent default; navigate programmatically
+                // so the correct URL for the detected OS is used
                 <a
                   key={id}
-                  href={deepLink}
+                  href={fallbackUrl}
                   rel="noopener noreferrer"
                   aria-label={`Contact us on ${label}`}
-                  onClick={(e) => handleDeepLinkClick(e, fallbackUrl)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateDeepLink(androidIntent, iosScheme, fallbackUrl);
+                  }}
                   className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
                   style={{ backgroundColor: bg }}
                 >
@@ -160,7 +176,7 @@ export function SocialFloatWidget() {
                   {label}
                 </a>
               ) : (
-                // Plain anchor — wa.me handles its own smart routing
+                // Plain anchor — wa.me handles its own smart routing for all platforms
                 <a
                   key={id}
                   href={fallbackUrl}
@@ -173,8 +189,8 @@ export function SocialFloatWidget() {
                   <Icon />
                   {label}
                 </a>
-              )
-            )}
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
