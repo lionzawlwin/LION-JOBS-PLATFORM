@@ -44,9 +44,12 @@ export function JobGrid({ jobs, loading, error }: Props) {
           <motion.div
             key={job.id}
             layout
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05, duration: 0.3 } }}
-            exit={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, y: 28, scale: 0.96 }}
+            animate={{
+              opacity: 1, y: 0, scale: 1,
+              transition: { delay: i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+            }}
+            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
           >
             <JobCard job={job} />
           </motion.div>

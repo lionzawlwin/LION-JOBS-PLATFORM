@@ -1,17 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Search, ArrowRight, Briefcase, Users, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { JobCategory } from '@/types';
+
+// ── Lazy-load: keeps the 3D bundle out of the critical path.
+// ssr:false prevents R3F from running on the server (WebGL is browser-only).
+const Hero3D = dynamic(() => import('@/components/Hero3D'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   show: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: { delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   }),
 };
 
@@ -46,17 +54,30 @@ export function HeroSection({ onSearch }: Props) {
   }
 
   return (
-    <section className="relative overflow-hidden bg-background pt-14 pb-16 sm:pt-20 sm:pb-24">
-      {/* Background orbs */}
-      <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[700px] w-[900px] rounded-full bg-brand-600/8 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute top-0 right-0 h-80 w-80 rounded-full bg-brand-500/5 blur-2xl" />
-      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 h-60 w-60 rounded-full bg-brand-600/5 blur-2xl" />
+    <section className="relative overflow-hidden myanmar-pattern-hero bg-background pt-14 pb-16 sm:pt-20 sm:pb-24">
 
-      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+      {/* ── 3D canvas — lazy, hidden on mobile to protect battery ── */}
+      <div
+        className="absolute inset-0 hidden md:block"
+        aria-hidden
+        style={{ zIndex: 0 }}
+      >
+        <Suspense fallback={null}>
+          <Hero3D />
+        </Suspense>
+      </div>
+
+      {/* ── Gradient colour orbs (behind text, above canvas) ─────── */}
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[700px] w-[900px] rounded-full bg-brand-600/6 blur-3xl" />
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute top-0 right-0 h-80 w-80 rounded-full bg-gold-500/8 blur-2xl" />
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute bottom-0 left-0 h-60 w-60 rounded-full bg-brand-600/5 blur-2xl" />
+
+      {/* ── Content ───────────────────────────────────────────────── */}
+      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8" style={{ zIndex: 2 }}>
 
         {/* Badge */}
         <motion.div custom={0} initial="hidden" animate="show" variants={fadeUp} className="mb-5 inline-flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-4 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-200 bg-gold-50 px-4 py-1.5 text-xs font-semibold text-gold-700 dark:border-gold-700/30 dark:bg-gold-600/10 dark:text-gold-400">
             🦁 Myanmar&apos;s #1 Job Agency
           </span>
         </motion.div>
@@ -67,7 +88,7 @@ export function HeroSection({ onSearch }: Props) {
           className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
         >
           Find Your Dream Job{' '}
-          <span className="bg-gradient-to-r from-brand-600 to-brand-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-brand-600 via-gold-500 to-brand-500 bg-clip-text text-transparent">
             in Myanmar
           </span>
         </motion.h1>
@@ -80,11 +101,11 @@ export function HeroSection({ onSearch }: Props) {
           Browse hundreds of vetted positions. Apply in minutes. Our expert team matches you with roles that fit your skills and salary expectations.
         </motion.p>
 
-        {/* ── Hero Search Bar ── */}
+        {/* ── Search bar ─────────────────────────────────────────── */}
         <motion.form
           custom={3} initial="hidden" animate="show" variants={fadeUp}
           onSubmit={handleSubmit}
-          className="mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-lg shadow-brand-600/5"
+          className="mx-auto mt-8 flex max-w-2xl items-center gap-2 rounded-2xl border border-white/60 bg-white/80 dark:border-white/10 dark:bg-slate-950/60 p-2 shadow-xl shadow-brand-600/8 backdrop-blur-sm"
         >
           <Search size={18} className="ml-2 shrink-0 text-muted-foreground" />
           <input
@@ -96,13 +117,13 @@ export function HeroSection({ onSearch }: Props) {
           />
           <button
             type="submit"
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25"
           >
             Search <ArrowRight size={14} />
           </button>
         </motion.form>
 
-        {/* ── Quick Category Chips ── */}
+        {/* ── Quick category chips ───────────────────────────────── */}
         <motion.div
           custom={4} initial="hidden" animate="show" variants={fadeUp}
           className="mt-4 flex flex-wrap justify-center gap-2"
@@ -116,7 +137,7 @@ export function HeroSection({ onSearch }: Props) {
                 'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
                 activeCategory === value
                   ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30'
-                  : 'border border-border bg-background text-muted-foreground hover:border-brand-500/40 hover:text-foreground',
+                  : 'border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm text-muted-foreground hover:border-gold-500/40 hover:text-foreground',
               )}
             >
               {label}
@@ -129,10 +150,11 @@ export function HeroSection({ onSearch }: Props) {
           custom={5} initial="hidden" animate="show" variants={fadeUp}
           className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground"
         >
-          <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-brand-600" /> 500+ open roles</span>
-          <span className="flex items-center gap-1.5"><Building2 size={13} className="text-brand-600" /> 50+ partner companies</span>
-          <span className="flex items-center gap-1.5"><Users size={13} className="text-brand-600" /> Free for candidates</span>
+          <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-gold-500" /> 500+ open roles</span>
+          <span className="flex items-center gap-1.5"><Building2 size={13} className="text-gold-500" /> 50+ partner companies</span>
+          <span className="flex items-center gap-1.5"><Users size={13} className="text-gold-500" /> Free for candidates</span>
         </motion.div>
+
       </div>
     </section>
   );

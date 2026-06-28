@@ -78,7 +78,7 @@ function SelectLevel({ value, onChange }: { value: string; onChange: (v: string)
 }
 
 function SectionCard({ title, icon: Icon, children }: {
-  title: string; icon: React.ElementType; children: React.ReactNode;
+  title: string; icon: React.FC<{ size?: number }>; children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">

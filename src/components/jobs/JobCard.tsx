@@ -16,9 +16,11 @@ const TYPE_COLORS: Record<string, string> = {
 export function JobCard({ job }: { job: Job }) {
   return (
     <article className={cn(
-      'group relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-all duration-200',
-      'hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-600/8 hover:-translate-y-0.5',
-      job.isFeatured && 'ring-2 ring-brand-500/20 border-brand-500/30',
+      // Glassmorphism base — translucent so the Myanmar body pattern shows through
+      'group relative flex flex-col gap-4 rounded-2xl p-6 transition-all duration-300',
+      'glass-card',
+      'hover:shadow-2xl hover:shadow-brand-600/10 hover:-translate-y-1 hover:border-white/80 dark:hover:border-white/15',
+      job.isFeatured && 'ring-2 ring-gold-500/30 !border-gold-400/40 dark:ring-gold-500/20',
     )}>
 
       {/* Top row: badges + time */}
@@ -30,7 +32,7 @@ export function JobCard({ job }: { job: Job }) {
             </span>
           )}
           {job.isFeatured && (
-            <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-600/10 dark:text-brand-400">
+            <span className="inline-flex items-center rounded-full bg-gold-50 px-2.5 py-0.5 text-xs font-semibold text-gold-700 dark:bg-gold-600/10 dark:text-gold-400">
               ⭐ Featured
             </span>
           )}

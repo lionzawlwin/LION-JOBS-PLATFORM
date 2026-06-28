@@ -6,12 +6,34 @@
 
 /* ── Design tokens ───────────────────────────────────────────── */
 :root {
-  /* Brand */
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-500: #6366f1;
-  --brand-600: #4f46e5;
-  --brand-700: #4338ca;
+  /* ── Royal Sapphire brand (primary interactive colour) ──────── */
+  --brand-50: #EFF4FF;
+  --brand-100: #DBEAFE;
+  --brand-200: #BFDBFE;
+  --brand-500: #3B68C7;
+  --brand-600: #1B3A6B;   /* Royal Sapphire — ≥7:1 on white */
+  --brand-700: #0F2547;
+
+  /* ── Shwedagon Gold (accent / decorative) ───────────────────── */
+  --gold-50:  #FEFBEB;
+  --gold-100: #FEF3C7;
+  --gold-200: #FDE68A;
+  --gold-400: #FBBF24;
+  --gold-500: #D4AF37;
+  --gold-600: #B8941F;
+  --gold-700: #9A7A10;
+
+  /* ── Deep Ruby Red (urgent / cta variant) ───────────────────── */
+  --ruby-50:  #FFF0F3;
+  --ruby-100: #FFE0E7;
+  --ruby-500: #C0243D;
+  --ruby-600: #8B1A2E;
+
+  /* ── Earthy tones (backgrounds / subtle fills) ──────────────── */
+  --earth-50:  #FBF7F0;
+  --earth-100: #F5E6C8;
+  --earth-200: #E8CFA0;
+  --earth-500: #C4A575;
 
   /* Surface */
   --bg: #ffffff;
@@ -106,11 +128,34 @@
 
 /* ── Tailwind v4 theme mapping ───────────────────────────────── */
 @theme inline {
-  --color-brand-50: var(--brand-50);
+  /* brand (sapphire) */
+  --color-brand-50:  var(--brand-50);
   --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
   --color-brand-500: var(--brand-500);
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
+
+  /* gold */
+  --color-gold-50:  var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+
+  /* ruby */
+  --color-ruby-50:  var(--ruby-50);
+  --color-ruby-100: var(--ruby-100);
+  --color-ruby-500: var(--ruby-500);
+  --color-ruby-600: var(--ruby-600);
+
+  /* earth */
+  --color-earth-50:  var(--earth-50);
+  --color-earth-100: var(--earth-100);
+  --color-earth-200: var(--earth-200);
+  --color-earth-500: var(--earth-500);
 
   --color-bg: var(--bg);
   --color-bg-subtle: var(--bg-subtle);
@@ -200,6 +245,55 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/* ── Myanmar Unicode typography ─────────────────────────────── */
+/* Padauk / Pyidaungsu load via next/font (layout.tsx) and are
+   referenced here as CSS variable fallbacks for Myanmar code points. */
+body {
+  font-family:
+    var(--font-geist-sans, system-ui),
+    var(--font-padauk, 'Padauk'),
+    'Padauk',
+    'Pyidaungsu',
+    sans-serif;
+}
+
+/* Larger line-height for Myanmar script which has stacked diacritics */
+:lang(my), .myanmar-text {
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+}
+
+/* ── Myanmar lotus-diamond background pattern ────────────────── */
+/* Inspired by traditional Kachin weave and lotus petal geometry.
+   Applied at ≈ 3% opacity — enough for texture, invisible to SEO. */
+.myanmar-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 26 L48 40 L40 54 L32 40Z' fill='none' stroke='%23C9A227' stroke-width='0.6' opacity='0.18'/%3E%3Cpath d='M40 10 L44 18 L40 26 L36 18Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.13'/%3E%3Cpath d='M40 54 L44 62 L40 70 L36 62Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.13'/%3E%3Cpath d='M10 40 L18 36 L26 40 L18 44Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.13'/%3E%3Cpath d='M54 40 L62 36 L70 40 L62 44Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.13'/%3E%3Ccircle cx='0' cy='0' r='1.5' fill='%23C9A227' opacity='0.08'/%3E%3Ccircle cx='80' cy='0' r='1.5' fill='%23C9A227' opacity='0.08'/%3E%3Ccircle cx='0' cy='80' r='1.5' fill='%23C9A227' opacity='0.08'/%3E%3Ccircle cx='80' cy='80' r='1.5' fill='%23C9A227' opacity='0.08'/%3E%3Ccircle cx='40' cy='40' r='1' fill='%23C9A227' opacity='0.1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+/* Stronger version for the hero section */
+.myanmar-pattern-hero {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 26 L48 40 L40 54 L32 40Z' fill='none' stroke='%23C9A227' stroke-width='0.6' opacity='0.28'/%3E%3Cpath d='M40 10 L44 18 L40 26 L36 18Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.2'/%3E%3Cpath d='M40 54 L44 62 L40 70 L36 62Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.2'/%3E%3Cpath d='M10 40 L18 36 L26 40 L18 44Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.2'/%3E%3Cpath d='M54 40 L62 36 L70 40 L62 44Z' fill='none' stroke='%23C9A227' stroke-width='0.5' opacity='0.2'/%3E%3Ccircle cx='0' cy='0' r='1.5' fill='%23C9A227' opacity='0.12'/%3E%3Ccircle cx='80' cy='0' r='1.5' fill='%23C9A227' opacity='0.12'/%3E%3Ccircle cx='0' cy='80' r='1.5' fill='%23C9A227' opacity='0.12'/%3E%3Ccircle cx='80' cy='80' r='1.5' fill='%23C9A227' opacity='0.12'/%3E%3Ccircle cx='40' cy='40' r='1' fill='%23C9A227' opacity='0.15'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+/* ── Glassmorphism card utility ──────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-card {
+  background: rgba(15, 37, 71, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ── Print styles (resume builder) ──────────────────────────── */
