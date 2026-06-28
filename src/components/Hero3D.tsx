@@ -2,20 +2,36 @@
 
 import { useRef, useEffect, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float } from '@react-three/drei';
+import { Float, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ── Myanmar brand palette ─────────────────────────────────────────
-const GOLD        = '#D4AF37';
-const GOLD_BRIGHT = '#F5D76E';
-const RUBY        = '#9B1C31';
-const SAPPHIRE    = '#1B3A6B';
-const SAPPHIRE_LT = '#2E5EAA';
+// ── Camera sits at z=9, fov=50.
+// Visible half-width at z=0 ≈ tan(25°)×9 ≈ 4.2 units.
+// Text content lives within ±1.8 units of centre.
+// All objects sit at |x|>3.5 or |y|>2.5 — safely off the text column.
+// ─────────────────────────────────────────────────────────────────────
+const GOLD     = '#D4AF37';
+const RUBY     = '#9B1C31';
+const SAPPHIRE = '#1B3A6B';
+const SAP_LT   = '#3B6FC7';
 
-// ── Mouse-reactive scene ──────────────────────────────────────────
+// Shared material factory — emissive guarantees colour even under dim IBL
+function mat(color: string, metalness = 0.6, roughness = 0.25, emissiveIntensity = 0.07) {
+  return (
+    <meshStandardMaterial
+      color={color}
+      metalness={metalness}
+      roughness={roughness}
+      emissive={color}
+      emissiveIntensity={emissiveIntensity}
+    />
+  );
+}
+
+// ── Mouse-reactive parent group ───────────────────────────────────
 function Scene() {
-  const groupRef = useRef<THREE.Group>(null!);
-  const mouse    = useRef<[number, number]>([0, 0]);
+  const group = useRef<THREE.Group>(null!);
+  const mouse = useRef<[number, number]>([0, 0]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -29,78 +45,102 @@ function Scene() {
   }, []);
 
   useFrame(() => {
-    if (!groupRef.current) return;
-    groupRef.current.rotation.y = THREE.MathUtils.lerp(
-      groupRef.current.rotation.y, mouse.current[0] * 0.22, 0.035,
+    if (!group.current) return;
+    group.current.rotation.y = THREE.MathUtils.lerp(
+      group.current.rotation.y, mouse.current[0] * 0.18, 0.04,
     );
-    groupRef.current.rotation.x = THREE.MathUtils.lerp(
-      groupRef.current.rotation.x, mouse.current[1] * 0.10, 0.035,
+    group.current.rotation.x = THREE.MathUtils.lerp(
+      group.current.rotation.x, mouse.current[1] * 0.09, 0.04,
     );
   });
 
   return (
-    <group ref={groupRef}>
-      {/* ── Large golden octahedron — Shwedagon pagoda geometry ── */}
-      <Float speed={0.9} rotationIntensity={0.3} floatIntensity={0.9}>
-        <mesh position={[-2.8, 0.2, 0]}>
-          <octahedronGeometry args={[1.6, 0]} />
-          <meshStandardMaterial color={GOLD} metalness={0.95} roughness={0.06} />
+    <group ref={group}>
+
+      {/* ── LEFT EDGE: golden octahedron — Shwedagon pagoda shape ── */}
+      <Float speed={0.9} rotationIntensity={0.35} floatIntensity={0.8}>
+        <mesh position={[-5.0, 0.6, -2.5]}>
+          <octahedronGeometry args={[0.55, 0]} />
+          {mat(GOLD, 0.65, 0.2, 0.12)}
         </mesh>
       </Float>
 
-      {/* ── Ruby torus — halo / ring ─────────────────────────────── */}
-      <Float speed={0.7} rotationIntensity={0.5} floatIntensity={0.6}>
-        <mesh position={[3.0, 0.4, -1.2]} rotation={[Math.PI / 3, 0.2, 0]}>
-          <torusGeometry args={[1.1, 0.28, 16, 48]} />
-          <meshStandardMaterial color={RUBY} metalness={0.75} roughness={0.18} />
+      {/* ── RIGHT EDGE: ruby torus — halo / ring ──────────────────── */}
+      <Float speed={0.75} rotationIntensity={0.45} floatIntensity={0.7}>
+        <mesh position={[4.8, -0.3, -2.5]} rotation={[Math.PI / 3, 0.2, 0]}>
+          <torusGeometry args={[0.55, 0.14, 16, 48]} />
+          {mat(RUBY, 0.65, 0.22, 0.10)}
         </mesh>
       </Float>
 
-      {/* ── Sapphire icosahedron — crystalline gem ───────────────── */}
-      <Float speed={1.4} rotationIntensity={0.9} floatIntensity={1.2}>
-        <mesh position={[0.8, 2.4, -0.5]}>
-          <icosahedronGeometry args={[0.75, 0]} />
-          <meshStandardMaterial color={SAPPHIRE} metalness={0.85} roughness={0.08} />
+      {/* ── TOP RIGHT: sapphire icosahedron — crystalline gem ────── */}
+      <Float speed={1.3} rotationIntensity={0.8} floatIntensity={1.1}>
+        <mesh position={[2.8, 3.2, -1.5]}>
+          <icosahedronGeometry args={[0.28, 0]} />
+          {mat(SAPPHIRE, 0.7, 0.18, 0.09)}
         </mesh>
       </Float>
 
-      {/* ── Small sapphire cube ─────────────────────────────────── */}
-      <Float speed={1.1} rotationIntensity={1.2} floatIntensity={0.7}>
-        <mesh position={[4.5, -1.5, 0]} rotation={[0.4, 0.4, 0.4]}>
-          <boxGeometry args={[0.7, 0.7, 0.7]} />
-          <meshStandardMaterial color={SAPPHIRE_LT} metalness={0.8} roughness={0.15} />
+      {/* ── BOTTOM LEFT: small sapphire cube ─────────────────────── */}
+      <Float speed={1.0} rotationIntensity={1.1} floatIntensity={0.6}>
+        <mesh position={[-4.0, -2.8, -1.0]} rotation={[0.5, 0.4, 0.3]}>
+          <boxGeometry args={[0.28, 0.28, 0.28]} />
+          {mat(SAP_LT, 0.6, 0.25, 0.08)}
         </mesh>
       </Float>
 
-      {/* ── Gold particle spheres ───────────────────────────────── */}
+      {/* ── TOP LEFT: small gold diamond ─────────────────────────── */}
+      <Float speed={0.85} rotationIntensity={0.5} floatIntensity={0.9}>
+        <mesh position={[-3.2, 2.6, -1.5]}>
+          <octahedronGeometry args={[0.2, 0]} />
+          {mat(GOLD, 0.5, 0.3, 0.15)}
+        </mesh>
+      </Float>
+
+      {/* ── BOTTOM RIGHT: ruby tetrahedron ───────────────────────── */}
+      <Float speed={1.15} rotationIntensity={0.7} floatIntensity={0.75}>
+        <mesh position={[3.8, -2.5, -1.2]}>
+          <tetrahedronGeometry args={[0.22, 0]} />
+          {mat(RUBY, 0.55, 0.28, 0.12)}
+        </mesh>
+      </Float>
+
+      {/* ── Micro gold particle spheres (all at screen edges) ─────── */}
       {(
         [
-          [-1.5,  3.0,  0.5],
-          [ 4.0,  1.5, -0.5],
-          [-4.0, -0.8,  0.3],
-          [ 1.8, -2.8,  0.8],
-          [ 5.0,  0.0, -1.0],
-          [-3.5,  2.5, -0.5],
+          [-3.8,  1.8, -0.5],
+          [ 5.5,  1.2, -3.0],
+          [-5.5, -1.5, -3.0],
+          [ 2.0,  4.0, -2.0],
+          [-1.5, -3.8, -1.5],
+          [ 4.5,  3.0, -2.5],
         ] as [number, number, number][]
       ).map(([x, y, z], i) => (
-        <Float key={i} speed={1.0 + i * 0.15} rotationIntensity={0} floatIntensity={0.4 + i * 0.08}>
+        <Float key={i} speed={0.9 + i * 0.12} floatIntensity={0.35 + i * 0.06} rotationIntensity={0}>
           <mesh position={[x, y, z]}>
-            <sphereGeometry args={[0.11 + (i % 3) * 0.04, 8, 8]} />
-            <meshStandardMaterial color={GOLD_BRIGHT} metalness={1} roughness={0} />
+            <sphereGeometry args={[0.065 + (i % 3) * 0.025, 8, 8]} />
+            <meshStandardMaterial
+              color="#F5D76E"
+              metalness={0.85}
+              roughness={0.1}
+              emissive="#F5D76E"
+              emissiveIntensity={0.18}
+            />
           </mesh>
         </Float>
       ))}
 
-      {/* ── Background wireframe sphere ─────────────────────────── */}
+      {/* ── Very faint background wireframe (pure atmosphere) ──────── */}
       <mesh>
-        <sphereGeometry args={[5.5, 14, 14]} />
-        <meshBasicMaterial color={GOLD} wireframe transparent opacity={0.022} />
+        <sphereGeometry args={[6.5, 12, 12]} />
+        <meshBasicMaterial color={GOLD} wireframe transparent opacity={0.015} />
       </mesh>
+
     </group>
   );
 }
 
-// Memoised so dynamic() re-renders don't cause unnecessary Canvas remounts
+// Memoised to prevent Canvas remount on parent re-renders
 const Hero3D = memo(function Hero3D() {
   return (
     <Canvas
@@ -109,13 +149,20 @@ const Hero3D = memo(function Hero3D() {
       dpr={[1, 1.5]}
       style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
     >
-      {/* Warm gold key light  */}
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[5, 8, 5]}  intensity={2.0} color="#FFF5C0" />
-      {/* Cool sapphire fill */}
-      <pointLight       position={[-4, -3, -2]} intensity={1.5} color={SAPPHIRE} />
-      {/* Warm ruby rim */}
-      <pointLight       position={[4, 4, 2]}    intensity={0.7} color={RUBY} />
+      {/*
+        Environment provides Image-Based Lighting (IBL) — this is what makes
+        metallic and semi-metallic materials reflect realistic colour.
+        Without it, high-metalness objects look pitch-black in a dark scene.
+        "sunset" gives warm golden tones that match the Myanmar palette.
+      */}
+      <Environment preset="sunset" />
+
+      {/* Additional scene lights for directional colour accents */}
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[4, 6, 4]}  intensity={1.8} color="#FFF3B0" />
+      <pointLight       position={[-5, 3, 2]}  intensity={2.0} color="#D4AF37" />
+      <pointLight       position={[5, -3, 1]}  intensity={1.2} color="#3B6FC7" />
+
       <Scene />
     </Canvas>
   );

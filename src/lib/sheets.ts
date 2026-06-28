@@ -96,6 +96,57 @@ export async function getCandidates(): Promise<Candidate[]> {
   }));
 }
 
+// ── appendJob ─────────────────────────────────────────────────────
+// Appends a new row to the Jobs sheet and returns the generated job ID.
+// Column order must match the getJobs() row mapping above (A=id … N=isFeatured).
+export async function appendJob(data: {
+  title: string;
+  company: string;
+  location: string;
+  category: string;
+  type: string;
+  salaryMin: number;
+  salaryMax: number;
+  currency: string;
+  description: string;
+  requirements: string[];   // stored as pipe-separated in col K
+  isUrgent: boolean;
+  isFeatured: boolean;
+}): Promise<string> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const id       = `jb-${Date.now()}`;
+  const postedAt = new Date().toISOString();
+  const sheets   = getSheets();
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${JOBS_TAB}!A:N`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [[
+        id,
+        data.title,
+        data.company,
+        data.location,
+        data.category,
+        data.type,
+        data.salaryMin,
+        data.salaryMax,
+        data.currency,
+        data.description,
+        data.requirements.join('|'),
+        postedAt,
+        data.isUrgent  ? 'TRUE' : 'FALSE',
+        data.isFeatured ? 'TRUE' : 'FALSE',
+      ]],
+    },
+  });
+
+  return id;
+}
+
 export async function updateCandidateStage(
   candidateId: string,
   stage: ApplicationStatus,
