@@ -37,64 +37,95 @@ function FacebookIcon() {
   );
 }
 
-// ── Platform ──────────────────────────────────────────────────────
-function getOS(): 'android' | 'ios' | 'other' {
-  if (typeof navigator === 'undefined') return 'other';
-  const ua = navigator.userAgent;
-  if (/android/i.test(ua)) return 'android';
-  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
-  return 'other';
-}
+// ── Device detection ──────────────────────────────────────────────
+const isMobile  = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+const isAndroid = () => /android/i.test(navigator.userAgent);
+const isIOS     = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-// ── Navigation ────────────────────────────────────────────────────
-// Android Chrome: use intent:// URL — Chrome's native app-launch mechanism.
-//   Handles app-not-installed fallback internally via browser_fallback_url.
-//   Does NOT open extra tabs; if app missing, current tab navigates to fallback.
+// ── Intelligent routing ───────────────────────────────────────────
 //
-// iOS Safari/Chrome: use the custom URI scheme (tg://, fb://, viber://).
-//   A JS timer opens the web fallback in a new tab if the app doesn't take over.
+//  MOBILE (Android)
+//    → intent:// URL via a temporary anchor click.
+//      Chrome intercepts intent:// at the anchor layer and fires the Android
+//      Intent system without touching the current page navigation.
+//      App installed   : app opens, current tab stays on original page.
+//      App not installed: Chrome follows browser_fallback_url in the same tab.
+//      No JS timer needed — the intent URL carries its own fallback.
 //
-// Desktop: open the web URL directly, no custom scheme attempted.
-function navigateDeepLink(
+//  MOBILE (iOS)
+//    → Custom URI scheme (tg://, fb://, viber://) via window.location.href.
+//      App installed   : iOS switches to the app; tab goes to background →
+//                        both visibilitychange and window blur fire → timer cancelled.
+//      App not installed: nothing happens → after 1.5 s, web fallback opens in a new tab.
+//
+//  DESKTOP
+//    → window.open(webUrl, '_blank') — always. No intent schemes attempted.
+//      Zero risk of "cannot open page" error dialogs.
+//
+function handleChannelClick(
+  e: React.MouseEvent,
   androidIntent: string | null,
-  iosScheme: string | null,
-  fallbackUrl: string,
+  iosScheme:     string | null,
+  webUrl:        string,
 ) {
-  const os = getOS();
+  e.preventDefault();
 
-  if (os === 'android' && androidIntent) {
-    window.location.href = androidIntent;
-    return;
+  if (isMobile()) {
+    // ── Mobile: launch the native app ────────────────────────────
+    if (isAndroid() && androidIntent) {
+      // Temporary anchor click — Chrome intercepts intent:// here, not at
+      // the navigation level, so the current page is never navigated away from.
+      const a = document.createElement('a');
+      a.href = androidIntent;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+      }, 1000);
+
+    } else if (isIOS() && iosScheme) {
+      // iOS custom scheme: navigate, then cancel fallback the moment this
+      // tab loses focus (either visibilitychange or window blur, whichever fires first).
+      window.location.href = iosScheme;
+
+      const timer = setTimeout(() => {
+        if (!document.hidden) {
+          window.open(webUrl, '_blank', 'noopener,noreferrer');
+        }
+      }, 1500);
+
+      const cancel = () => {
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', onVis);
+        window.removeEventListener('blur', cancel);
+      };
+      const onVis = () => { if (document.hidden) cancel(); };
+      document.addEventListener('visibilitychange', onVis,  { once: true });
+      window.addEventListener('blur',               cancel, { once: true });
+
+    } else {
+      // Mobile but no deep-link defined for this OS → web URL
+      window.open(webUrl, '_blank', 'noopener,noreferrer');
+    }
+
+  } else {
+    // ── Desktop: standard web URL, new tab, no intent schemes ────
+    window.open(webUrl, '_blank', 'noopener,noreferrer');
   }
-
-  if (os === 'ios' && iosScheme) {
-    window.location.href = iosScheme;
-    const timer = setTimeout(() => {
-      if (!document.hidden) {
-        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-      }
-    }, 1500);
-    document.addEventListener('visibilitychange', function handler() {
-      if (document.hidden) clearTimeout(timer);
-      document.removeEventListener('visibilitychange', handler);
-    });
-    return;
-  }
-
-  window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
 }
 
 // ── Channel config ────────────────────────────────────────────────
-// androidIntent: Chrome Intent URL — most reliable way to launch apps on Android.
-//   Format: intent://<path>#Intent;scheme=<scheme>;package=<pkg>;S.browser_fallback_url=<encoded_url>;end
-// iosScheme: custom URI scheme for iOS (tg://, fb://, viber://)
-// fallbackUrl: web URL used on desktop, and embedded inside the androidIntent fallback
+//  androidIntent  Chrome Intent URL — carries browser_fallback_url inside it.
+//  iosScheme      Custom URI scheme for iOS.
+//  webUrl         Web URL — used on desktop always; embedded in androidIntent fallback;
+//                 used as iOS fallback after the 1.5 s timer.
 type Channel = {
   id:            string;
   label:         string;
   androidIntent: string | null;
   iosScheme:     string | null;
-  fallbackUrl:   string;
+  webUrl:        string;
   bg:            string;
   icon:          () => React.JSX.Element;
 };
@@ -103,9 +134,9 @@ const CHANNELS: Channel[] = [
   {
     id:            'whatsapp',
     label:         'WhatsApp',
-    androidIntent: null,  // wa.me is a smart universal link — handles both platforms itself
+    androidIntent: null,   // wa.me is a universal smart link — handles all platforms itself
     iosScheme:     null,
-    fallbackUrl:   'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
+    webUrl:        'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
     bg:            '#25D366',
     icon:          WhatsAppIcon,
   },
@@ -114,7 +145,7 @@ const CHANNELS: Channel[] = [
     label:         'Viber',
     androidIntent: 'intent://chat?number=%2B959979333333#Intent;scheme=viber;package=com.viber.voip;S.browser_fallback_url=https%3A%2F%2Fwww.viber.com%2Fdownload%2F;end',
     iosScheme:     'viber://chat?number=%2B959979333333',
-    fallbackUrl:   'https://www.viber.com/download/',
+    webUrl:        'https://www.viber.com/download/',
     bg:            '#7360F2',
     icon:          ViberIcon,
   },
@@ -123,7 +154,7 @@ const CHANNELS: Channel[] = [
     label:         'Telegram',
     androidIntent: 'intent://resolve?domain=lionjobsagency#Intent;scheme=tg;package=org.telegram.messenger;S.browser_fallback_url=https%3A%2F%2Ft.me%2Flionjobsagency;end',
     iosScheme:     'tg://resolve?domain=lionjobsagency',
-    fallbackUrl:   'https://t.me/lionjobsagency',
+    webUrl:        'https://t.me/lionjobsagency',
     bg:            '#229ED9',
     icon:          TelegramIcon,
   },
@@ -132,7 +163,7 @@ const CHANNELS: Channel[] = [
     label:         'Facebook',
     androidIntent: 'intent://page/1Ddo52GnoS#Intent;scheme=fb;package=com.facebook.katana;S.browser_fallback_url=https%3A%2F%2Fwww.facebook.com%2F1Ddo52GnoS;end',
     iosScheme:     'fb://page/1Ddo52GnoS',
-    fallbackUrl:   'https://www.facebook.com/1Ddo52GnoS',
+    webUrl:        'https://www.facebook.com/1Ddo52GnoS',
     bg:            '#1877F2',
     icon:          FacebookIcon,
   },
@@ -154,21 +185,16 @@ export function SocialFloatWidget() {
             transition={{ duration: 0.18, ease: 'easeOut' }}
             className="flex flex-col items-end gap-2"
           >
-            {CHANNELS.map(({ id, label, androidIntent, iosScheme, fallbackUrl, bg, icon: Icon }) => {
+            {CHANNELS.map(({ id, label, androidIntent, iosScheme, webUrl, bg, icon: Icon }) => {
               const hasDeepLink = Boolean(androidIntent || iosScheme);
 
               return hasDeepLink ? (
-                // Deep-link button — always prevent default; navigate programmatically
-                // so the correct URL for the detected OS is used
                 <a
                   key={id}
-                  href={fallbackUrl}
+                  href={webUrl}
                   rel="noopener noreferrer"
-                  aria-label={`Contact us on ${label}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigateDeepLink(androidIntent, iosScheme, fallbackUrl);
-                  }}
+                  aria-label={`Open ${label}`}
+                  onClick={(e) => handleChannelClick(e, androidIntent, iosScheme, webUrl)}
                   className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
                   style={{ backgroundColor: bg }}
                 >
@@ -176,13 +202,13 @@ export function SocialFloatWidget() {
                   {label}
                 </a>
               ) : (
-                // Plain anchor — wa.me handles its own smart routing for all platforms
+                // WhatsApp — wa.me handles its own smart routing; no JS needed
                 <a
                   key={id}
-                  href={fallbackUrl}
+                  href={webUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Contact us on ${label}`}
+                  aria-label={`Open ${label}`}
                   className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
                   style={{ backgroundColor: bg }}
                 >
