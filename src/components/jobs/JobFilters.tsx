@@ -1,5 +1,6 @@
 'use client';
 
+import { X } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ const CATEGORIES: JobCategory[] = [
 
 const TYPES: JobType[] = ['Full-time', 'Part-time', 'Contract', 'Remote', 'Hybrid'];
 
-const LOCATIONS = ['Any Location', 'Yangon, Myanmar', 'Mandalay, Myanmar', 'Remote'];
+const LOCATIONS = ['Yangon, Myanmar', 'Mandalay, Myanmar', 'Remote'];
 
 interface Props {
   filters: JobFilters;
@@ -25,6 +26,12 @@ interface Props {
 }
 
 export function JobFilters({ filters, onChange, total }: Props) {
+  const hasActiveFilters = filters.category || filters.type || filters.location;
+
+  function clearAll() {
+    onChange({ category: '', type: '', location: '' });
+  }
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
       {/* Category */}
@@ -32,7 +39,7 @@ export function JobFilters({ filters, onChange, total }: Props) {
         value={filters.category || '__all__'}
         onValueChange={(v) => onChange({ category: v === '__all__' ? '' : (v as JobCategory) })}
       >
-        <SelectTrigger className="h-9 w-full sm:w-44 text-sm bg-background">
+        <SelectTrigger className="h-10 w-full sm:w-44 text-sm bg-background rounded-xl">
           <SelectValue placeholder="All Categories" />
         </SelectTrigger>
         <SelectContent>
@@ -46,7 +53,7 @@ export function JobFilters({ filters, onChange, total }: Props) {
         value={filters.type || '__all__'}
         onValueChange={(v) => onChange({ type: v === '__all__' ? '' : (v as JobType) })}
       >
-        <SelectTrigger className="h-9 w-full sm:w-40 text-sm bg-background">
+        <SelectTrigger className="h-10 w-full sm:w-40 text-sm bg-background rounded-xl">
           <SelectValue placeholder="All Types" />
         </SelectTrigger>
         <SelectContent>
@@ -60,19 +67,30 @@ export function JobFilters({ filters, onChange, total }: Props) {
         value={filters.location || '__any__'}
         onValueChange={(v) => onChange({ location: v === '__any__' ? '' : (v ?? '') })}
       >
-        <SelectTrigger className="h-9 w-full sm:w-48 text-sm bg-background">
+        <SelectTrigger className="h-10 w-full sm:w-48 text-sm bg-background rounded-xl">
           <SelectValue placeholder="Any Location" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="__any__">Any Location</SelectItem>
           {LOCATIONS.map((l) => (
-            <SelectItem key={l} value={l === 'Any Location' ? '__any__' : l}>{l}</SelectItem>
+            <SelectItem key={l} value={l}>{l}</SelectItem>
           ))}
         </SelectContent>
       </Select>
 
+      {/* Clear button */}
+      {hasActiveFilters && (
+        <button
+          onClick={clearAll}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X size={13} /> Clear filters
+        </button>
+      )}
+
       {/* Results count */}
-      <span className="ml-auto text-sm text-muted-foreground whitespace-nowrap">
-        {total} {total === 1 ? 'role' : 'roles'} found
+      <span className="ml-auto text-sm font-medium text-muted-foreground whitespace-nowrap">
+        <span className="text-foreground font-bold">{total}</span> {total === 1 ? 'role' : 'roles'} found
       </span>
     </div>
   );

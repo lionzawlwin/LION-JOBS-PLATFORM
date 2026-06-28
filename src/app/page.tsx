@@ -9,7 +9,7 @@ import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { JobGrid } from '@/components/jobs/JobGrid';
 import { useJobs, filterJobs } from '@/hooks/useJobs';
-import type { JobFilters as FiltersType } from '@/types';
+import type { JobCategory, JobFilters as FiltersType } from '@/types';
 
 const DEFAULT_FILTERS: FiltersType = {
   keyword: '',
@@ -30,15 +30,19 @@ export default function HomePage() {
     setFilters((prev) => ({ ...prev, ...patch }));
   }
 
+  function handleHeroSearch(keyword: string, category: JobCategory | '') {
+    setFilters((prev) => ({ ...prev, keyword, category }));
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
 
       <main className="flex-1">
-        <HeroSection />
+        <HeroSection onSearch={handleHeroSearch} />
         <StatsBar />
 
-        {/* Job Board Section */}
+        {/* Job Board */}
         <section id="jobs" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
@@ -49,13 +53,11 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Search + Filters */}
-          <div className="mb-6 flex flex-col gap-4">
+          <div className="mb-5 flex flex-col gap-3">
             <SearchBar filters={filters} onChange={handleFilterChange} />
             <JobFilters filters={filters} onChange={handleFilterChange} total={filtered.length} />
           </div>
 
-          {/* Grid */}
           <JobGrid jobs={filtered} loading={loading} error={error} />
         </section>
       </main>
