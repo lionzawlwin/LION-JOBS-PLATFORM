@@ -38,55 +38,57 @@ function FacebookIcon() {
 }
 
 // ── Device detection ──────────────────────────────────────────────
+//
+// Reads navigator.userAgent — called only inside onClick (client-side, user
+// gesture context), never at module load or during SSR.
+//
+// Covers all standard Android handsets/tablets and Apple iOS devices.
+// Chrome OS tablets may match "android" in the UA; the false-positive rate
+// is negligible for this audience.
 const isMobile  = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 const isAndroid = () => /android/i.test(navigator.userAgent);
 const isIOS     = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-// ── Intelligent routing ───────────────────────────────────────────
+// ── Click routing ─────────────────────────────────────────────────
 //
-//  MOBILE (Android)
-//    → intent:// URL via a temporary anchor click.
-//      Chrome intercepts intent:// at the anchor layer and fires the Android
-//      Intent system without touching the current page navigation.
-//      App installed   : app opens, current tab stays on original page.
-//      App not installed: Chrome follows browser_fallback_url in the same tab.
-//      No JS timer needed — the intent URL carries its own fallback.
+//  ANDROID (Chrome)
+//    window.location.replace(intentUrl) — Chrome intercepts the intent://
+//    URI at the navigation layer, before the tab navigates, and fires the
+//    Android Intent system directly from the user-gesture context.
+//    • App installed   → app opens; current tab is preserved (navigation
+//      is consumed by the intent system, never completes).
+//    • App not installed → Chrome reads browser_fallback_url and navigates
+//      the CURRENT tab to that URL. No new tab ever opens.
+//    replace() is used so the intent URL doesn't linger in browser history.
 //
-//  MOBILE (iOS)
-//    → Custom URI scheme (tg://, fb://, viber://) via window.location.href.
-//      App installed   : iOS switches to the app; tab goes to background →
-//                        both visibilitychange and window blur fire → timer cancelled.
-//      App not installed: nothing happens → after 1.5 s, web fallback opens in a new tab.
+//  IOS (Safari / Chrome)
+//    window.location.href = iosScheme — iOS hands the custom URI to the
+//    registered app. If the app opens, this tab goes to the background and
+//    both visibilitychange and window blur fire → timer is cancelled.
+//    If the app is not installed, nothing happens and after 1.5 s the web
+//    fallback opens in a new tab.
 //
 //  DESKTOP
-//    → window.open(webUrl, '_blank') — always. No intent schemes attempted.
-//      Zero risk of "cannot open page" error dialogs.
+//    window.open(webUrl, '_blank') — the intent scheme is never attempted.
+//    Desktop users always get a clean new tab to the web URL.
 //
 function handleChannelClick(
-  e: React.MouseEvent,
+  e: React.MouseEvent<HTMLButtonElement>,
   androidIntent: string | null,
   iosScheme:     string | null,
   webUrl:        string,
 ) {
+  // Belt-and-suspenders: prevent any default and stop bubbling even though
+  // these are <button> elements with no native navigation behaviour.
   e.preventDefault();
+  e.stopPropagation();
 
   if (isMobile()) {
-    // ── Mobile: launch the native app ────────────────────────────
+    // ── MOBILE ────────────────────────────────────────────────────
     if (isAndroid() && androidIntent) {
-      // Temporary anchor click — Chrome intercepts intent:// here, not at
-      // the navigation level, so the current page is never navigated away from.
-      const a = document.createElement('a');
-      a.href = androidIntent;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        if (document.body.contains(a)) document.body.removeChild(a);
-      }, 1000);
+      window.location.replace(androidIntent);
 
     } else if (isIOS() && iosScheme) {
-      // iOS custom scheme: navigate, then cancel fallback the moment this
-      // tab loses focus (either visibilitychange or window blur, whichever fires first).
       window.location.href = iosScheme;
 
       const timer = setTimeout(() => {
@@ -101,30 +103,30 @@ function handleChannelClick(
         window.removeEventListener('blur', cancel);
       };
       const onVis = () => { if (document.hidden) cancel(); };
-      document.addEventListener('visibilitychange', onVis,  { once: true });
+      document.addEventListener('visibilitychange', onVis, { once: true });
       window.addEventListener('blur',               cancel, { once: true });
 
     } else {
-      // Mobile but no deep-link defined for this OS → web URL
+      // Mobile without a deep-link (e.g. WhatsApp via wa.me smart redirect)
       window.open(webUrl, '_blank', 'noopener,noreferrer');
     }
 
   } else {
-    // ── Desktop: standard web URL, new tab, no intent schemes ────
+    // ── DESKTOP ───────────────────────────────────────────────────
     window.open(webUrl, '_blank', 'noopener,noreferrer');
   }
 }
 
 // ── Channel config ────────────────────────────────────────────────
-//  androidIntent  Chrome Intent URL — carries browser_fallback_url inside it.
-//  iosScheme      Custom URI scheme for iOS.
-//  webUrl         Web URL — used on desktop always; embedded in androidIntent fallback;
-//                 used as iOS fallback after the 1.5 s timer.
 type Channel = {
   id:            string;
   label:         string;
+  // intent:// URL for Android Chrome — carries its own browser_fallback_url.
   androidIntent: string | null;
+  // Custom URI scheme for iOS.
   iosScheme:     string | null;
+  // Web URL — desktop always; embedded in androidIntent as fallback;
+  // used as iOS fallback after the 1.5 s timer.
   webUrl:        string;
   bg:            string;
   icon:          () => React.JSX.Element;
@@ -134,7 +136,8 @@ const CHANNELS: Channel[] = [
   {
     id:            'whatsapp',
     label:         'WhatsApp',
-    androidIntent: null,   // wa.me is a universal smart link — handles all platforms itself
+    // wa.me is a smart redirect that works on all platforms without a custom scheme.
+    androidIntent: null,
     iosScheme:     null,
     webUrl:        'https://wa.me/959979333333?text=Hi%20Lion%20Jobs!%20I%20am%20looking%20for%20a%20job.',
     bg:            '#25D366',
@@ -185,38 +188,22 @@ export function SocialFloatWidget() {
             transition={{ duration: 0.18, ease: 'easeOut' }}
             className="flex flex-col items-end gap-2"
           >
-            {CHANNELS.map(({ id, label, androidIntent, iosScheme, webUrl, bg, icon: Icon }) => {
-              const hasDeepLink = Boolean(androidIntent || iosScheme);
-
-              return hasDeepLink ? (
-                <a
-                  key={id}
-                  href={webUrl}
-                  rel="noopener noreferrer"
-                  aria-label={`Open ${label}`}
-                  onClick={(e) => handleChannelClick(e, androidIntent, iosScheme, webUrl)}
-                  className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
-                  style={{ backgroundColor: bg }}
-                >
-                  <Icon />
-                  {label}
-                </a>
-              ) : (
-                // WhatsApp — wa.me handles its own smart routing; no JS needed
-                <a
-                  key={id}
-                  href={webUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Open ${label}`}
-                  className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
-                  style={{ backgroundColor: bg }}
-                >
-                  <Icon />
-                  {label}
-                </a>
-              );
-            })}
+            {CHANNELS.map(({ id, label, androidIntent, iosScheme, webUrl, bg, icon: Icon }) => (
+              // All channels are <button> elements — no <a> tags here.
+              // This eliminates any default browser navigation behaviour and
+              // ensures the onClick handler has full control over what happens.
+              <button
+                key={id}
+                type="button"
+                aria-label={`Open ${label}`}
+                onClick={(e) => handleChannelClick(e, androidIntent, iosScheme, webUrl)}
+                className="flex cursor-pointer items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 active:opacity-80"
+                style={{ backgroundColor: bg }}
+              >
+                <Icon />
+                {label}
+              </button>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
