@@ -59,6 +59,14 @@ export const translations = {
     alerts_subscribe:   'Subscribe on Telegram',
     alerts_all:         'All Categories',
     alerts_note:        'Free. Unsubscribe anytime.',
+
+    // Email alerts
+    email_alerts_title:       'Get Job Alerts by Email',
+    email_alerts_sub:         'Be the first to know when new jobs match your skills. We send only the good stuff.',
+    email_alerts_placeholder: 'Your email address',
+    email_alerts_btn:         'Subscribe',
+    email_alerts_success:     "You're subscribed! New jobs will land in your inbox.",
+    email_alerts_error:       'Could not subscribe. Please try again.',
   },
 
   my: {
@@ -119,6 +127,14 @@ export const translations = {
     alerts_subscribe:   'Telegram တွင် ဝင်ရောက်ပါ',
     alerts_all:         'အမျိုးအစားအားလုံး',
     alerts_note:        'အခမဲ့။ မည်သည့်အချိန်မဆို ဖြုတ်သိမ်းနိုင်သည်။',
+
+    // Email alerts
+    email_alerts_title:       'အီးမေးလ်ဖြင့် အလုပ်သတိပေးချက် ရယူပါ',
+    email_alerts_sub:         'သင်၏ ကျွမ်းကျင်မှုနှင့် ကိုက်ညီသော အလုပ်အသစ်များ ရောက်သည်နှင့် ချက်ချင်းသိရှိပါ။',
+    email_alerts_placeholder: 'အီးမေးလ်လိပ်စာ',
+    email_alerts_btn:         'စာရင်းသွင်းပါ',
+    email_alerts_success:     'စာရင်းသွင်းပြီးပါပြီ! အလုပ်အသစ်များ သင်၏ inbox တွင် ရောက်ပါမည်။',
+    email_alerts_error:       'စာရင်းမသွင်းနိုင်ပါ။ ထပ်မံကြိုးစားပါ။',
   },
 } satisfies Record<Lang, Record<string, string>>;
 

@@ -4,8 +4,9 @@ import type { Job, Candidate, ApplicationStatus } from '@/types';
 
 // Tab names must match your Google Sheet exactly (case-sensitive).
 // Override via env vars to avoid touching code when the sheet is renamed.
-const JOBS_TAB       = process.env.GOOGLE_JOBS_TAB       ?? 'Jobs';
-const CANDIDATES_TAB = process.env.GOOGLE_CANDIDATES_TAB ?? 'Pipeline';
+const JOBS_TAB        = process.env.GOOGLE_JOBS_TAB        ?? 'Jobs';
+const CANDIDATES_TAB  = process.env.GOOGLE_CANDIDATES_TAB  ?? 'Pipeline';
+const SUBSCRIBERS_TAB = process.env.GOOGLE_SUBSCRIBERS_TAB ?? 'Subscribers';
 
 function isConfigured(): boolean {
   return Boolean(
@@ -394,6 +395,30 @@ export async function updateCandidateStage(
     range: `${CANDIDATES_TAB}!H${rowIndex + 2}`,
     valueInputOption: 'RAW',
     requestBody: { values: [[stage]] },
+  });
+}
+
+// ── appendEmailSubscriber ─────────────────────────────────────────
+// Appends a new subscriber row to the Subscribers tab.
+// Tab columns: email | category | subscribed_at | source | ip
+export async function appendEmailSubscriber(data: {
+  email: string;
+  category?: string;
+  ip?: string;
+}): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const sheets = getSheets();
+  const now    = new Date().toISOString();
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${SUBSCRIBERS_TAB}!A:E`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [[data.email, data.category ?? 'All', now, 'Website', data.ip ?? '']],
+    },
   });
 }
 

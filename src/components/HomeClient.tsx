@@ -6,6 +6,8 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { StatsBar } from '@/components/landing/StatsBar';
 import { Testimonials } from '@/components/landing/Testimonials';
 import { JobAlerts } from '@/components/landing/JobAlerts';
+import { EmailAlerts } from '@/components/landing/EmailAlerts';
+import { RecentlyViewed } from '@/components/jobs/RecentlyViewed';
 import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { JobGrid } from '@/components/jobs/JobGrid';
@@ -52,6 +54,7 @@ export function HomeClient({ initialJobs }: Props) {
   return (
     <>
       <HeroSection onSearch={handleHeroSearch} />
+      <RecentlyViewed allJobs={jobs.length ? jobs : initialJobs} />
       <StatsBar liveJobCount={jobs.length || initialJobs.length} />
 
       <section id="jobs" className="myanmar-pattern py-12 sm:py-16">
@@ -135,6 +138,7 @@ export function HomeClient({ initialJobs }: Props) {
       </section>
 
       <Testimonials />
+      <EmailAlerts />
       <JobAlerts />
       <JoinCommunity />
     </>

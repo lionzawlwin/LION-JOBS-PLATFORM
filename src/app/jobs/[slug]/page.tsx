@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { JobPostingSchema } from '@/components/seo/JobPostingSchema';
 import { ShareButton } from '@/components/jobs/ShareButton';
+import { SimilarJobs } from '@/components/jobs/SimilarJobs';
+import { TrackJobView } from '@/components/jobs/TrackJobView';
 import { JoinCommunity } from '@/components/JoinCommunity';
 import { getJobs } from '@/lib/sheets';
 import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
@@ -242,31 +244,11 @@ export default async function JobDetailPage(
             </div>
           </div>
 
-          {/* ── Related jobs ── */}
-          {related.length > 0 && (
-            <section className="mt-10">
-              <h2 className="mb-4 text-lg font-bold text-foreground">
-                More {job.category} Jobs
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {related.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/jobs/${buildJobSlug(r)}`}
-                    className="group rounded-xl border border-border bg-card p-4 transition-all hover:border-brand-500/40 hover:shadow-md"
-                  >
-                    <p className="text-sm font-bold text-foreground group-hover:text-brand-600 transition-colors">
-                      {r.title}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{r.company}</p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin size={11} /> {r.location}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
+          {/* ── Similar jobs ── */}
+          <SimilarJobs jobs={related} category={job.category} />
+
+          {/* Track this view in recently-viewed (client-side localStorage) */}
+          <TrackJobView jobId={job.id} />
         </div>
 
         <JoinCommunity />
