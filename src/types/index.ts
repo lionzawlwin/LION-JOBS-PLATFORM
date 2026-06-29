@@ -81,6 +81,8 @@ export interface B2bLead {
   urgency: string;
   requirements: string;
   agencyMessage: string;
+  jobDescription: string;
+  benefits: string;
   submittedAt: string;
   status: string;
 }

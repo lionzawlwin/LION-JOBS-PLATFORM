@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
     urgency:        body.urgency        ?? 'Within 1 month',
     requirements:   body.requirements   ?? '',
     agencyMessage:  body.agencyMessage  ?? '',
+    jobDescription: body.jobDescription ?? '',
+    benefits:       body.benefits       ?? '',
   };
 
   let leadId: string;

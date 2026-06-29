@@ -1,9 +1,13 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCandidateJob } from '@/lib/sheets';
+import { updateB2bLeadStatus } from '@/lib/sheets';
 import type { NextRequest } from 'next/server';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
+
+const VALID_STATUSES = new Set([
+  'New', 'In Review', 'Pending', 'Active', 'Interview', 'Placed', 'On Hold', 'Rejected', 'Closed',
+]);
 
 export async function PATCH(
   req: NextRequest,
@@ -23,22 +27,22 @@ export async function PATCH(
     return Response.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { jobId, jobTitle, company, clear } = body as {
-    jobId?: string; jobTitle?: string; company?: string; clear?: boolean;
-  };
-  if (!clear && !jobTitle) {
-    return Response.json({ error: 'jobTitle is required (or pass clear: true to unlink).' }, { status: 422 });
+  const { status } = body as { status?: string };
+  if (!status || !VALID_STATUSES.has(status)) {
+    return Response.json(
+      { error: `Invalid status. Must be one of: ${[...VALID_STATUSES].join(', ')}` },
+      { status: 422 },
+    );
   }
 
   try {
-    await updateCandidateJob(id, jobId ?? '', jobTitle ?? '', company ?? '');
+    await updateB2bLeadStatus(id, status);
+    return Response.json({ ok: true });
   } catch (err) {
-    console.error('[candidates/job] error:', err);
+    console.error('[leads/status] error:', err);
     if (process.env.NODE_ENV !== 'production') {
       return Response.json({ ok: true, dev: true });
     }
-    return Response.json({ error: 'Could not update job link.' }, { status: 502 });
+    return Response.json({ error: 'Could not update lead status.' }, { status: 502 });
   }
-
-  return Response.json({ ok: true });
 }

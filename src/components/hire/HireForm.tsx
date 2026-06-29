@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Building2, User, Briefcase, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Building2, User, Briefcase, ChevronRight, CheckCircle2, Loader2, FileText, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const schema = z.object({
@@ -24,8 +24,10 @@ const schema = z.object({
   workSetup:     z.string().min(1),
   salaryBudget:  z.string().optional(),
   urgency:       z.string().min(1),
-  requirements:   z.string().optional(),
-  agencyMessage:  z.string().optional(),
+  requirements:    z.string().optional(),
+  jobDescription:  z.string().optional(),
+  benefits:        z.string().optional(),
+  agencyMessage:   z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -45,8 +47,9 @@ const inputCls =
 const errorCls = 'mt-1 text-xs text-red-500';
 
 export function HireForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted,   setSubmitted]  = useState(false);
   const [serverError, setServerError] = useState('');
+  const [reqTab,      setReqTab]     = useState<'requirements' | 'jobDescription' | 'benefits'>('requirements');
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -220,15 +223,56 @@ export function HireForm() {
               {['ASAP (within 2 weeks)', 'Within 1 month', 'Within 3 months', 'Planning ahead (3+ months)'].map((u) => <option key={u}>{u}</option>)}
             </select>
           </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Key Requirements & Notes</label>
-            <textarea
-              {...register('requirements')}
-              rows={4}
-              placeholder="e.g. 3+ years experience in React, fluent English, immediate joiner preferred..."
-              className={cn(inputCls, 'resize-none')}
-            />
+          {/* Tabbed: Requirements / Job Description / Benefits */}
+          <div className="sm:col-span-2 space-y-3">
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1 w-fit">
+              {([
+                { key: 'requirements',   label: 'Key Requirements', icon: <FileText size={13} /> },
+                { key: 'jobDescription', label: 'Job Description',  icon: <Briefcase size={13} /> },
+                { key: 'benefits',       label: 'Benefits & Perks', icon: <Gift size={13} /> },
+              ] as const).map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setReqTab(t.key)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap',
+                    reqTab === t.key
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+
+            {reqTab === 'requirements' && (
+              <textarea
+                {...register('requirements')}
+                rows={5}
+                placeholder="e.g. 3+ years experience in React, fluent English, immediate joiner preferred..."
+                className={cn(inputCls, 'resize-none')}
+              />
+            )}
+            {reqTab === 'jobDescription' && (
+              <textarea
+                {...register('jobDescription')}
+                rows={5}
+                placeholder="Describe the role scope, day-to-day responsibilities, team structure, and reporting line…"
+                className={cn(inputCls, 'resize-none')}
+              />
+            )}
+            {reqTab === 'benefits' && (
+              <textarea
+                {...register('benefits')}
+                rows={5}
+                placeholder="e.g. Medical insurance, annual leave 14 days, performance bonus, flexible hours, remote work options…"
+                className={cn(inputCls, 'resize-none')}
+              />
+            )}
           </div>
+
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-xs font-semibold text-foreground">Message to Agency</label>
             <textarea

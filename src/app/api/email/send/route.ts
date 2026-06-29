@@ -17,7 +17,9 @@ function getResend() {
   return new Resend(key);
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <noreply@lionjobs.co>';
+// Use a verified domain in RESEND_FROM_EMAIL (Vercel env var).
+// Falls back to Resend's shared test domain so emails actually deliver during setup.
+const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <onboarding@resend.dev>';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);

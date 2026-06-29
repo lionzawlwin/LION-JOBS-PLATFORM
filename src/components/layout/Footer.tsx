@@ -103,7 +103,6 @@ export function Footer() {
 
         <div className="mt-10 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} Lion Jobs Agency. All rights reserved.</p>
-          <p>Built with Next.js · Powered by AI</p>
         </div>
       </div>
     </footer>

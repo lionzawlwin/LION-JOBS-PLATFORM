@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Users, Info, PenSquare, Mail, LayoutGrid, Table2 } from 'lucide-react';
+import { BarChart2, Building2, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
@@ -14,14 +14,17 @@ import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'candidates' | 'companies' | 'content' | 'campaigns';
+type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'b2b-leads' | 'content' | 'campaigns';
 
 const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
-  { value: 'overview',   label: 'Overview',       icon: <BarChart2  size={14} /> },
-  { value: 'candidates', label: 'Candidates',      icon: <Users      size={14} /> },
-  { value: 'companies',  label: 'B2B Companies',   icon: <Building2  size={14} /> },
-  { value: 'content',    label: 'Content Studio',  icon: <PenSquare  size={14} /> },
-  { value: 'campaigns',  label: 'Email Campaigns', icon: <Mail       size={14} /> },
+  { value: 'overview',   label: 'Overview',          icon: <BarChart2     size={14} /> },
+  { value: 'candidates', label: 'Candidates',         icon: <Users         size={14} /> },
+  { value: 'post-job',   label: 'Post a New Job',     icon: <PlusSquare    size={14} /> },
+  { value: 'manage-jobs',label: 'Manage Jobs',        icon: <Briefcase     size={14} /> },
+  { value: 'companies',  label: 'B2B Companies',      icon: <Building2     size={14} /> },
+  { value: 'b2b-leads',  label: 'B2B Hiring Requests',icon: <ClipboardList size={14} /> },
+  { value: 'content',    label: 'Content Studio',     icon: <PenSquare     size={14} /> },
+  { value: 'campaigns',  label: 'Email Campaigns',    icon: <Mail          size={14} /> },
 ];
 
 interface Props {
@@ -71,7 +74,10 @@ export function DashboardClient({ isAdmin = false }: Props) {
           Admin dashboard — Lion Jobs Agency internal use only.
           {activeTab === 'overview'    && ' Real-time analytics across candidates, jobs, and companies.'}
           {activeTab === 'candidates'  && ' Manage candidate applications and pipeline stages.'}
+          {activeTab === 'post-job'    && ' Create and publish new job listings to the platform.'}
+          {activeTab === 'manage-jobs' && ' Edit, pause, or close existing job postings.'}
           {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
+          {activeTab === 'b2b-leads'   && ' Incoming hiring requests from employers. Update status to track progress.'}
           {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
           {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
         </span>
@@ -81,11 +87,8 @@ export function DashboardClient({ isAdmin = false }: Props) {
 
       {activeTab === 'candidates' && (
         <>
-          <PostJobForm />
-          <JobsPanel />
-
           {/* View toggle */}
-          <div className="my-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground">Candidate Pipeline</h3>
             <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1">
               <button
@@ -113,16 +116,12 @@ export function DashboardClient({ isAdmin = false }: Props) {
         </>
       )}
 
-      {activeTab === 'companies' && (
-        <>
-          <CompaniesView />
-          <B2bLeadsTable />
-        </>
-      )}
-
-      {activeTab === 'content'   && <ContentStudio />}
-
-      {activeTab === 'campaigns' && <EmailCampaigns />}
+      {activeTab === 'post-job'    && <PostJobForm />}
+      {activeTab === 'manage-jobs' && <JobsPanel />}
+      {activeTab === 'companies'   && <CompaniesView />}
+      {activeTab === 'b2b-leads'   && <B2bLeadsTable />}
+      {activeTab === 'content'     && <ContentStudio />}
+      {activeTab === 'campaigns'   && <EmailCampaigns />}
     </>
   );
 }

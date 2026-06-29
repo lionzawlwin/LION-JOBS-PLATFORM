@@ -85,6 +85,8 @@ const JOB_COL = {
   notes:                 19,
   screening_questions:   20,
   benefits:              21,
+  // col W — pre-formatted message text read by Make.com "Watch Rows" trigger
+  text:                  22,
 } as const;
 
 // cache() deduplicates calls within a single server render (generateMetadata + page).
@@ -312,15 +314,31 @@ export async function appendJob(data: {
   const postedAt = new Date().toISOString();
   const sheets   = getSheets();
 
-  // Row values must align with JOB_COL indices 0–19.
+  // Build pre-formatted social message text (col W) so Make.com "Watch Rows"
+  // trigger has a ready-to-use `text` field for Telegram/Facebook modules.
+  const salaryText = data.salaryMin > 0
+    ? `${data.salaryMin.toLocaleString()} – ${data.salaryMax.toLocaleString()} ${data.currency}`
+    : 'Negotiable';
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+  const messageText = [
+    data.isUrgent ? '🔥 URGENT HIRING' : '✨ NEW JOB ALERT',
+    `💼 ${data.title}`,
+    `🏢 ${data.company}`,
+    `📍 ${data.location}  |  ${data.type}`,
+    `💰 ${salaryText}`,
+    '',
+    `👉 Apply Now: ${SITE_URL}/jobs/${id}`,
+  ].join('\n');
+
+  // Row values must align with JOB_COL indices 0–22.
   // Indices 17 (applications_count) and 18 (hired_count) are formula columns — left blank.
   const row: (string | number) [] = [
     id,                                    // 0  job_id
     data.title,                            // 1  title
     data.company,                          // 2  company
-    data.category,                         // 3  category  ← was index 4
-    data.type,                             // 4  type      ← was index 5
-    data.location,                         // 5  location  ← was index 3
+    data.category,                         // 3  category
+    data.type,                             // 4  type
+    data.location,                         // 5  location
     data.salaryMin,                        // 6  salary_min
     data.salaryMax,                        // 7  salary_max
     data.currency,                         // 8  currency
@@ -328,20 +346,21 @@ export async function appendJob(data: {
     data.requirements.join('|'),           // 10 requirements
     postedAt,                              // 11 posted_at
     '',                                    // 12 deadline  (set manually)
-    data.isUrgent   ? 'TRUE' : 'FALSE',   // 13 is_urgent  ← was index 12
-    data.isFeatured ? 'TRUE' : 'FALSE',   // 14 is_featured ← was index 13
-    'Active',                              // 15 status    (default)
+    data.isUrgent   ? 'TRUE' : 'FALSE',   // 13 is_urgent
+    data.isFeatured ? 'TRUE' : 'FALSE',   // 14 is_featured
+    'Active',                              // 15 status
     '',                                    // 16 source
     '',                                    // 17 applications_count (formula — leave blank)
     '',                                    // 18 hired_count        (formula — leave blank)
     '',                                    // 19 notes
     '',                                    // 20 screening_questions (set manually)
     (data.benefits ?? []).join(', '),      // 21 benefits (comma-separated)
+    messageText,                           // 22 text (pre-formatted for Make.com)
   ];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A:V`,
+    range: `${JOBS_TAB}!A:W`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
@@ -639,27 +658,30 @@ export async function appendCompany(data: {
 }
 
 // ── B2B Leads (Employer Portal) ───────────────────────────────────
-// Tab: B2B_Leads | Cols A–R
+// Tab: B2B_Leads | Cols A–T
 //   A lead_id | B company_name | C industry | D location | E website
 //   F contact_name | G contact_title | H work_email | I phone
 //   J job_title | K headcount | L work_setup | M salary_budget
 //   N urgency | O requirements | P submitted_at | Q status | R agency_message
+//   S job_description | T benefits
 export async function appendB2bLead(data: {
-  companyName:    string;
-  industry:       string;
-  location:       string;
-  website:        string;
-  contactName:    string;
-  contactTitle:   string;
-  workEmail:      string;
-  phone:          string;
-  jobTitle:       string;
-  headcount:      string;
-  workSetup:      string;
-  salaryBudget:   string;
-  urgency:        string;
-  requirements:   string;
-  agencyMessage?: string;
+  companyName:     string;
+  industry:        string;
+  location:        string;
+  website:         string;
+  contactName:     string;
+  contactTitle:    string;
+  workEmail:       string;
+  phone:           string;
+  jobTitle:        string;
+  headcount:       string;
+  workSetup:       string;
+  salaryBudget:    string;
+  urgency:         string;
+  requirements:    string;
+  agencyMessage?:  string;
+  jobDescription?: string;
+  benefits?:       string;
 }): Promise<string> {
   if (!isConfigured()) throw new Error('Google Sheets not configured.');
 
@@ -685,12 +707,14 @@ export async function appendB2bLead(data: {
     data.requirements,
     now,
     'New',
-    data.agencyMessage ?? '',
+    data.agencyMessage  ?? '',
+    data.jobDescription ?? '',
+    data.benefits       ?? '',
   ];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
-    range:            `${B2B_LEADS_TAB}!A:R`,
+    range:            `${B2B_LEADS_TAB}!A:T`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody:      { values: [row] },
@@ -705,35 +729,59 @@ export async function getB2bLeads(): Promise<B2bLead[]> {
     const sheets = getSheets();
     const { data } = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: `${B2B_LEADS_TAB}!A2:R`,
+      range: `${B2B_LEADS_TAB}!A2:T`,
     });
     if (!data.values?.length) return [];
     return data.values
       .filter((row) => row[0])
       .map((row) => ({
-        id:             row[0]  ?? '',
-        companyName:    row[1]  ?? '',
-        industry:       row[2]  ?? '',
-        location:       row[3]  ?? '',
-        website:        row[4]  ?? '',
-        contactName:    row[5]  ?? '',
-        contactTitle:   row[6]  ?? '',
-        workEmail:      row[7]  ?? '',
-        phone:          row[8]  ?? '',
-        jobTitle:       row[9]  ?? '',
-        headcount:      row[10] ?? '',
-        workSetup:      row[11] ?? '',
-        salaryBudget:   row[12] ?? '',
-        urgency:        row[13] ?? '',
-        requirements:   row[14] ?? '',
-        submittedAt:    row[15] ?? '',
-        status:         row[16] ?? 'New',
-        agencyMessage:  row[17] ?? '',
+        id:              row[0]  ?? '',
+        companyName:     row[1]  ?? '',
+        industry:        row[2]  ?? '',
+        location:        row[3]  ?? '',
+        website:         row[4]  ?? '',
+        contactName:     row[5]  ?? '',
+        contactTitle:    row[6]  ?? '',
+        workEmail:       row[7]  ?? '',
+        phone:           row[8]  ?? '',
+        jobTitle:        row[9]  ?? '',
+        headcount:       row[10] ?? '',
+        workSetup:       row[11] ?? '',
+        salaryBudget:    row[12] ?? '',
+        urgency:         row[13] ?? '',
+        requirements:    row[14] ?? '',
+        submittedAt:     row[15] ?? '',
+        status:          row[16] ?? 'New',
+        agencyMessage:   row[17] ?? '',
+        jobDescription:  row[18] ?? '',
+        benefits:        row[19] ?? '',
       }));
   } catch (err) {
     console.warn('[sheets] getB2bLeads error:', (err as Error).message);
     return [];
   }
+}
+
+export async function updateB2bLeadStatus(leadId: string, status: string): Promise<void> {
+  if (!isConfigured()) return;
+
+  const sheets = getSheets();
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${B2B_LEADS_TAB}!A2:A`,
+  });
+  if (!data.values) return;
+
+  const rowIndex = data.values.findIndex((row) => row[0] === leadId);
+  if (rowIndex === -1) return;
+
+  // Q = col index 16 → 1-based column = 17 → "Q", sheet row = rowIndex + 2
+  await sheets.spreadsheets.values.update({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${B2B_LEADS_TAB}!Q${rowIndex + 2}`,
+    valueInputOption: 'RAW',
+    requestBody:      { values: [[status]] },
+  });
 }
 
 // Updates job_id (col E), job_title (col F), and company (col G) for a candidate.

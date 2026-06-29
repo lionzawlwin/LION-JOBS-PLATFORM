@@ -5,17 +5,15 @@ import useSWR from 'swr';
 import {
   X, Phone, Mail, Briefcase, DollarSign, MapPin,
   Calendar, FileText, Star, ExternalLink, Clock,
-  Download, Link2, Loader2,
+  Download, Link2, Loader2, Pencil, Unlink, CheckCircle2,
 } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import type { Candidate, ApplicationStatus, Job } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-function toDownloadUrl(url: string): string {
-  const match = url.match(/\/file\/d\/([^/]+)/);
-  if (match) return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  return url;
+function proxyDownloadUrl(rawUrl: string): string {
+  return `/api/download?url=${encodeURIComponent(rawUrl)}`;
 }
 
 const STAGE_STYLE: Record<ApplicationStatus, string> = {
@@ -42,9 +40,11 @@ const STAGES: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hir
 
 export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
   const { data: jobs = [] } = useSWR<Job[]>('/api/jobs', fetcher);
-  const [linkJobId, setLinkJobId] = useState('');
-  const [linking,   setLinking]   = useState(false);
-  const [linkDone,  setLinkDone]  = useState(false);
+  const [linkJobId,  setLinkJobId]  = useState('');
+  const [linking,    setLinking]    = useState(false);
+  const [jobEditMode, setJobEditMode] = useState(false);
+  // tracks the linked job as committed — synced from candidate.jobId on open
+  const [linkedJob, setLinkedJob] = useState<{ id: string; title: string; company: string } | null>(null);
 
   // Close on Escape
   useEffect(() => {
@@ -53,12 +53,26 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // Prevent body scroll while open
+  // Reset local state when a new candidate opens
   useEffect(() => {
-    if (candidate) { document.body.style.overflow = 'hidden'; setLinkJobId(''); setLinkDone(false); }
-    else document.body.style.overflow = '';
+    if (candidate) {
+      document.body.style.overflow = 'hidden';
+      setLinkJobId('');
+      setJobEditMode(false);
+      if (candidate.jobId) {
+        const matched = jobs.find((j) => j.id === candidate.jobId);
+        setLinkedJob(matched
+          ? { id: matched.id, title: matched.title, company: matched.company }
+          : { id: candidate.jobId, title: candidate.position || 'Unknown', company: candidate.company || '' },
+        );
+      } else {
+        setLinkedJob(null);
+      }
+    } else {
+      document.body.style.overflow = '';
+    }
     return () => { document.body.style.overflow = ''; };
-  }, [candidate]);
+  }, [candidate, jobs]);
 
   async function handleLinkJob() {
     if (!linkJobId || !candidate) return;
@@ -66,14 +80,35 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
     if (!job) return;
     setLinking(true);
     try {
-      await fetch(`/api/candidates/${candidate.id}/job`, {
+      const res = await fetch(`/api/candidates/${candidate.id}/job`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ jobId: job.id, jobTitle: job.title, company: job.company }),
       });
-      setLinkDone(true);
+      if (res.ok) {
+        setLinkedJob({ id: job.id, title: job.title, company: job.company });
+        setJobEditMode(false);
+        setLinkJobId('');
+      }
     } catch (err) {
       console.error('[CandidateDrawer] job link error:', err);
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function handleClearJob() {
+    if (!candidate) return;
+    setLinking(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/job`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ clear: true, jobTitle: '', jobId: '', company: '' }),
+      });
+      if (res.ok) { setLinkedJob(null); setJobEditMode(false); setLinkJobId(''); }
+    } catch (err) {
+      console.error('[CandidateDrawer] job clear error:', err);
     } finally {
       setLinking(false);
     }
@@ -161,20 +196,43 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
             )}
 
             {/* Job Assignment */}
-            {jobs.length > 0 && (
-              <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                  <Link2 size={11} /> Link to Job Requisition
-                </p>
-                {(candidate.jobId || candidate.company) && !linkDone && (
-                  <p className="text-xs text-muted-foreground">
-                    Currently linked: <span className="font-semibold text-foreground">{candidate.position || '—'}</span>
-                    {candidate.company && <span className="text-muted-foreground"> @ {candidate.company}</span>}
-                  </p>
-                )}
-                {linkDone && (
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Job linked successfully</p>
-                )}
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Link2 size={11} /> Job Requisition Link
+              </p>
+
+              {/* Linked state — show card with edit/remove */}
+              {linkedJob && !jobEditMode && (
+                <div className="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 dark:border-brand-700/30 dark:bg-brand-600/10 px-4 py-3">
+                  <CheckCircle2 size={16} className="shrink-0 text-brand-600 dark:text-brand-400" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-brand-700 dark:text-brand-300 truncate">{linkedJob.title}</p>
+                    {linkedJob.company && (
+                      <p className="text-[11px] text-brand-600/70 dark:text-brand-400/70">{linkedJob.company}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => { setJobEditMode(true); setLinkJobId(linkedJob.id); }}
+                      title="Change job"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-brand-600 hover:border-brand-300 transition-colors"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      onClick={handleClearJob}
+                      disabled={linking}
+                      title="Remove link"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-red-600 hover:border-red-300 transition-colors disabled:opacity-40"
+                    >
+                      {linking ? <Loader2 size={12} className="animate-spin" /> : <Unlink size={12} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* No link yet — or edit mode — show selector */}
+              {(!linkedJob || jobEditMode) && jobs.length > 0 && (
                 <div className="flex gap-2">
                   <select
                     value={linkJobId}
@@ -192,11 +250,23 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
                     className="flex items-center gap-1.5 rounded-xl border border-brand-600 bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
                   >
                     {linking ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
-                    Assign
+                    {jobEditMode ? 'Update' : 'Assign'}
                   </button>
+                  {jobEditMode && (
+                    <button
+                      onClick={() => { setJobEditMode(false); setLinkJobId(''); }}
+                      className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+
+              {!linkedJob && jobs.length === 0 && (
+                <p className="text-xs text-muted-foreground">No jobs posted yet.</p>
+              )}
+            </div>
           </div>
 
           {/* Contact Info */}
@@ -307,10 +377,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
                   <ExternalLink size={12} /> View
                 </a>
                 <a
-                  href={toDownloadUrl(candidate.cvUrl)}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={proxyDownloadUrl(candidate.cvUrl)}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700 transition-colors shadow-sm shadow-brand-600/30"
                 >
                   <Download size={12} /> Download
