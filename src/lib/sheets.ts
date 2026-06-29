@@ -518,27 +518,34 @@ export async function getCompanyFeedback(company: string): Promise<{
   totalReviews: number;
   wouldRecommendPct: number;
 }> {
-  if (!isConfigured()) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+  const empty = { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+  if (!isConfigured()) return empty;
 
-  const sheets = getSheets();
-  const { data } = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${FEEDBACK_TAB}!A2:H`,
-  });
+  try {
+    const sheets = getSheets();
+    const { data } = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+      range: `${FEEDBACK_TAB}!A2:H`,
+    });
 
-  if (!data.values?.length) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+    if (!data.values?.length) return empty;
 
-  // col index 2 = company, col index 4 = rating, col index 6 = would_recommend
-  const rows = data.values.filter((row) =>
-    String(row[2] ?? '').toLowerCase() === company.toLowerCase(),
-  );
+    // col index 2 = company, col index 4 = rating, col index 6 = would_recommend
+    const rows = data.values.filter((row) =>
+      String(row[2] ?? '').toLowerCase() === company.toLowerCase(),
+    );
 
-  if (rows.length === 0) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+    if (rows.length === 0) return empty;
 
-  const ratings         = rows.map((r) => Number(r[4]) || 0).filter((n) => n > 0);
-  const recommends      = rows.filter((r) => String(r[6]).toLowerCase() === 'yes').length;
-  const averageRating   = ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : 0;
-  const wouldRecommendPct = rows.length ? Math.round((recommends / rows.length) * 100) : 0;
+    const ratings           = rows.map((r) => Number(r[4]) || 0).filter((n) => n > 0);
+    const recommends        = rows.filter((r) => String(r[6]).toLowerCase() === 'yes').length;
+    const averageRating     = ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : 0;
+    const wouldRecommendPct = rows.length ? Math.round((recommends / rows.length) * 100) : 0;
 
-  return { averageRating, totalReviews: rows.length, wouldRecommendPct };
+    return { averageRating, totalReviews: rows.length, wouldRecommendPct };
+  } catch (err) {
+    // Feedback tab may not exist yet — fail gracefully rather than breaking SSG
+    console.warn('[sheets] getCompanyFeedback: tab may not exist yet —', (err as Error).message);
+    return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+  }
 }
