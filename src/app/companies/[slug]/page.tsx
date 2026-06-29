@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Briefcase, Building2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Briefcase, Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { JobCard } from '@/components/jobs/JobCard';
-import { getJobs } from '@/lib/sheets';
+import { getJobs, getCompanyFeedback } from '@/lib/sheets';
 import { buildJobSlug } from '@/lib/utils';
 
 export const revalidate = 3600;
@@ -42,10 +42,11 @@ export default async function CompanyProfilePage(
   props: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await props.params;
-  const jobs     = await getJobs();
+  const jobs        = await getJobs();
   const companyName = jobs.find((j) => slugify(j.company) === slug)?.company;
   if (!companyName) notFound();
 
+  const rating = await getCompanyFeedback(companyName);
   const companyJobs = jobs.filter((j) => j.company === companyName);
   const categories  = [...new Set(companyJobs.map((j) => j.category))];
   const locations   = [...new Set(companyJobs.map((j) => j.location))];
@@ -72,6 +73,12 @@ export default async function CompanyProfilePage(
                   {locations.slice(0, 2).map((loc) => (
                     <span key={loc} className="flex items-center gap-1.5"><MapPin size={13} /> {loc}</span>
                   ))}
+                  {rating.totalReviews > 0 && (
+                    <span className="flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                      <Star size={11} className="fill-yellow-400 text-yellow-400" />
+                      {rating.averageRating.toFixed(1)} · {rating.totalReviews} review{rating.totalReviews !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

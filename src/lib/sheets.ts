@@ -474,3 +474,71 @@ export async function getCandidatesByEmailOrPhone(query: string): Promise<{
     .filter((c) => c.id)
     .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
 }
+
+// ── Feedback tab ──────────────────────────────────────────────────
+// Columns: feedback_id | candidate_id | company | job_title | rating | experience | would_recommend | submitted_at
+const FEEDBACK_TAB = process.env.GOOGLE_FEEDBACK_TAB ?? 'Feedback';
+
+export async function appendFeedback(data: {
+  candidateId: string;
+  company: string;
+  jobTitle: string;
+  rating: number;          // 1-5
+  experience: string;
+  wouldRecommend: boolean;
+}): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const sheets = getSheets();
+  const id     = `fb-${Date.now()}`;
+  const now    = new Date().toISOString();
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${FEEDBACK_TAB}!A:H`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [[
+        id,
+        data.candidateId,
+        data.company,
+        data.jobTitle,
+        data.rating,
+        data.experience,
+        data.wouldRecommend ? 'Yes' : 'No',
+        now,
+      ]],
+    },
+  });
+}
+
+export async function getCompanyFeedback(company: string): Promise<{
+  averageRating: number;
+  totalReviews: number;
+  wouldRecommendPct: number;
+}> {
+  if (!isConfigured()) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+
+  const sheets = getSheets();
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${FEEDBACK_TAB}!A2:H`,
+  });
+
+  if (!data.values?.length) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+
+  // col index 2 = company, col index 4 = rating, col index 6 = would_recommend
+  const rows = data.values.filter((row) =>
+    String(row[2] ?? '').toLowerCase() === company.toLowerCase(),
+  );
+
+  if (rows.length === 0) return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
+
+  const ratings         = rows.map((r) => Number(r[4]) || 0).filter((n) => n > 0);
+  const recommends      = rows.filter((r) => String(r[6]).toLowerCase() === 'yes').length;
+  const averageRating   = ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : 0;
+  const wouldRecommendPct = rows.length ? Math.round((recommends / rows.length) * 100) : 0;
+
+  return { averageRating, totalReviews: rows.length, wouldRecommendPct };
+}
