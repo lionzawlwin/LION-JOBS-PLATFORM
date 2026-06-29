@@ -51,6 +51,7 @@ export interface Candidate {
   email?: string;
   phone: string;
   position: string;
+  jobId?: string;
   company?: string;
   cvUrl?: string;
   linkedinUrl?: string;
@@ -61,6 +62,27 @@ export interface Candidate {
   salaryExpected?: string;
   interviewDate?: string;
   source?: string;
+}
+
+export interface B2bLead {
+  id: string;
+  companyName: string;
+  industry: string;
+  location: string;
+  website: string;
+  contactName: string;
+  contactTitle: string;
+  workEmail: string;
+  phone: string;
+  jobTitle: string;
+  headcount: string;
+  workSetup: string;
+  salaryBudget: string;
+  urgency: string;
+  requirements: string;
+  agencyMessage: string;
+  submittedAt: string;
+  status: string;
 }
 
 export interface JobFilters {

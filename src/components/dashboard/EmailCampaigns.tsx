@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Send, Loader2, Mail, CheckCircle2, Users, Eye, EyeOff, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Send, Loader2, Mail, CheckCircle2, Users, Eye, EyeOff, AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Company } from '@/types';
 
@@ -44,6 +44,13 @@ export function EmailCampaigns() {
   const [results,      setResults]      = useState<{ name: string; ok: boolean; msg?: string }[]>([]);
   const [customNote,   setCustomNote]   = useState('');
   const [showPreview,  setShowPreview]  = useState(false);
+  const [editedBody,   setEditedBody]   = useState(EMAIL_TYPES[0].preview);
+
+  // Reset editable body whenever template type changes
+  useEffect(() => {
+    const found = EMAIL_TYPES.find((e) => e.value === emailType);
+    if (found) setEditedBody(found.preview);
+  }, [emailType]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,8 +99,9 @@ export function EmailCampaigns() {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: emailType,
-            to:   co.email,
+            type:       emailType,
+            to:         co.email,
+            customBody: editedBody,
             data: {
               contactPerson: co.contactPerson || co.name,
               companyName:   co.name,
@@ -236,29 +244,47 @@ export function EmailCampaigns() {
         {/* Right: Preview + Results ────────────────────────────── */}
         <div className="space-y-4">
 
-          {/* Email preview */}
+          {/* Email preview — editable */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div>
                 <p className="text-xs font-bold text-foreground">{activeType.emoji} {activeType.label}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Subject: {activeType.subject}</p>
               </div>
-              <button
-                onClick={() => setShowPreview(v => !v)}
-                className="flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                {showPreview ? <><EyeOff size={12} /> Hide</> : <><Eye size={12} /> Preview</>}
-              </button>
+              <div className="flex items-center gap-2">
+                {showPreview && editedBody !== activeType.preview && (
+                  <button
+                    onClick={() => setEditedBody(activeType.preview)}
+                    className="flex items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    title="Reset to default template"
+                  >
+                    <RotateCcw size={11} /> Reset
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowPreview(v => !v)}
+                  className="flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  {showPreview ? <><EyeOff size={12} /> Hide</> : <><Eye size={12} /> Edit</>}
+                </button>
+              </div>
             </div>
             {showPreview && (
-              <pre className="max-h-64 overflow-y-auto p-4 text-xs leading-relaxed text-muted-foreground font-sans whitespace-pre-wrap">
-                {activeType.preview}
-              </pre>
+              <div className="p-3">
+                <textarea
+                  value={editedBody}
+                  onChange={(e) => setEditedBody(e.target.value)}
+                  rows={12}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs leading-relaxed text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
+                  placeholder="Edit the email body here…"
+                />
+                <p className="mt-1.5 text-[10px] text-muted-foreground">Editing this template only affects this send — it does not permanently change the template.</p>
+              </div>
             )}
             {!showPreview && (
               <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
                 <Eye size={14} />
-                Click Preview to see the email template
+                Click Edit to preview &amp; customise before sending
               </div>
             )}
           </div>

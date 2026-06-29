@@ -24,7 +24,8 @@ const schema = z.object({
   workSetup:     z.string().min(1),
   salaryBudget:  z.string().optional(),
   urgency:       z.string().min(1),
-  requirements:  z.string().optional(),
+  requirements:   z.string().optional(),
+  agencyMessage:  z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -227,6 +228,16 @@ export function HireForm() {
               placeholder="e.g. 3+ years experience in React, fluent English, immediate joiner preferred..."
               className={cn(inputCls, 'resize-none')}
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">Message to Agency</label>
+            <textarea
+              {...register('agencyMessage')}
+              rows={3}
+              placeholder="Any specific notes or requests for our team — e.g. confidential search, preferred start date, or interview preferences…"
+              className={cn(inputCls, 'resize-none')}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">This message goes directly to our recruitment team and is not shown publicly.</p>
           </div>
         </div>
       </div>

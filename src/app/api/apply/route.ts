@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
     await forwardToMake({
       fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl,
       expectedSalary, desiredCategory,
+      // Explicit fields for Make.com Google Drive automation
+      candidateName: fullName,
+      files: cvFileName ? [{ name: cvFileName, type: 'cv', base64: cvBase64 ?? null }] : [],
       // Fields Make.com uses to route & send the confirmation email
       event:                'application_submitted',
       applicationStatus:    'Under Review',

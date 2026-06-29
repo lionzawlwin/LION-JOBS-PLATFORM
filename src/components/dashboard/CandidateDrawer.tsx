@@ -1,12 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import {
   X, Phone, Mail, Briefcase, DollarSign, MapPin,
   Calendar, FileText, Star, ExternalLink, Clock,
+  Download, Link2, Loader2,
 } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
-import type { Candidate, ApplicationStatus } from '@/types';
+import type { Candidate, ApplicationStatus, Job } from '@/types';
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+function toDownloadUrl(url: string): string {
+  const match = url.match(/\/file\/d\/([^/]+)/);
+  if (match) return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+  return url;
+}
 
 const STAGE_STYLE: Record<ApplicationStatus, string> = {
   Applied:     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -31,6 +41,11 @@ interface Props {
 const STAGES: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hired'];
 
 export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
+  const { data: jobs = [] } = useSWR<Job[]>('/api/jobs', fetcher);
+  const [linkJobId, setLinkJobId] = useState('');
+  const [linking,   setLinking]   = useState(false);
+  const [linkDone,  setLinkDone]  = useState(false);
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -40,10 +55,29 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
 
   // Prevent body scroll while open
   useEffect(() => {
-    if (candidate) document.body.style.overflow = 'hidden';
+    if (candidate) { document.body.style.overflow = 'hidden'; setLinkJobId(''); setLinkDone(false); }
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [candidate]);
+
+  async function handleLinkJob() {
+    if (!linkJobId || !candidate) return;
+    const job = jobs.find((j) => j.id === linkJobId);
+    if (!job) return;
+    setLinking(true);
+    try {
+      await fetch(`/api/candidates/${candidate.id}/job`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jobId: job.id, jobTitle: job.title, company: job.company }),
+      });
+      setLinkDone(true);
+    } catch (err) {
+      console.error('[CandidateDrawer] job link error:', err);
+    } finally {
+      setLinking(false);
+    }
+  }
 
   if (!candidate) return null;
 
@@ -122,6 +156,44 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
                       {s}
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Job Assignment */}
+            {jobs.length > 0 && (
+              <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                  <Link2 size={11} /> Link to Job Requisition
+                </p>
+                {(candidate.jobId || candidate.company) && !linkDone && (
+                  <p className="text-xs text-muted-foreground">
+                    Currently linked: <span className="font-semibold text-foreground">{candidate.position || '—'}</span>
+                    {candidate.company && <span className="text-muted-foreground"> @ {candidate.company}</span>}
+                  </p>
+                )}
+                {linkDone && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Job linked successfully</p>
+                )}
+                <div className="flex gap-2">
+                  <select
+                    value={linkJobId}
+                    onChange={(e) => setLinkJobId(e.target.value)}
+                    className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
+                  >
+                    <option value="">Select a job…</option>
+                    {jobs.map((j) => (
+                      <option key={j.id} value={j.id}>{j.title} — {j.company}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleLinkJob}
+                    disabled={!linkJobId || linking}
+                    className="flex items-center gap-1.5 rounded-xl border border-brand-600 bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                  >
+                    {linking ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
+                    Assign
+                  </button>
                 </div>
               </div>
             )}
@@ -213,23 +285,38 @@ export function CandidateDrawer({ candidate, onClose, onStageChange }: Props) {
             )}
           </div>
 
-          {/* CV Link */}
+          {/* CV Link + Download */}
           {candidate.cvUrl && (
-            <a
-              href={candidate.cvUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 hover:border-brand-400 hover:bg-brand-100 dark:border-brand-700/30 dark:bg-brand-600/10 dark:hover:bg-brand-600/20 transition-colors group"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-md shadow-brand-600/30 group-hover:shadow-brand-600/50">
-                <FileText size={18} />
+            <div className="rounded-2xl border border-brand-200 bg-brand-50 dark:border-brand-700/30 dark:bg-brand-600/10 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-md shadow-brand-600/30">
+                  <FileText size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-brand-700 dark:text-brand-300">CV / Resume</p>
+                  <p className="truncate text-xs text-brand-600/70 dark:text-brand-400/70">{candidate.cvUrl}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-brand-700 dark:text-brand-300">View CV / Resume</p>
-                <p className="truncate text-xs text-brand-600/70 dark:text-brand-400/70">{candidate.cvUrl}</p>
+              <div className="flex gap-2 border-t border-brand-100 dark:border-brand-700/20 px-4 py-2.5">
+                <a
+                  href={candidate.cvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-brand-300 dark:border-brand-600/40 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-600/10 transition-colors"
+                >
+                  <ExternalLink size={12} /> View
+                </a>
+                <a
+                  href={toDownloadUrl(candidate.cvUrl)}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700 transition-colors shadow-sm shadow-brand-600/30"
+                >
+                  <Download size={12} /> Download
+                </a>
               </div>
-              <ExternalLink size={15} className="shrink-0 text-brand-500 group-hover:text-brand-700" />
-            </a>
+            </div>
           )}
 
           {/* Notes */}

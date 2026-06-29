@@ -6,6 +6,7 @@ import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
 import { CompaniesView } from './CompaniesView';
+import { B2bLeadsTable } from './B2bLeadsTable';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
 import { AnalyticsOverview } from './AnalyticsOverview';
@@ -112,7 +113,12 @@ export function DashboardClient({ isAdmin = false }: Props) {
         </>
       )}
 
-      {activeTab === 'companies' && <CompaniesView />}
+      {activeTab === 'companies' && (
+        <>
+          <CompaniesView />
+          <B2bLeadsTable />
+        </>
+      )}
 
       {activeTab === 'content'   && <ContentStudio />}
 

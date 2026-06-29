@@ -166,9 +166,28 @@ export function HeroSection({ onSearch }: Props) {
           </Link>
         </motion.div>
 
-        {/* Trust strip */}
+        {/* Hire Talent CTA */}
         <motion.div
           custom={6} initial="hidden" animate="show" variants={fadeUp}
+          className="mt-4"
+        >
+          <a href="/hire-with-us" className="group block mx-auto max-w-2xl">
+            <div className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-amber-400/50 dark:border-amber-500/40 bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm px-6 py-5 shadow-lg shadow-amber-500/8 transition-all duration-200 hover:border-amber-500 hover:bg-amber-50/80 dark:hover:bg-amber-600/10 hover:shadow-amber-500/15">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30 group-hover:shadow-amber-500/50 group-hover:scale-105 transition-all duration-200">
+                <Building2 size={22} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-base font-bold text-foreground">Looking to Hire? Tell Us Your Needs</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">Find pre-vetted talent for your company — free employer consultation, fast turnaround.</p>
+              </div>
+              <ArrowRight size={20} className="shrink-0 text-amber-600 group-hover:translate-x-1 transition-transform duration-200" />
+            </div>
+          </a>
+        </motion.div>
+
+        {/* Trust strip */}
+        <motion.div
+          custom={7} initial="hidden" animate="show" variants={fadeUp}
           className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground"
         >
           <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-gold-500" /> 500+ {t('hero_stat_roles')}</span>

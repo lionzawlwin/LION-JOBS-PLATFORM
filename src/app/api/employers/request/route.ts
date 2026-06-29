@@ -16,20 +16,21 @@ export async function POST(req: NextRequest) {
   }
 
   const leadData = {
-    companyName:  body.companyName  ?? '',
-    industry:     body.industry     ?? '',
-    location:     body.location     ?? '',
-    website:      body.website      ?? '',
-    contactName:  body.contactName  ?? '',
-    contactTitle: body.contactTitle ?? '',
-    workEmail:    body.workEmail    ?? '',
-    phone:        body.phone        ?? '',
-    jobTitle:     body.jobTitle     ?? '',
-    headcount:    body.headcount    ?? '1',
-    workSetup:    body.workSetup    ?? 'On-site',
-    salaryBudget: body.salaryBudget ?? '',
-    urgency:      body.urgency      ?? 'Within 1 month',
-    requirements: body.requirements ?? '',
+    companyName:    body.companyName    ?? '',
+    industry:       body.industry       ?? '',
+    location:       body.location       ?? '',
+    website:        body.website        ?? '',
+    contactName:    body.contactName    ?? '',
+    contactTitle:   body.contactTitle   ?? '',
+    workEmail:      body.workEmail      ?? '',
+    phone:          body.phone          ?? '',
+    jobTitle:       body.jobTitle       ?? '',
+    headcount:      body.headcount      ?? '1',
+    workSetup:      body.workSetup      ?? 'On-site',
+    salaryBudget:   body.salaryBudget   ?? '',
+    urgency:        body.urgency        ?? 'Within 1 month',
+    requirements:   body.requirements   ?? '',
+    agencyMessage:  body.agencyMessage  ?? '',
   };
 
   let leadId: string;

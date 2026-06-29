@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { cache } from 'react';
-import type { Job, Candidate, ApplicationStatus, Company, CompanyStatus } from '@/types';
+import type { Job, Candidate, ApplicationStatus, Company, CompanyStatus, B2bLead } from '@/types';
 
 // Tab names must match your Google Sheet exactly (case-sensitive).
 // Override via env vars to avoid touching code when the sheet is renamed.
@@ -211,6 +211,7 @@ export async function getCandidates(): Promise<Candidate[]> {
       email:       row[CANDIDATE_COL.email]        || undefined,
       phone:       row[CANDIDATE_COL.phone]        || '',
       position:    row[CANDIDATE_COL.job_title]    || '',
+      jobId:       row[CANDIDATE_COL.job_id]       || undefined,
       company:     row[CANDIDATE_COL.company]      || undefined,
       cvUrl:       row[CANDIDATE_COL.cv_url]       || undefined,
       linkedinUrl: undefined,
@@ -638,26 +639,27 @@ export async function appendCompany(data: {
 }
 
 // ── B2B Leads (Employer Portal) ───────────────────────────────────
-// Tab: B2B_Leads | Cols A–Q
+// Tab: B2B_Leads | Cols A–R
 //   A lead_id | B company_name | C industry | D location | E website
 //   F contact_name | G contact_title | H work_email | I phone
 //   J job_title | K headcount | L work_setup | M salary_budget
-//   N urgency | O requirements | P submitted_at | Q status
+//   N urgency | O requirements | P submitted_at | Q status | R agency_message
 export async function appendB2bLead(data: {
-  companyName:   string;
-  industry:      string;
-  location:      string;
-  website:       string;
-  contactName:   string;
-  contactTitle:  string;
-  workEmail:     string;
-  phone:         string;
-  jobTitle:      string;
-  headcount:     string;
-  workSetup:     string;
-  salaryBudget:  string;
-  urgency:       string;
-  requirements:  string;
+  companyName:    string;
+  industry:       string;
+  location:       string;
+  website:        string;
+  contactName:    string;
+  contactTitle:   string;
+  workEmail:      string;
+  phone:          string;
+  jobTitle:       string;
+  headcount:      string;
+  workSetup:      string;
+  salaryBudget:   string;
+  urgency:        string;
+  requirements:   string;
+  agencyMessage?: string;
 }): Promise<string> {
   if (!isConfigured()) throw new Error('Google Sheets not configured.');
 
@@ -683,17 +685,88 @@ export async function appendB2bLead(data: {
     data.requirements,
     now,
     'New',
+    data.agencyMessage ?? '',
   ];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
-    range:            `${B2B_LEADS_TAB}!A:Q`,
+    range:            `${B2B_LEADS_TAB}!A:R`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody:      { values: [row] },
   });
 
   return id;
+}
+
+export async function getB2bLeads(): Promise<B2bLead[]> {
+  if (!isConfigured()) return [];
+  try {
+    const sheets = getSheets();
+    const { data } = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+      range: `${B2B_LEADS_TAB}!A2:R`,
+    });
+    if (!data.values?.length) return [];
+    return data.values
+      .filter((row) => row[0])
+      .map((row) => ({
+        id:             row[0]  ?? '',
+        companyName:    row[1]  ?? '',
+        industry:       row[2]  ?? '',
+        location:       row[3]  ?? '',
+        website:        row[4]  ?? '',
+        contactName:    row[5]  ?? '',
+        contactTitle:   row[6]  ?? '',
+        workEmail:      row[7]  ?? '',
+        phone:          row[8]  ?? '',
+        jobTitle:       row[9]  ?? '',
+        headcount:      row[10] ?? '',
+        workSetup:      row[11] ?? '',
+        salaryBudget:   row[12] ?? '',
+        urgency:        row[13] ?? '',
+        requirements:   row[14] ?? '',
+        submittedAt:    row[15] ?? '',
+        status:         row[16] ?? 'New',
+        agencyMessage:  row[17] ?? '',
+      }));
+  } catch (err) {
+    console.warn('[sheets] getB2bLeads error:', (err as Error).message);
+    return [];
+  }
+}
+
+// Updates job_id (col E), job_title (col F), and company (col G) for a candidate.
+export async function updateCandidateJob(
+  candidateId: string,
+  jobId:        string,
+  jobTitle:     string,
+  company:      string,
+): Promise<void> {
+  if (!isConfigured()) return;
+
+  const sheets = getSheets();
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!A2:A`,
+  });
+  if (!data.values) return;
+
+  const rowIndex = data.values.findIndex((row) => row[0] === candidateId);
+  if (rowIndex === -1) return;
+
+  const sheetRow = rowIndex + 2; // 1-based + header row
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    requestBody: {
+      valueInputOption: 'RAW',
+      data: [
+        { range: `${CANDIDATES_TAB}!E${sheetRow}`, values: [[jobId]] },
+        { range: `${CANDIDATES_TAB}!F${sheetRow}`, values: [[jobTitle]] },
+        { range: `${CANDIDATES_TAB}!G${sheetRow}`, values: [[company]] },
+      ],
+    },
+  });
 }
 
 export async function updateCompanyStatus(
