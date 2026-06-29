@@ -2,9 +2,39 @@ import { getJobs, appendJob } from '@/lib/sheets';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
-export async function GET(_req: NextRequest) {
+// Accepts optional filter query params so the client avoids downloading
+// the full dataset on every filter change once the job count grows.
+//
+// All params are optional — omitting them returns the full dataset
+// (backward-compatible with existing SWR hooks / SSR pre-fetch).
+export async function GET(req: NextRequest) {
   try {
-    const jobs = await getJobs();
+    const sp       = req.nextUrl.searchParams;
+    const keyword  = sp.get('keyword')?.toLowerCase().trim()  ?? '';
+    const category = sp.get('category')?.trim() ?? '';
+    const type     = sp.get('type')?.trim()     ?? '';
+    const location = sp.get('location')?.toLowerCase().trim() ?? '';
+    const salaryMin = parseInt(sp.get('salaryMin') ?? '0', 10) || 0;
+    const salaryMax = parseInt(sp.get('salaryMax') ?? '0', 10) || 0;
+
+    let jobs = await getJobs();
+
+    const hasFilter = keyword || category || type || location || salaryMin || salaryMax;
+    if (hasFilter) {
+      jobs = jobs.filter((job) => {
+        if (category && job.category !== category)                      return false;
+        if (type     && job.type     !== type)                          return false;
+        if (location && !job.location.toLowerCase().includes(location)) return false;
+        if (salaryMin > 0 && job.salaryMax > 0 && job.salaryMax < salaryMin) return false;
+        if (salaryMax > 0 && job.salaryMin > 0 && job.salaryMin > salaryMax) return false;
+        if (keyword) {
+          const hay = `${job.title} ${job.company} ${job.description}`.toLowerCase();
+          if (!hay.includes(keyword)) return false;
+        }
+        return true;
+      });
+    }
+
     return Response.json(jobs, {
       headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' },
     });
@@ -18,10 +48,7 @@ export async function GET(_req: NextRequest) {
 }
 
 // ── POST /api/jobs ────────────────────────────────────────────────
-// Creates a new job row in Google Sheets and fires the publish webhook.
-// Requires header:  x-admin-key: <ADMIN_KEY env var>
 export async function POST(req: NextRequest) {
-  // ── Auth ─────────────────────────────────────────────────────
   const ADMIN_KEY = process.env.ADMIN_KEY;
   if (!ADMIN_KEY) {
     return NextResponse.json(
@@ -33,7 +60,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // ── Parse & validate ─────────────────────────────────────────
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -47,7 +73,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Append to Google Sheets ───────────────────────────────────
   let jobId: string;
   try {
     jobId = await appendJob({
@@ -69,12 +94,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to write to Google Sheets' }, { status: 502 });
   }
 
-  // ── Fire publish webhook (non-blocking — failure doesn't fail the job) ──
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
   const SITE_URL       = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
   if (PUBLISH_SECRET) {
-    // Pass raw fields so the webhook doesn't need to re-query Sheets
     fetch(`${SITE_URL}/api/webhooks/publish-job`, {
       method: 'POST',
       headers: {
@@ -82,18 +105,11 @@ export async function POST(req: NextRequest) {
         'x-webhook-secret': PUBLISH_SECRET,
       },
       body: JSON.stringify({
-        id:          jobId,
-        title:       String(title),
-        company:     String(company),
-        location:    String(location),
-        type:        String(type),
-        category:    String(category),
-        salaryMin:   Number(body.salaryMin) || 0,
-        salaryMax:   Number(body.salaryMax) || 0,
-        currency:    String(body.currency ?? 'MMK'),
-        description: String(description),
-        isUrgent:    Boolean(body.isUrgent),
-        postedAt:    new Date().toISOString(),
+        id: jobId, title: String(title), company: String(company),
+        location: String(location), type: String(type), category: String(category),
+        salaryMin: Number(body.salaryMin) || 0, salaryMax: Number(body.salaryMax) || 0,
+        currency: String(body.currency ?? 'MMK'), description: String(description),
+        isUrgent: Boolean(body.isUrgent), postedAt: new Date().toISOString(),
       }),
     }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
   }

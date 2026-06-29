@@ -5,6 +5,7 @@ import { Bookmark } from 'lucide-react';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { StatsBar } from '@/components/landing/StatsBar';
 import { Testimonials } from '@/components/landing/Testimonials';
+import { JobAlerts } from '@/components/landing/JobAlerts';
 import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { JobGrid } from '@/components/jobs/JobGrid';
@@ -28,15 +29,16 @@ interface Props {
 }
 
 export function HomeClient({ initialJobs }: Props) {
-  const { jobs, loading, error } = useJobs(initialJobs);
   const [filters, setFilters] = useState<FiltersType>(DEFAULT_FILTERS);
   const [showSaved, setShowSaved] = useState(false);
   const { savedIds } = useSavedJobs();
 
-  const filtered = filterJobs(jobs, filters);
+  // Server-side filtering when browsing; fetch all when in saved-jobs mode
+  const { jobs, loading, error } = useJobs(initialJobs, showSaved ? DEFAULT_FILTERS : filters);
+
   const displayJobs = showSaved
-    ? filtered.filter((j) => savedIds.includes(j.id))
-    : filtered;
+    ? filterJobs(jobs, filters).filter((j) => savedIds.includes(j.id))
+    : jobs;
 
   function handleFilterChange(patch: Partial<FiltersType>) {
     setFilters((prev) => ({ ...prev, ...patch }));
@@ -94,7 +96,7 @@ export function HomeClient({ initialJobs }: Props) {
 
               {!loading && (
                 <span className="rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
-                  {filtered.length} {filtered.length === 1 ? 'role' : 'roles'} live
+                  {displayJobs.length} {displayJobs.length === 1 ? 'role' : 'roles'} live
                 </span>
               )}
             </div>
@@ -133,6 +135,7 @@ export function HomeClient({ initialJobs }: Props) {
       </section>
 
       <Testimonials />
+      <JobAlerts />
       <JoinCommunity />
     </>
   );

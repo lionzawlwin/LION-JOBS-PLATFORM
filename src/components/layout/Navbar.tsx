@@ -6,10 +6,12 @@ import { Sun, Moon, Briefcase, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { t, toggleLang } = useLanguage();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
@@ -26,14 +28,24 @@ export function Navbar() {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-5 md:flex">
           <Link href="/#jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Find Jobs
+            {t('nav_find_jobs')}
           </Link>
           <Link href="/resume-builder" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Resume Builder
+            {t('nav_resume')}
           </Link>
           <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Dashboard
+            {t('nav_dashboard')}
           </Link>
+
+          {/* Language toggle */}
+          <button
+            aria-label="Switch language"
+            onClick={toggleLang}
+            className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            {t('nav_lang_toggle')}
+          </button>
+
           <button
             aria-label="Toggle theme"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -45,12 +57,19 @@ export function Navbar() {
             href="/#jobs"
             className={cn(buttonVariants({ size: 'sm' }), 'bg-brand-600 hover:bg-brand-700 text-white rounded-xl')}
           >
-            Browse Jobs
+            {t('nav_browse')}
           </Link>
         </nav>
 
         {/* Mobile controls */}
         <div className="flex items-center gap-2 md:hidden">
+          <button
+            aria-label="Switch language"
+            onClick={toggleLang}
+            className="rounded-lg border border-border px-2 py-1 text-xs font-semibold text-muted-foreground"
+          >
+            {t('nav_lang_toggle')}
+          </button>
           <button
             aria-label="Toggle theme"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -73,13 +92,13 @@ export function Navbar() {
         <div className="border-t border-border bg-background md:hidden">
           <nav className="flex flex-col gap-1 px-4 py-3">
             <Link href="/#jobs" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              Find Jobs
+              {t('nav_find_jobs')}
             </Link>
             <Link href="/resume-builder" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              Resume Builder
+              {t('nav_resume')}
             </Link>
             <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              Dashboard
+              {t('nav_dashboard')}
             </Link>
           </nav>
         </div>

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Search, ArrowRight, Briefcase, Users, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobCategory } from '@/types';
 
 // ── Lazy-load: keeps the 3D bundle out of the critical path.
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function HeroSection({ onSearch }: Props) {
+  const { t } = useLanguage();
   const [keyword, setKeyword] = useState('');
   const [activeCategory, setActiveCategory] = useState<JobCategory | ''>('');
 
@@ -78,7 +80,7 @@ export function HeroSection({ onSearch }: Props) {
         {/* Badge */}
         <motion.div custom={0} initial="hidden" animate="show" variants={fadeUp} className="mb-5 inline-flex">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-200 bg-gold-50 px-4 py-1.5 text-xs font-semibold text-gold-700 dark:border-gold-700/30 dark:bg-gold-600/10 dark:text-gold-400">
-            🦁 Myanmar&apos;s #1 Job Agency
+            🦁 {t('hero_badge')}
           </span>
         </motion.div>
 
@@ -87,9 +89,8 @@ export function HeroSection({ onSearch }: Props) {
           custom={1} initial="hidden" animate="show" variants={fadeUp}
           className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
         >
-          Find Your Dream Job{' '}
           <span className="bg-gradient-to-r from-brand-600 via-gold-500 to-brand-500 bg-clip-text text-transparent">
-            in Myanmar
+            {t('hero_headline')}
           </span>
         </motion.h1>
 
@@ -98,7 +99,7 @@ export function HeroSection({ onSearch }: Props) {
           custom={2} initial="hidden" animate="show" variants={fadeUp}
           className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg"
         >
-          Browse hundreds of vetted positions. Apply in minutes. Our expert team matches you with roles that fit your skills and salary expectations.
+          {t('hero_sub')}
         </motion.p>
 
         {/* ── Search bar ─────────────────────────────────────────── */}
@@ -112,14 +113,14 @@ export function HeroSection({ onSearch }: Props) {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Job title, company, or keyword…"
+            placeholder={t('hero_search_placeholder')}
             className="flex-1 bg-transparent py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           <button
             type="submit"
             className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25"
           >
-            Search <ArrowRight size={14} />
+            {t('hero_search_btn')} <ArrowRight size={14} />
           </button>
         </motion.form>
 
@@ -150,9 +151,9 @@ export function HeroSection({ onSearch }: Props) {
           custom={5} initial="hidden" animate="show" variants={fadeUp}
           className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground"
         >
-          <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-gold-500" /> 500+ open roles</span>
-          <span className="flex items-center gap-1.5"><Building2 size={13} className="text-gold-500" /> 50+ partner companies</span>
-          <span className="flex items-center gap-1.5"><Users size={13} className="text-gold-500" /> Free for candidates</span>
+          <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-gold-500" /> 500+ {t('hero_stat_roles')}</span>
+          <span className="flex items-center gap-1.5"><Building2 size={13} className="text-gold-500" /> 50+ {t('hero_stat_companies')}</span>
+          <span className="flex items-center gap-1.5"><Users size={13} className="text-gold-500" /> {t('hero_stat_free')}</span>
         </motion.div>
 
       </div>

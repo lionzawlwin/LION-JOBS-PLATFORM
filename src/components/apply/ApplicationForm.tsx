@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { CVUpload } from './CVUpload';
 import { SuccessModal } from './SuccessModal';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── Zod schemas ──────────────────────────────────────────────────
 const baseSchema = z.object({
@@ -57,6 +58,7 @@ interface ApplicationFormProps {
 }
 
 export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationFormProps) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'cv' | 'linkedin'>('cv');
   const [successOpen, setSuccessOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -127,7 +129,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
         {/* Full Name */}
         <div className="space-y-1.5">
-          <Label htmlFor="fullName">Full Name <span className="text-danger">*</span></Label>
+          <Label htmlFor="fullName">{t('form_full_name')} <span className="text-danger">*</span></Label>
           <Input
             id="fullName"
             placeholder="e.g. Aung Ko Ko"
@@ -142,7 +144,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
 
         {/* Email */}
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email Address <span className="text-danger">*</span></Label>
+          <Label htmlFor="email">{t('form_email')} <span className="text-danger">*</span></Label>
           <Input
             id="email"
             type="email"
@@ -159,7 +161,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <Label htmlFor="phone">Phone Number <span className="text-danger">*</span></Label>
+          <Label htmlFor="phone">{t('form_phone')} <span className="text-danger">*</span></Label>
           <Input
             id="phone"
             type="tel"
@@ -176,7 +178,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
 
         {/* Position */}
         <div className="space-y-1.5">
-          <Label htmlFor="position">Applied Position <span className="text-danger">*</span></Label>
+          <Label htmlFor="position">{t('form_position')} <span className="text-danger">*</span></Label>
           <Input
             id="position"
             placeholder="e.g. Senior Software Engineer"
@@ -190,7 +192,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
 
         {/* CV / LinkedIn toggle */}
         <div className="space-y-3">
-          <Label>Portfolio / CV <span className="text-danger">*</span></Label>
+          <Label>{t('form_portfolio')} <span className="text-danger">*</span></Label>
 
           {/* Toggle pills */}
           <div className="inline-flex rounded-lg border border-border p-1 gap-1">
@@ -204,7 +206,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <FileUp size={14} /> Upload CV
+              <FileUp size={14} /> {t('form_upload_cv')}
             </button>
             <button
               type="button"
@@ -271,15 +273,15 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
         >
           {isSubmitting ? (
             <>
-              <Loader2 size={16} className="mr-2 animate-spin" /> Submitting…
+              <Loader2 size={16} className="mr-2 animate-spin" /> {t('form_submitting')}
             </>
           ) : (
-            'Submit Application'
+            t('form_submit')
           )}
         </Button>
 
         <p className="text-center text-xs text-muted-foreground">
-          By submitting, you agree that Lion Jobs Agency may share your details with the hiring company.
+          {t('form_consent')}
         </p>
       </form>
 
