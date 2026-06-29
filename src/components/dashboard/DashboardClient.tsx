@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Users, Info, PenSquare, Mail } from 'lucide-react';
+import { BarChart2, Building2, Users, Info, PenSquare, Mail, LayoutGrid, Table2 } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
@@ -9,6 +9,7 @@ import { CompaniesView } from './CompaniesView';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
 import { AnalyticsOverview } from './AnalyticsOverview';
+import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +28,8 @@ interface Props {
 }
 
 export function DashboardClient({ isAdmin = false }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab,   setActiveTab]   = useState<Tab>('overview');
+  const [candView,    setCandView]    = useState<'table' | 'board'>('table');
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only
@@ -80,7 +82,33 @@ export function DashboardClient({ isAdmin = false }: Props) {
         <>
           <PostJobForm />
           <JobsPanel />
-          <KanbanBoard />
+
+          {/* View toggle */}
+          <div className="my-4 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-foreground">Candidate Pipeline</h3>
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1">
+              <button
+                onClick={() => setCandView('table')}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                  candView === 'table' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <Table2 size={12} /> Table
+              </button>
+              <button
+                onClick={() => setCandView('board')}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                  candView === 'board' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <LayoutGrid size={12} /> Kanban
+              </button>
+            </div>
+          </div>
+
+          {candView === 'table' ? <CandidateDataTable /> : <KanbanBoard />}
         </>
       )}
 

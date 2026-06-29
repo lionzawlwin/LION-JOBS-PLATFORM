@@ -51,12 +51,16 @@ export interface Candidate {
   email?: string;
   phone: string;
   position: string;
+  company?: string;
   cvUrl?: string;
   linkedinUrl?: string;
   matchScore: number;
   stage: ApplicationStatus;
   appliedAt: string;
   notes?: string;
+  salaryExpected?: string;
+  interviewDate?: string;
+  source?: string;
 }
 
 export interface JobFilters {

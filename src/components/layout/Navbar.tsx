@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Briefcase, Menu, X, Inbox } from 'lucide-react';
+import { Sun, Moon, Briefcase, Menu, X, Inbox, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,12 @@ export function Navbar() {
             <Inbox size={14} /> {t('nav_drop_cv')}
           </Link>
           <Link
+            href="/hire-with-us"
+            className={cn(buttonVariants({ size: 'sm' }), 'border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-600/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20 rounded-xl gap-1.5')}
+          >
+            <Building2 size={14} /> Hire Talent
+          </Link>
+          <Link
             href="/#jobs"
             className={cn(buttonVariants({ size: 'sm' }), 'bg-brand-600 hover:bg-brand-700 text-white rounded-xl')}
           >
@@ -113,6 +119,13 @@ export function Navbar() {
               className="mt-1 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5 text-sm font-semibold text-brand-700 dark:border-brand-700/40 dark:bg-brand-600/10 dark:text-brand-300"
             >
               <Inbox size={15} /> {t('nav_drop_cv')}
+            </Link>
+            <Link
+              href="/hire-with-us"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-700 dark:border-amber-600/40 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+              <Building2 size={15} /> Hire Talent
             </Link>
           </nav>
         </div>

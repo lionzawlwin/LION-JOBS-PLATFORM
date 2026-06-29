@@ -8,6 +8,7 @@ const JOBS_TAB        = process.env.GOOGLE_JOBS_TAB        ?? 'Jobs';
 const CANDIDATES_TAB  = process.env.GOOGLE_CANDIDATES_TAB  ?? 'Pipeline';
 const SUBSCRIBERS_TAB = process.env.GOOGLE_SUBSCRIBERS_TAB ?? 'Subscribers';
 const COMPANIES_TAB   = process.env.GOOGLE_COMPANIES_TAB   ?? 'Companies';
+const B2B_LEADS_TAB   = process.env.GOOGLE_B2B_LEADS_TAB   ?? 'B2B_Leads';
 
 function isConfigured(): boolean {
   return Boolean(
@@ -209,16 +210,19 @@ export async function getCandidates(): Promise<Candidate[]> {
       name:        row[CANDIDATE_COL.full_name]    || '',
       email:       row[CANDIDATE_COL.email]        || undefined,
       phone:       row[CANDIDATE_COL.phone]        || '',
-      // job_title is the candidate's applied-for position (replaces old "position" field)
       position:    row[CANDIDATE_COL.job_title]    || '',
+      company:     row[CANDIDATE_COL.company]      || undefined,
       cvUrl:       row[CANDIDATE_COL.cv_url]       || undefined,
-      linkedinUrl: undefined,  // field removed from Pipeline tab; kept in type for API compatibility
+      linkedinUrl: undefined,
       matchScore:  Number(row[CANDIDATE_COL.rating]) || 0,
       stage: (VALID_STAGES.has(row[CANDIDATE_COL.stage] as ApplicationStatus)
         ? row[CANDIDATE_COL.stage]
         : 'Applied') as ApplicationStatus,
-      appliedAt: row[CANDIDATE_COL.applied_at] || new Date().toISOString(),
-      notes:     row[CANDIDATE_COL.notes]      || undefined,
+      appliedAt:      row[CANDIDATE_COL.applied_at]        || new Date().toISOString(),
+      notes:          row[CANDIDATE_COL.notes]              || undefined,
+      salaryExpected: row[CANDIDATE_COL.salary_expected]   || undefined,
+      interviewDate:  row[CANDIDATE_COL.interview_date]    || undefined,
+      source:         row[CANDIDATE_COL.source]            || undefined,
     }));
 }
 
@@ -630,6 +634,65 @@ export async function appendCompany(data: {
     insertDataOption: 'INSERT_ROWS',
     requestBody:      { values: [row] },
   });
+  return id;
+}
+
+// ── B2B Leads (Employer Portal) ───────────────────────────────────
+// Tab: B2B_Leads | Cols A–Q
+//   A lead_id | B company_name | C industry | D location | E website
+//   F contact_name | G contact_title | H work_email | I phone
+//   J job_title | K headcount | L work_setup | M salary_budget
+//   N urgency | O requirements | P submitted_at | Q status
+export async function appendB2bLead(data: {
+  companyName:   string;
+  industry:      string;
+  location:      string;
+  website:       string;
+  contactName:   string;
+  contactTitle:  string;
+  workEmail:     string;
+  phone:         string;
+  jobTitle:      string;
+  headcount:     string;
+  workSetup:     string;
+  salaryBudget:  string;
+  urgency:       string;
+  requirements:  string;
+}): Promise<string> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+
+  const id  = `b2b-${Date.now()}`;
+  const now = new Date().toISOString();
+  const sheets = getSheets();
+
+  const row = [
+    id,
+    data.companyName,
+    data.industry,
+    data.location,
+    data.website,
+    data.contactName,
+    data.contactTitle,
+    data.workEmail,
+    data.phone,
+    data.jobTitle,
+    data.headcount,
+    data.workSetup,
+    data.salaryBudget,
+    data.urgency,
+    data.requirements,
+    now,
+    'New',
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${B2B_LEADS_TAB}!A:Q`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody:      { values: [row] },
+  });
+
   return id;
 }
 
