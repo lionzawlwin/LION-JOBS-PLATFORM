@@ -104,7 +104,10 @@ export async function POST(req: NextRequest) {
   const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
 
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
-  const SITE_URL       = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  // NEXT_PUBLIC_ vars are inlined by Turbopack at build time and become ""
+  // (empty string) when unset — "" ?? fallback never fires because "" is not
+  // null/undefined.  Use the non-public SITE_URL instead (runtime lookup).
+  const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
   if (PUBLISH_SECRET) {
     fetch(`${SITE_URL}/api/webhooks/publish-job`, {

@@ -3,7 +3,8 @@ import { getJobs } from '@/lib/sheets';
 import { buildJobSlug, formatSalary } from '@/lib/utils';
 import type { Job } from '@/types';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+// NEXT_PUBLIC_ vars are inlined as "" by Turbopack when unset — use runtime var.
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 const WEBHOOK_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
 const MAKE_PUBLISH_URL = process.env.MAKE_PUBLISH_WEBHOOK_URL;
 

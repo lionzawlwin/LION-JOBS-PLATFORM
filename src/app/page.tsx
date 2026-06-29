@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     'အလုပ်အကိုင်', 'ရန်ကုန် အလုပ်', 'lion jobs', 'recruitment myanmar',
   ],
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app'}/`,
+    canonical: `${process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app'}/`,
   },
   openGraph: {
     title: "Lion Jobs Agency — Myanmar's #1 Job Portal",

@@ -38,7 +38,7 @@ export function JobPostingSchema({ job, jobUrl }: Props) {
     hiringOrganization: {
       '@type': 'Organization',
       name: job.company,
-      sameAs: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app',
+      sameAs: process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app',
     },
 
     // ── Location ─────────────────────────────────────────────────

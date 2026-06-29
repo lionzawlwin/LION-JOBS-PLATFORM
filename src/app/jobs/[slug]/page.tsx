@@ -18,7 +18,7 @@ import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
 // on first request and are then cached (dynamicParams = true is the default).
 export const revalidate = 3600;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
 // ── Static params ─────────────────────────────────────────────────
 export async function generateStaticParams() {

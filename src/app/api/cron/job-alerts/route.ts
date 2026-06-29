@@ -4,7 +4,7 @@ import { getJobs } from '@/lib/sheets';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
 export async function GET(req: Request) {
   // Vercel Cron authenticates with Bearer + CRON_SECRET

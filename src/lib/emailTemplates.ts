@@ -1,4 +1,4 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 const BRAND    = '#7C3AED'; // brand-600 purple
 
 const baseStyles = `

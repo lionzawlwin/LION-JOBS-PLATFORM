@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getJobs } from '@/lib/sheets';
 import { buildJobSlug } from '@/lib/utils';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
 export const revalidate = 3600;
 

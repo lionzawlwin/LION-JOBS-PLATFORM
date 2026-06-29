@@ -28,7 +28,7 @@ export interface TemplateVars {
 
 type TemplateSet = Record<PostPlatform, string>;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
 function fill(template: string, vars: TemplateVars): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => {
