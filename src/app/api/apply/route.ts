@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { forwardToMake } from '@/lib/makeWebhook';
-import { appendCandidate } from '@/lib/sheets';
+import { appendCandidate, updateCandidateCvUrl } from '@/lib/sheets';
+import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import type { NextRequest } from 'next/server';
 
 const applySchema = z
@@ -59,8 +60,9 @@ export async function POST(req: NextRequest) {
   const candidateNotes = desiredCategory ? `Category: ${desiredCategory}` : undefined;
 
   // ── 1. Write directly to Google Sheets Pipeline tab ──────────────
+  let candidateId: string | undefined;
   try {
-    await appendCandidate({
+    candidateId = await appendCandidate({
       fullName, email, phone, position, jobId, linkedinUrl, cvFileName,
       expectedSalary, notes: candidateNotes,
       noticePeriod, cityLocation, education, experienceYears,
@@ -68,29 +70,51 @@ export async function POST(req: NextRequest) {
     });
     console.log(`[apply] Candidate "${fullName}" appended to Pipeline sheet.`);
   } catch (err) {
-    // Log full error server-side — this is the most important failure to surface.
     console.error('[apply] CRITICAL — Google Sheets append failed:', err);
     console.error('[apply] Candidate data that failed to save:', {
       fullName, email, phone, position, jobId,
     });
-    // Return 502 so the client knows the submission did not save.
     return Response.json(
       { error: 'Could not save your application. Please try again or contact us directly.' },
       { status: 502 },
     );
   }
 
-  // ── 2. Forward to Make.com (CV storage / email confirmation) ──────
-  // Non-critical: if Make.com is down or unconfigured we still return success
-  // because the data is already in Google Sheets.
+  // ── 2. Upload CV directly to Google Drive ─────────────────────────
+  // Non-critical: if Drive upload fails the application is already saved in Sheets.
+  const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
+  if (parentFolderId && cvBase64 && cvFileName) {
+    (async () => {
+      try {
+        // a. Create a sub-folder named after the candidate
+        const folderId = await createCandidateFolder(fullName, parentFolderId);
+
+        // b+c. Upload the CV file into that folder
+        const driveUrl = await uploadFileToDrive(
+          { name: cvFileName, base64: cvBase64 },
+          folderId,
+        );
+
+        console.log(`[apply] CV uploaded to Drive for "${fullName}": ${driveUrl}`);
+
+        // d. Write the Drive URL back into the candidate's row in Sheets
+        if (candidateId) {
+          await updateCandidateCvUrl(candidateId, driveUrl);
+          console.log(`[apply] cv_url updated in Sheets for candidate ${candidateId}`);
+        }
+      } catch (err) {
+        // Non-fatal — Sheets row already exists
+        console.error('[apply] Drive upload error (non-critical — Sheets write succeeded):', err);
+      }
+    })();
+  }
+
+  // ── 3. Forward to Make.com (email confirmation only) ──────────────
+  // CV base64 is intentionally NOT sent — Make.com no longer handles Drive storage.
   try {
     await forwardToMake({
-      fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl,
+      fullName, email, phone, position, jobId, linkedinUrl,
       expectedSalary, desiredCategory,
-      // Explicit fields for Make.com Google Drive automation
-      candidateName: fullName,
-      files: cvFileName ? [{ name: cvFileName, type: 'cv', base64: cvBase64 ?? null }] : [],
-      // Fields Make.com uses to route & send the confirmation email
       event:                'application_submitted',
       applicationStatus:    'Under Review',
       confirmationEmailTo:  email ?? null,
@@ -98,24 +122,6 @@ export async function POST(req: NextRequest) {
     } as Parameters<typeof forwardToMake>[0] & Record<string, unknown>);
   } catch (err) {
     console.error('[apply] Make.com webhook error (non-critical — sheet write succeeded):', err);
-    // Intentionally NOT returning an error response here.
-  }
-
-  // ── 3. Forward to dedicated Google Drive upload webhook ───────────
-  // Sends candidateName + files[] to a separate Make.com scenario that
-  // handles only Drive storage, keeping CV uploads decoupled from the
-  // general application notification flow.
-  const driveWebhookUrl = process.env.MAKE_DRIVE_WEBHOOK_URL;
-  if (driveWebhookUrl && cvFileName && cvBase64) {
-    fetch(driveWebhookUrl, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        candidateName: fullName,
-        files: [{ name: cvFileName, type: 'cv', base64: cvBase64 }],
-      }),
-      signal: AbortSignal.timeout(8_000),
-    }).catch((err) => console.error('[apply] Drive webhook error (non-critical):', err));
   }
 
   return Response.json({ ok: true, confirmationSent: Boolean(email) });
