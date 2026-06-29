@@ -26,6 +26,7 @@ export interface Job {
   currency: string;
   description: string;
   requirements: string[];
+  benefits?: string[];
   postedAt: string;
   isUrgent?: boolean;
   isFeatured?: boolean;

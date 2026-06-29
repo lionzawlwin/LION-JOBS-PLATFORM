@@ -83,6 +83,7 @@ const JOB_COL = {
   hired_count:           18,
   notes:                 19,
   screening_questions:   20,
+  benefits:              21,
 } as const;
 
 // cache() deduplicates calls within a single server render (generateMetadata + page).
@@ -95,7 +96,7 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A2:U`,
+    range: `${JOBS_TAB}!A2:V`,
   });
 
   if (!data.values?.length) {
@@ -129,6 +130,9 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
         if (!raw) return undefined;
         try { return JSON.parse(raw); } catch { return undefined; }
       })(),
+      benefits: row[JOB_COL.benefits]
+        ? String(row[JOB_COL.benefits]).split(',').map((b: string) => b.trim()).filter(Boolean)
+        : undefined,
     }));
 });
 
@@ -295,6 +299,7 @@ export async function appendJob(data: {
   requirements: string[];   // stored pipe-separated in col K
   isUrgent: boolean;
   isFeatured: boolean;
+  benefits?: string[];      // stored comma-separated in col V
 }): Promise<string> {
   if (!isConfigured()) throw new Error('Google Sheets not configured.');
 
@@ -325,11 +330,13 @@ export async function appendJob(data: {
     '',                                    // 17 applications_count (formula — leave blank)
     '',                                    // 18 hired_count        (formula — leave blank)
     '',                                    // 19 notes
+    '',                                    // 20 screening_questions (set manually)
+    (data.benefits ?? []).join(', '),      // 21 benefits (comma-separated)
   ];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A:T`,
+    range: `${JOBS_TAB}!A:V`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },

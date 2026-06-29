@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { AdminBar } from '@/components/layout/AdminBar';
 import { HomeClient } from '@/components/HomeClient';
 import { getJobs } from '@/lib/sheets';
 
@@ -42,6 +43,7 @@ export default async function HomePage() {
       <main className="flex-1">
         <HomeClient initialJobs={initialJobs} />
       </main>
+      <AdminBar />
       <Footer />
     </div>
   );

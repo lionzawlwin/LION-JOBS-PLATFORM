@@ -33,9 +33,6 @@ export function Navbar() {
           <Link href="/resume-builder" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             {t('nav_resume')}
           </Link>
-          <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            {t('nav_dashboard')}
-          </Link>
           <Link href="/my-applications" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             {t('nav_my_apps')}
           </Link>
@@ -106,9 +103,6 @@ export function Navbar() {
             </Link>
             <Link href="/resume-builder" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               {t('nav_resume')}
-            </Link>
-            <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-              {t('nav_dashboard')}
             </Link>
             <Link href="/my-applications" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               {t('nav_my_apps')}

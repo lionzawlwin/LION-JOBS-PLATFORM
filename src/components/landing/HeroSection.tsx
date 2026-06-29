@@ -147,18 +147,22 @@ export function HeroSection({ onSearch }: Props) {
           ))}
         </motion.div>
 
-        {/* Drop CV secondary CTA */}
+        {/* Drop CV — prominent CTA card */}
         <motion.div
           custom={5} initial="hidden" animate="show" variants={fadeUp}
-          className="mt-5 flex justify-center"
+          className="mt-6"
         >
-          <Link
-            href="/drop-cv"
-            className="inline-flex items-center gap-2 rounded-full border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm px-5 py-2 text-sm font-medium text-muted-foreground hover:border-brand-400/60 hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
-          >
-            <Inbox size={14} />
-            {t('nav_drop_cv')}
-            <span className="text-xs text-muted-foreground/70">— no job required</span>
+          <Link href="/drop-cv" className="group block mx-auto max-w-2xl">
+            <div className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-brand-400/50 dark:border-brand-500/40 bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm px-6 py-5 shadow-lg shadow-brand-600/8 transition-all duration-200 hover:border-brand-500 hover:bg-brand-50/80 dark:hover:bg-brand-600/10 hover:shadow-brand-600/15">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30 group-hover:shadow-brand-600/50 group-hover:scale-105 transition-all duration-200">
+                <Inbox size={22} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-base font-bold text-foreground">Drop Your CV — No Job Required</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">Join our talent pool. We'll match you when the perfect job arrives. Free &amp; no spam.</p>
+              </div>
+              <ArrowRight size={20} className="shrink-0 text-brand-600 group-hover:translate-x-1 transition-transform duration-200" />
+            </div>
           </Link>
         </motion.div>
 

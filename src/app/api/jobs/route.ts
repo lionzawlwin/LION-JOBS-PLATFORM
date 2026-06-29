@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
       requirements: Array.isArray(body.requirements) ? body.requirements : [],
       isUrgent:     Boolean(body.isUrgent),
       isFeatured:   Boolean(body.isFeatured),
+      benefits:     Array.isArray(body.benefits) ? body.benefits : [],
     });
   } catch (err) {
     console.error('[POST /api/jobs] Sheets append failed:', err);
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
         salaryMin: Number(body.salaryMin) || 0, salaryMax: Number(body.salaryMax) || 0,
         currency: String(body.currency ?? 'MMK'), description: String(description),
         isUrgent: Boolean(body.isUrgent), postedAt: new Date().toISOString(),
+        benefits: Array.isArray(body.benefits) ? body.benefits : [],
       }),
     }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
   }

@@ -40,6 +40,7 @@ const schema = z.object({
   currency:     z.string(),
   description:  z.string().min(20, 'Description must be at least 20 characters'),
   requirements: z.string(),
+  benefits:     z.string(),
   isUrgent:     z.boolean(),
   isFeatured:   z.boolean(),
 });
@@ -91,6 +92,8 @@ export function PostJobForm() {
       isFeatured: false,
       salaryMin: 0,
       salaryMax: 0,
+      benefits: '',
+      requirements: '',
     },
   });
 
@@ -107,10 +110,15 @@ export function PostJobForm() {
     // Persist admin key for this session
     sessionStorage.setItem('lion_admin_key', data.adminKey);
 
-    // Parse requirements: one per line, filter blanks
+    // Parse requirements and benefits: one per line, filter blanks
     const requirements = data.requirements
       .split('\n')
       .map((r) => r.trim())
+      .filter(Boolean);
+
+    const benefits = data.benefits
+      .split('\n')
+      .map((b) => b.trim())
       .filter(Boolean);
 
     try {
@@ -120,7 +128,7 @@ export function PostJobForm() {
           'Content-Type': 'application/json',
           'x-admin-key': data.adminKey,
         },
-        body: JSON.stringify({ ...data, requirements }),
+        body: JSON.stringify({ ...data, requirements, benefits }),
       });
 
       const json = await res.json();
@@ -322,6 +330,18 @@ export function PostJobForm() {
                   className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">One requirement per line. Leave blank if not applicable.</p>
+              </div>
+
+              {/* Benefits */}
+              <div>
+                <Label>Benefits & Perks</Label>
+                <textarea
+                  rows={3}
+                  placeholder={`One benefit per line:\nHealth Insurance\nAnnual Bonus\nTransport Allowance\nRemote Work Options`}
+                  {...register('benefits')}
+                  className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">One benefit per line. Used by AI to write better Facebook posts.</p>
               </div>
 
               {/* Flags */}

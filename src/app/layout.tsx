@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Padauk } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { SessionProviderWrapper } from '@/components/providers/SessionProviderWrapper';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { SocialFloatWidget } from '@/components/ui/SocialFloatWidget';
 import { PWARegister } from '@/components/PWARegister';
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <SessionProviderWrapper>
           <LanguageProvider>
             {children}
             <SocialFloatWidget />
@@ -61,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }}
             />
           </LanguageProvider>
+          </SessionProviderWrapper>
         </ThemeProvider>
       </body>
     </html>

@@ -89,6 +89,10 @@ function buildPayload(job: Job) {
       `ကျွန်တော်/ကျွန်မ "${job.title}" ရာထူးအတွက် လျှောက်ထားလိုပါသည်`,
     )}`,
 
+    // Benefits (for AI-generated social posts)
+    benefits: job.benefits ?? [],
+    benefitsText: (job.benefits ?? []).join(', ') || '',
+
     // Pre-formatted message strings for Telegram / Viber / Facebook
     messageShort: buildMessage(job, salary, slug),
     // 'text' is an alias for messageShort — Telegram modules in Make.com
@@ -149,6 +153,7 @@ export async function POST(req: NextRequest) {
       postedAt: body.postedAt ?? new Date().toISOString(),
       isUrgent: Boolean(body.isUrgent),
       isFeatured: Boolean(body.isFeatured),
+      benefits: Array.isArray(body.benefits) ? body.benefits : [],
     };
     payload = buildPayload(syntheticJob);
   } else {
