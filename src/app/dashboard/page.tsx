@@ -1,13 +1,11 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
-import { PostJobForm } from '@/components/dashboard/PostJobForm';
-import { JobsPanel } from '@/components/dashboard/JobsPanel';
-import { LayoutDashboard, Info } from 'lucide-react';
+import { DashboardClient } from '@/components/dashboard/DashboardClient';
+import { LayoutDashboard } from 'lucide-react';
 
 export const metadata = {
-  title: 'Candidate Pipeline | Lion Jobs Agency',
-  description: 'Internal dashboard for managing candidate applications and pipeline stages.',
+  title: 'Dashboard | Lion Jobs Agency',
+  description: 'Manage job postings and candidate applications. Candidates can also track their application status here.',
 };
 
 export default function DashboardPage() {
@@ -22,30 +20,15 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <LayoutDashboard size={22} className="text-brand-600" />
               <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-                Candidate Pipeline
+                Dashboard
               </h1>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Drag candidates between columns to update their stage in real time.
+              Employers: manage jobs and candidates. Candidates: track your application status.
             </p>
           </div>
 
-          {/* Internal notice */}
-          <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-            <Info size={14} className="mt-0.5 shrink-0" />
-            <span>
-              Internal use only — Lion Jobs Agency staff dashboard for managing candidate applications.
-            </span>
-          </div>
-
-          {/* Post a Job */}
-          <PostJobForm />
-
-          {/* Manage / Delete Jobs */}
-          <JobsPanel />
-
-          {/* Candidate Board */}
-          <KanbanBoard />
+          <DashboardClient />
         </div>
       </main>
 

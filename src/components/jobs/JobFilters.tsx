@@ -1,6 +1,7 @@
 'use client';
 
-import { X, SlidersHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -30,10 +31,13 @@ interface Props {
 }
 
 export function JobFilters({ filters, onChange, total }: Props) {
-  const hasActiveFilters = Boolean(filters.category || filters.type || filters.location);
+  const [showSalary, setShowSalary] = useState(false);
+  const hasSalary = (filters.salaryMin ?? 0) > 0 || (filters.salaryMax ?? 0) > 0;
+  const hasActiveFilters = Boolean(filters.category || filters.type || filters.location || hasSalary);
 
   function clearAll() {
-    onChange({ category: '', type: '', location: '' });
+    onChange({ category: '', type: '', location: '', salaryMin: 0, salaryMax: 0 });
+    setShowSalary(false);
   }
 
   return (
@@ -109,6 +113,22 @@ export function JobFilters({ filters, onChange, total }: Props) {
           </SelectContent>
         </Select>
 
+        {/* Salary toggle button */}
+        <button
+          type="button"
+          onClick={() => setShowSalary((v) => !v)}
+          className={cn(
+            'flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-colors',
+            hasSalary
+              ? 'border-brand-600/50 bg-brand-50 text-brand-700 dark:bg-brand-600/10 dark:text-brand-300'
+              : 'border-border/70 bg-background text-muted-foreground hover:text-foreground',
+          )}
+        >
+          Salary
+          {hasSalary && <span className="text-[10px] font-bold">✓</span>}
+          <ChevronDown size={12} className={cn('transition-transform', showSalary && 'rotate-180')} />
+        </button>
+
         {/* Clear button */}
         {hasActiveFilters && (
           <button
@@ -125,6 +145,10 @@ export function JobFilters({ filters, onChange, total }: Props) {
             filters.category && { label: filters.category, clear: () => onChange({ category: '' }) },
             filters.type     && { label: filters.type,     clear: () => onChange({ type: '' }) },
             filters.location && { label: filters.location, clear: () => onChange({ location: '' }) },
+            hasSalary && {
+              label: `${filters.salaryMin ? filters.salaryMin + 'K' : ''}${filters.salaryMin && filters.salaryMax ? '–' : ''}${filters.salaryMax ? filters.salaryMax + 'K' : ''} MMK`,
+              clear: () => onChange({ salaryMin: 0, salaryMax: 0 }),
+            },
           ].filter(Boolean).map((pill) => {
             if (!pill) return null;
             return (
@@ -141,6 +165,53 @@ export function JobFilters({ filters, onChange, total }: Props) {
           })}
         </div>
       </div>
+
+      {/* ── Salary Range Row ── */}
+      {showSalary && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Salary (K MMK / month)</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              placeholder="Min"
+              value={filters.salaryMin || ''}
+              onChange={(e) => onChange({ salaryMin: Number(e.target.value) || 0 })}
+              className="h-9 w-24 rounded-lg border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+            />
+            <span className="text-xs text-muted-foreground">to</span>
+            <input
+              type="number"
+              min={0}
+              placeholder="Max"
+              value={filters.salaryMax || ''}
+              onChange={(e) => onChange({ salaryMax: Number(e.target.value) || 0 })}
+              className="h-9 w-24 rounded-lg border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+            />
+          </div>
+          <div className="flex gap-2 ml-auto">
+            {[
+              { label: 'Under 500K', min: 0, max: 500 },
+              { label: '500K–1M', min: 500, max: 1000 },
+              { label: '1M+', min: 1000, max: 0 },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => onChange({ salaryMin: preset.min, salaryMax: preset.max })}
+                className={cn(
+                  'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  filters.salaryMin === preset.min && filters.salaryMax === preset.max
+                    ? 'border-brand-600 bg-brand-600 text-white'
+                    : 'border-border/60 text-muted-foreground hover:border-brand-400 hover:text-brand-600',
+                )}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Results count ── */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
