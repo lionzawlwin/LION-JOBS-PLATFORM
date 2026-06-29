@@ -30,6 +30,8 @@ export interface Job {
   isUrgent?: boolean;
   isFeatured?: boolean;
   logoUrl?: string;
+  applicationsCount?: number;
+  deadline?: string;
 }
 
 export interface Candidate {

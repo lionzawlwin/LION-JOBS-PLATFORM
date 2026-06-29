@@ -117,8 +117,10 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
         ? String(row[JOB_COL.requirements]).split('|').map((r: string) => r.trim()).filter(Boolean)
         : [],
       postedAt:   row[JOB_COL.posted_at]   || new Date().toISOString(),
-      isUrgent:   String(row[JOB_COL.is_urgent]).toUpperCase()   === 'TRUE',
-      isFeatured: String(row[JOB_COL.is_featured]).toUpperCase() === 'TRUE',
+      isUrgent:          String(row[JOB_COL.is_urgent]).toUpperCase()   === 'TRUE',
+      isFeatured:        String(row[JOB_COL.is_featured]).toUpperCase() === 'TRUE',
+      applicationsCount: Number(row[JOB_COL.applications_count]) || 0,
+      deadline:          row[JOB_COL.deadline] || undefined,
     }));
 });
 
@@ -393,4 +395,51 @@ export async function updateCandidateStage(
     valueInputOption: 'RAW',
     requestBody: { values: [[stage]] },
   });
+}
+
+// ── getCandidatesByEmailOrPhone ────────────────────────────────────
+// Looks up all applications for a given email or phone number.
+// Used by the /my-applications self-serve status page.
+// Phone matching is partial so +959... matches 09... style variants.
+export async function getCandidatesByEmailOrPhone(query: string): Promise<{
+  id: string;
+  name: string;
+  position: string;
+  company: string;
+  stage: string;
+  appliedAt: string;
+  stageUpdatedAt: string;
+}[]> {
+  if (!isConfigured()) return [];
+
+  const sheets = getSheets();
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!A2:X`,
+  });
+
+  if (!data.values?.length) return [];
+
+  const q = query.toLowerCase().trim();
+  // Strip common phone prefixes so +959... matches 09...
+  const qDigits = q.replace(/\D/g, '').replace(/^(95|0)/, '');
+
+  const matches = data.values.filter((row) => {
+    const email = String(row[CANDIDATE_COL.email] ?? '').toLowerCase();
+    const phone = String(row[CANDIDATE_COL.phone] ?? '').replace(/\D/g, '').replace(/^(95|0)/, '');
+    return email === q || (qDigits.length >= 5 && phone.includes(qDigits));
+  });
+
+  return matches
+    .map((row) => ({
+      id:             String(row[CANDIDATE_COL.candidate_id] ?? ''),
+      name:           String(row[CANDIDATE_COL.full_name]    ?? ''),
+      position:       String(row[CANDIDATE_COL.job_title]    ?? ''),
+      company:        String(row[CANDIDATE_COL.company]      ?? ''),
+      stage:          String(row[CANDIDATE_COL.stage]        ?? 'Applied'),
+      appliedAt:      String(row[CANDIDATE_COL.applied_at]   ?? ''),
+      stageUpdatedAt: String(row[CANDIDATE_COL.stage_updated_at] ?? ''),
+    }))
+    .filter((c) => c.id)
+    .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
 }

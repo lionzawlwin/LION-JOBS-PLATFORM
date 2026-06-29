@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn, formatSalary, timeAgo, truncate, buildJobSlug } from '@/lib/utils';
 import { ShareButton } from '@/components/jobs/ShareButton';
 import { SaveButton } from '@/components/jobs/SaveButton';
+import { getJobSignals } from '@/lib/jobSignals';
 import type { Job } from '@/types';
 
 const SITE_URL =
@@ -22,9 +23,18 @@ const TYPE_COLORS: Record<string, string> = {
   'Hybrid': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
+const SIGNAL_STYLES: Record<string, string> = {
+  urgent:   'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  popular:  'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400',
+  closing:  'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  new:      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  featured: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+};
+
 export function JobCard({ job }: { job: Job }) {
   const slug    = buildJobSlug(job);
   const jobUrl  = `${SITE_URL}/jobs/${slug}`;
+  const signals = getJobSignals(job);
 
   return (
     <article className={cn(
@@ -73,6 +83,24 @@ export function JobCard({ job }: { job: Job }) {
         </span>
         <Badge variant="secondary" className="text-xs font-medium">{job.category}</Badge>
       </div>
+
+      {/* Social proof signals */}
+      {signals.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {signals.map((s) => (
+            <span
+              key={s.label}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                SIGNAL_STYLES[s.variant],
+              )}
+            >
+              {s.variant === 'urgent' && <Zap size={10} />}
+              {s.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Description */}
       <p className="text-sm text-muted-foreground leading-relaxed">

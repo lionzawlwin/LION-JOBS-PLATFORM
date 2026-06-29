@@ -8,6 +8,14 @@ export const translations = {
     nav_dashboard:      'Dashboard',
     nav_browse:         'Browse Jobs',
     nav_lang_toggle:    'မြန်မာ',
+    nav_my_apps:        'My Applications',
+
+    // Application status page
+    status_title:       'Track Your Applications',
+    status_placeholder: 'Enter your email or phone number',
+    status_check_btn:   'Check Status',
+    status_no_results:  'No applications found. Try a different email or phone.',
+    status_privacy:     'We only show your own applications. Your data is never shared.',
 
     // Hero
     hero_badge:         "Myanmar's #1 Job Agency",
@@ -60,6 +68,14 @@ export const translations = {
     nav_dashboard:      'ထိန်းချုပ်ခန်း',
     nav_browse:         'အလုပ်များကြည့်ပါ',
     nav_lang_toggle:    'English',
+    nav_my_apps:        'ကျွန်ုပ်၏ လျှောက်လွှာများ',
+
+    // Application status page
+    status_title:       'လျှောက်လွှာ စစ်ဆေးပါ',
+    status_placeholder: 'အီးမေးလ် သို့ ဖုန်းနံပါတ် ထည့်ပါ',
+    status_check_btn:   'စစ်ဆေးပါ',
+    status_no_results:  'လျှောက်လွှာ မတွေ့ပါ။ အီးမေးလ် သို့ ဖုန်းနံပါတ် ပြန်စစ်ပါ။',
+    status_privacy:     'သင်၏ လျှောက်လွှာများသာ ပြပါမည်။ ဒေတာ မျှဝေမည် မဟုတ်ပါ။',
 
     // Hero
     hero_badge:         'မြန်မာ့ အကောင်းဆုံး အလုပ်ရှာဖွေရေး',
