@@ -1,9 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import { MapPin, Clock, Zap, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { cn, formatSalary, timeAgo, truncate } from '@/lib/utils';
+import { cn, formatSalary, timeAgo, truncate, buildJobSlug } from '@/lib/utils';
+import { ShareButton } from '@/components/jobs/ShareButton';
 import type { Job } from '@/types';
+
+const SITE_URL =
+  typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
 const TYPE_COLORS: Record<string, string> = {
   'Full-time': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -14,16 +22,18 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function JobCard({ job }: { job: Job }) {
+  const slug    = buildJobSlug(job);
+  const jobUrl  = `${SITE_URL}/jobs/${slug}`;
+
   return (
     <article className={cn(
-      // Glassmorphism base — translucent so the Myanmar body pattern shows through
       'group relative flex flex-col gap-4 rounded-2xl p-6 transition-all duration-300',
       'glass-card',
       'hover:shadow-2xl hover:shadow-brand-600/10 hover:-translate-y-1 hover:border-white/80 dark:hover:border-white/15',
       job.isFeatured && 'ring-2 ring-gold-500/30 !border-gold-400/40 dark:ring-gold-500/20',
     )}>
 
-      {/* Top row: badges + time */}
+      {/* Top row: badges + time + share */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
           {job.isUrgent && (
@@ -37,7 +47,10 @@ export function JobCard({ job }: { job: Job }) {
             </span>
           )}
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(job.postedAt)}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs text-muted-foreground">{timeAgo(job.postedAt)}</span>
+          <ShareButton url={jobUrl} title={job.title} company={job.company} />
+        </div>
       </div>
 
       {/* Title + Company */}

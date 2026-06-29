@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Clock, DollarSign, Zap, Share2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, DollarSign, Zap } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { JobPostingSchema } from '@/components/seo/JobPostingSchema';
+import { ShareButton } from '@/components/jobs/ShareButton';
 import { JoinCommunity } from '@/components/JoinCommunity';
 import { getJobs } from '@/lib/sheets';
 import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
@@ -154,15 +155,12 @@ export default async function JobDetailPage(
               >
                 Ask via WhatsApp
               </a>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Check out this job: ${job.title} at ${job.company} — ${jobUrl}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Share this job"
-                className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              >
-                <Share2 size={15} />
-              </a>
+              <ShareButton
+                url={jobUrl}
+                title={job.title}
+                company={job.company}
+                className="ml-auto h-10 w-10 rounded-xl"
+              />
             </div>
           </div>
 
