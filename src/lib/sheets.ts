@@ -319,7 +319,10 @@ export async function appendJob(data: {
   const salaryText = data.salaryMin > 0
     ? `${data.salaryMin.toLocaleString()} – ${data.salaryMax.toLocaleString()} ${data.currency}`
     : 'Negotiable';
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
+  // SITE_URL intentionally uses no NEXT_PUBLIC_ prefix: Turbopack inlines
+  // NEXT_PUBLIC_ vars at build time and substitutes "" when unset, which
+  // would produce a malformed Apply URL in the social message text.
+  const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
   const messageText = [
     data.isUrgent ? '🔥 URGENT HIRING' : '✨ NEW JOB ALERT',
     `💼 ${data.title}`,

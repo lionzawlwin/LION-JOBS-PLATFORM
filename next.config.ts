@@ -1,5 +1,15 @@
 import type { NextConfig } from 'next';
 
+// next-auth/react reads process.env.NEXTAUTH_URL at MODULE EVALUATION time via
+// parseUrl(). If the var is absent or an empty string the parseUrl() call does
+// `new URL('')` which throws TypeError: Invalid URL and aborts static generation
+// for every page that SSR-renders <SessionProvider> (including /_not-found via
+// the root layout).  Set a safe fallback here — before any modules load — so the
+// URL is always valid.  Vercel's own NEXTAUTH_URL env var takes precedence when set.
+if (!process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = 'https://lion-jobs-platform.vercel.app';
+}
+
 const nextConfig: NextConfig = {
   // ── Images ────────────────────────────────────────────────────
   images: {

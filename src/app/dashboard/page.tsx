@@ -1,3 +1,7 @@
+// Prevent static prerendering: this page requires live auth headers and
+// triggers the next-auth/react module which reads NEXTAUTH_URL at eval time.
+export const dynamic = 'force-dynamic';
+
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
