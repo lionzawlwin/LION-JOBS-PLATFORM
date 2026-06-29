@@ -3,7 +3,8 @@
 import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Search, ArrowRight, Briefcase, Users, Building2 } from 'lucide-react';
+import Link from 'next/link';
+import { Search, ArrowRight, Briefcase, Users, Building2, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobCategory } from '@/types';
@@ -146,9 +147,24 @@ export function HeroSection({ onSearch }: Props) {
           ))}
         </motion.div>
 
-        {/* Trust strip */}
+        {/* Drop CV secondary CTA */}
         <motion.div
           custom={5} initial="hidden" animate="show" variants={fadeUp}
+          className="mt-5 flex justify-center"
+        >
+          <Link
+            href="/drop-cv"
+            className="inline-flex items-center gap-2 rounded-full border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm px-5 py-2 text-sm font-medium text-muted-foreground hover:border-brand-400/60 hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
+          >
+            <Inbox size={14} />
+            {t('nav_drop_cv')}
+            <span className="text-xs text-muted-foreground/70">— no job required</span>
+          </Link>
+        </motion.div>
+
+        {/* Trust strip */}
+        <motion.div
+          custom={6} initial="hidden" animate="show" variants={fadeUp}
           className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground"
         >
           <span className="flex items-center gap-1.5"><Briefcase size={13} className="text-gold-500" /> 500+ {t('hero_stat_roles')}</span>

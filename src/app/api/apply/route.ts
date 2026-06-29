@@ -5,15 +5,17 @@ import type { NextRequest } from 'next/server';
 
 const applySchema = z
   .object({
-    fullName:    z.string().min(2),
-    email:       z.string().email().optional(),
-    phone:       z.string().min(7),
-    position:    z.string().min(2),
-    jobId:       z.string().optional(),
-    mode:        z.enum(['cv', 'linkedin']),
-    cvBase64:    z.string().optional(),
-    cvFileName:  z.string().optional(),
-    linkedinUrl: z.string().url().optional(),
+    fullName:        z.string().min(2),
+    email:           z.string().email().optional(),
+    phone:           z.string().min(7),
+    position:        z.string().min(2),
+    jobId:           z.string().optional(),
+    mode:            z.enum(['cv', 'linkedin']),
+    cvBase64:        z.string().optional(),
+    cvFileName:      z.string().optional(),
+    linkedinUrl:     z.string().url().optional(),
+    expectedSalary:  z.string().optional(),
+    desiredCategory: z.string().optional(),
   })
   .refine(
     (d) =>
@@ -37,12 +39,14 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: message }, { status: 422 });
   }
 
-  const { fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl } = parsed.data;
+  const { fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl, expectedSalary, desiredCategory } = parsed.data;
+
+  const candidateNotes = desiredCategory ? `Category: ${desiredCategory}` : undefined;
 
   // ── 1. Write directly to Google Sheets Pipeline tab ──────────────
   // This is the primary persistence path. Make.com is secondary (notifications/CV storage).
   try {
-    await appendCandidate({ fullName, email, phone, position, jobId, linkedinUrl, cvFileName });
+    await appendCandidate({ fullName, email, phone, position, jobId, linkedinUrl, cvFileName, expectedSalary, notes: candidateNotes });
     console.log(`[apply] Candidate "${fullName}" appended to Pipeline sheet.`);
   } catch (err) {
     // Log full error server-side — this is the most important failure to surface.
@@ -63,6 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     await forwardToMake({
       fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl,
+      expectedSalary, desiredCategory,
       // Fields Make.com uses to route & send the confirmation email
       event:                'application_submitted',
       applicationStatus:    'Under Review',

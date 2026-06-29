@@ -221,13 +221,15 @@ export async function getCandidates(): Promise<Candidate[]> {
 // Appends a new row to the Pipeline tab. Builds a full 24-column array,
 // padding unused fields with "" so column alignment is never off.
 export async function appendCandidate(data: {
-  fullName:    string;
-  email?:      string;
-  phone:       string;
-  position:    string;   // maps to job_title (col F)
-  jobId?:      string;
-  linkedinUrl?: string;
-  cvFileName?:  string;
+  fullName:       string;
+  email?:         string;
+  phone:          string;
+  position:       string;   // maps to job_title (col F)
+  jobId?:         string;
+  linkedinUrl?:   string;
+  cvFileName?:    string;
+  expectedSalary?: string;
+  notes?:         string;
 }): Promise<string> {
   if (!isConfigured()) throw new Error('Google Sheets not configured.');
 
@@ -251,7 +253,7 @@ export async function appendCandidate(data: {
     '',                              // 10 assigned_to
     '',                              // 11 interview_date
     '',                              // 12 interview_location
-    '',                              // 13 salary_expected
+    data.expectedSalary ?? '',       // 13 salary_expected
     '',                              // 14 salary_offered
     '',                              // 15 notice_period
     'Website',                       // 16 source
@@ -260,7 +262,7 @@ export async function appendCandidate(data: {
     '',                              // 19 offer_date
     '',                              // 20 start_date
     '',                              // 21 webhook_sent
-    data.cvFileName  ? `CV uploaded: ${data.cvFileName}` : '',  // 22 notes
+    [data.cvFileName ? `CV: ${data.cvFileName}` : '', data.notes ?? ''].filter(Boolean).join(' | '),  // 22 notes
     now,                             // 23 last_updated
   ];
 

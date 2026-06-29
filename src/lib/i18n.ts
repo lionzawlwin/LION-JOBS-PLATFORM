@@ -9,6 +9,17 @@ export const translations = {
     nav_browse:         'Browse Jobs',
     nav_lang_toggle:    'မြန်မာ',
     nav_my_apps:        'My Applications',
+    nav_drop_cv:        'Drop Your CV',
+
+    // Talent Pool
+    talent_pool_headline:        'Join Our Talent Pool',
+    talent_pool_sub:             "Don't see the right job? Drop your CV and we'll reach out as soon as a matching role opens.",
+    talent_pool_desired_title:   'Desired Job Title',
+    talent_pool_category:        'Desired Category',
+    talent_pool_expected_salary: 'Expected Salary (MMK/month, optional)',
+    talent_pool_submit:          'Join Talent Pool',
+    talent_pool_success_title:   "You're in Our Talent Pool!",
+    talent_pool_success_sub:     "We'll contact you as soon as a matching position opens up. Keep an eye on your phone.",
 
     // Application status page
     status_title:       'Track Your Applications',
@@ -77,6 +88,17 @@ export const translations = {
     nav_browse:         'အလုပ်များကြည့်ပါ',
     nav_lang_toggle:    'English',
     nav_my_apps:        'ကျွန်ုပ်၏ လျှောက်လွှာများ',
+    nav_drop_cv:        'CV ထည့်ပါ',
+
+    // Talent Pool
+    talent_pool_headline:        'Talent Pool တွင် ပါဝင်ပါ',
+    talent_pool_sub:             'သင့်နှင့် ကိုက်ညီသောအလုပ် မတွေ့ပါသလား? CV ထည့်ပြီး ကိုက်ညီသောရာထူး ရရှိသောအခါ ဆက်သွယ်ပေးပါမည်။',
+    talent_pool_desired_title:   'လိုချင်သောရာထူး',
+    talent_pool_category:        'လိုချင်သောအမျိုးအစား',
+    talent_pool_expected_salary: 'မျှော်မှန်းလစာ (MMK/လ၊ ရွေးချယ်နိုင်)',
+    talent_pool_submit:          'Talent Pool တွင် ပါဝင်ပါ',
+    talent_pool_success_title:   'Talent Pool တွင် ပါဝင်ပြီးပါပြီ!',
+    talent_pool_success_sub:     'ကိုက်ညီသောရာထူး ရောက်သည်နှင့် ဆက်သွယ်ပေးပါမည်။ ဖုန်းကို မျက်စိပွင့်ပြီး ကြည့်ပါ။',
 
     // Application status page
     status_title:       'လျှောက်လွှာ စစ်ဆေးပါ',
