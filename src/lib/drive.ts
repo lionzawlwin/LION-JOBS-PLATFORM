@@ -81,12 +81,9 @@ export async function uploadFileToDrive(
     fields: 'id,webViewLink',
   });
 
-  // Make the file readable by anyone with the link so the admin can share it
-  await drive.permissions.create({
-    fileId:      res.data.id!,
-    requestBody: { role: 'reader', type: 'anyone' },
-  });
-
+  // No public permission is set — file is accessible only to users who have
+  // access to the parent folder (your team's Drive). This keeps candidate CVs
+  // private to your organisation.
   return res.data.webViewLink ?? `https://drive.google.com/file/d/${res.data.id}/view`;
 }
 
