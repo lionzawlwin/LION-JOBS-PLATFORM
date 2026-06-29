@@ -82,5 +82,22 @@ export async function POST(req: NextRequest) {
     // Intentionally NOT returning an error response here.
   }
 
+  // ── 3. Forward to dedicated Google Drive upload webhook ───────────
+  // Sends candidateName + files[] to a separate Make.com scenario that
+  // handles only Drive storage, keeping CV uploads decoupled from the
+  // general application notification flow.
+  const driveWebhookUrl = process.env.MAKE_DRIVE_WEBHOOK_URL;
+  if (driveWebhookUrl && cvFileName && cvBase64) {
+    fetch(driveWebhookUrl, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidateName: fullName,
+        files: [{ name: cvFileName, type: 'cv', base64: cvBase64 }],
+      }),
+      signal: AbortSignal.timeout(8_000),
+    }).catch((err) => console.error('[apply] Drive webhook error (non-critical):', err));
+  }
+
   return Response.json({ ok: true, confirmationSent: Boolean(email) });
 }
