@@ -78,9 +78,10 @@ const JOB_COL = {
   is_featured:       14,
   status:            15,
   source:            16,
-  applications_count:17,
-  hired_count:       18,
-  notes:             19,
+  applications_count:    17,
+  hired_count:           18,
+  notes:                 19,
+  screening_questions:   20,
 } as const;
 
 // cache() deduplicates calls within a single server render (generateMetadata + page).
@@ -93,7 +94,7 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A2:T`,
+    range: `${JOBS_TAB}!A2:U`,
   });
 
   if (!data.values?.length) {
@@ -122,6 +123,11 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
       isFeatured:        String(row[JOB_COL.is_featured]).toUpperCase() === 'TRUE',
       applicationsCount: Number(row[JOB_COL.applications_count]) || 0,
       deadline:          row[JOB_COL.deadline] || undefined,
+      screeningQuestions: (() => {
+        const raw = row[JOB_COL.screening_questions];
+        if (!raw) return undefined;
+        try { return JSON.parse(raw); } catch { return undefined; }
+      })(),
     }));
 });
 

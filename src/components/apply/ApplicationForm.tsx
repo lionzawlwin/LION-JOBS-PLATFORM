@@ -20,8 +20,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CVUpload } from './CVUpload';
 import { SuccessModal } from './SuccessModal';
+import { ScreeningQuestions } from './ScreeningQuestions';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { ScreeningQuestion } from '@/types';
 
 // ── Zod schemas ──────────────────────────────────────────────────
 const baseSchema = z.object({
@@ -55,14 +57,16 @@ type FormData = z.infer<typeof formSchema>;
 interface ApplicationFormProps {
   jobId?: string;
   defaultPosition?: string;
+  screeningQuestions?: ScreeningQuestion[];
 }
 
-export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationFormProps) {
+export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestions = [] }: ApplicationFormProps) {
   const { t } = useLanguage();
   const [mode, setMode] = useState<'cv' | 'linkedin'>('cv');
   const [successOpen, setSuccessOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | undefined>(undefined);
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
 
   const {
     register,
@@ -108,7 +112,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
       const res = await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, jobId }),
+        body: JSON.stringify({ ...data, jobId, screeningAnswers: Object.keys(screeningAnswers).length ? screeningAnswers : undefined }),
       });
 
       if (!res.ok) {
@@ -189,6 +193,15 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
             <p className="text-xs text-danger">{errors.position.message}</p>
           )}
         </div>
+
+        {/* Screening questions (if any) */}
+        {screeningQuestions.length > 0 && (
+          <ScreeningQuestions
+            questions={screeningQuestions}
+            answers={screeningAnswers}
+            onChange={(id, value) => setScreeningAnswers((prev) => ({ ...prev, [id]: value }))}
+          />
+        )}
 
         {/* CV / LinkedIn toggle */}
         <div className="space-y-3">

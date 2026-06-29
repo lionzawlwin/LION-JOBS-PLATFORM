@@ -70,7 +70,13 @@ export function JobCard({ job }: { job: Job }) {
         <h3 className="text-base font-bold text-foreground group-hover:text-brand-600 transition-colors leading-snug">
           {job.title}
         </h3>
-        <p className="mt-1 text-sm font-medium text-muted-foreground">{job.company}</p>
+        <a
+          href={`/companies/${job.company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-1 text-sm font-medium text-muted-foreground hover:text-brand-600 transition-colors"
+        >
+          {job.company}
+        </a>
       </div>
 
       {/* Meta chips */}

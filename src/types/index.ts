@@ -32,6 +32,16 @@ export interface Job {
   logoUrl?: string;
   applicationsCount?: number;
   deadline?: string;
+  screeningQuestions?: ScreeningQuestion[];
+}
+
+export interface ScreeningQuestion {
+  id:       string;
+  question: string;
+  type:     'yes_no' | 'text' | 'number';
+  required: boolean;
+  knockout?: boolean;
+  expected?: string;
 }
 
 export interface Candidate {

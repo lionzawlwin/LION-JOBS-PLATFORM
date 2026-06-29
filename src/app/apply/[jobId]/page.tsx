@@ -85,6 +85,7 @@ export default async function ApplyPage(props: PageProps<'/apply/[jobId]'>) {
             <ApplicationForm
               jobId={jobId}
               defaultPosition={job?.title ?? ''}
+              screeningQuestions={job?.screeningQuestions}
             />
           </div>
         </div>
