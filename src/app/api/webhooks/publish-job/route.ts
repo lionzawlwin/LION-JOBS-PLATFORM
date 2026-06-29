@@ -90,16 +90,24 @@ function buildPayload(job: Job) {
     )}`,
 
     // Pre-formatted message strings for Telegram / Viber / Facebook
-    messageShort: [
-      job.isUrgent ? '🔥 URGENT' : '✨ NEW JOB',
-      `💼 *${job.title}*`,
-      `🏢 ${job.company}`,
-      `📍 ${job.location}  |  ${job.type}`,
-      `💰 ${salary}`,
-      '',
-      `👉 Apply: ${SITE_URL}/jobs/${slug}`,
-    ].join('\n'),
+    messageShort: buildMessage(job, salary, slug),
+    // 'text' is an alias for messageShort — Telegram modules in Make.com
+    // use the field name 'text' by default, so we expose both names
+    text: buildMessage(job, salary, slug),
   };
+}
+
+function buildMessage(job: Job, salary: string, slug: string): string {
+  const lines = [
+    job.isUrgent ? '🔥 URGENT HIRING' : '✨ NEW JOB ALERT',
+    `💼 ${job.title || '(untitled)'}`,
+    `🏢 ${job.company || 'Lion Jobs Agency'}`,
+    `📍 ${job.location || 'Myanmar'}  |  ${job.type || 'Full-time'}`,
+    `💰 ${salary}`,
+    '',
+    `👉 Apply Now: ${SITE_URL}/jobs/${slug}`,
+  ];
+  return lines.join('\n');
 }
 
 // ── Route handler ─────────────────────────────────────────────────
