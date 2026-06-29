@@ -184,6 +184,15 @@ const CANDIDATE_COL = {
   webhook_sent:      21,
   notes:             22,
   last_updated:      23,
+  // extended profile fields added in v3 (cols Y-AF)
+  city_location:     24,
+  education:         25,
+  experience_years:  26,
+  current_company:   27,
+  current_salary:    28,
+  languages:         29,
+  skills:            30,
+  portfolio_url:     31,
 } as const;
 
 // Stages the Kanban board renders columns for. Any value written by Make.com
@@ -200,7 +209,7 @@ export async function getCandidates(): Promise<Candidate[]> {
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${CANDIDATES_TAB}!A2:X`,
+    range: `${CANDIDATES_TAB}!A2:AF`,
   });
 
   if (!data.values?.length) return [];
@@ -226,6 +235,15 @@ export async function getCandidates(): Promise<Candidate[]> {
       salaryExpected: row[CANDIDATE_COL.salary_expected]   || undefined,
       interviewDate:  row[CANDIDATE_COL.interview_date]    || undefined,
       source:         row[CANDIDATE_COL.source]            || undefined,
+      // extended profile fields (v3 columns Y-AF)
+      cityLocation:    row[CANDIDATE_COL.city_location]   || undefined,
+      education:       row[CANDIDATE_COL.education]        || undefined,
+      experienceYears: row[CANDIDATE_COL.experience_years] || undefined,
+      currentCompany:  row[CANDIDATE_COL.current_company]  || undefined,
+      currentSalary:   row[CANDIDATE_COL.current_salary]   || undefined,
+      languages:       row[CANDIDATE_COL.languages]         || undefined,
+      skills:          row[CANDIDATE_COL.skills]            || undefined,
+      portfolioUrl:    row[CANDIDATE_COL.portfolio_url]    || undefined,
     }));
 }
 
@@ -233,24 +251,33 @@ export async function getCandidates(): Promise<Candidate[]> {
 // Appends a new row to the Pipeline tab. Builds a full 24-column array,
 // padding unused fields with "" so column alignment is never off.
 export async function appendCandidate(data: {
-  fullName:       string;
-  email?:         string;
-  phone:          string;
-  position:       string;   // maps to job_title (col F)
-  jobId?:         string;
-  linkedinUrl?:   string;
-  cvFileName?:    string;
+  fullName:        string;
+  email?:          string;
+  phone:           string;
+  position:        string;   // maps to job_title (col F)
+  jobId?:          string;
+  linkedinUrl?:    string;
+  cvFileName?:     string;
   expectedSalary?: string;
-  notes?:         string;
+  noticePeriod?:   string;
+  notes?:          string;
+  // extended profile fields (v3)
+  cityLocation?:    string;
+  education?:       string;
+  experienceYears?: string;
+  currentCompany?:  string;
+  currentSalary?:   string;
+  languages?:       string;
+  skills?:          string;
+  portfolioUrl?:    string;
 }): Promise<string> {
   if (!isConfigured()) throw new Error('Google Sheets not configured.');
 
-  const id        = `cand-${Date.now()}`;
-  const now       = new Date().toISOString();
-  const sheets    = getSheets();
+  const id     = `cand-${Date.now()}`;
+  const now    = new Date().toISOString();
+  const sheets = getSheets();
 
-  // Build the 24-column row aligned to CANDIDATE_COL indices 0–23.
-  // Any field we can't populate at submit time is left as "".
+  // Build the 32-column row aligned to CANDIDATE_COL indices 0–31.
   const row: string[] = [
     id,                              // 0  candidate_id
     data.fullName,                   // 1  full_name
@@ -267,23 +294,31 @@ export async function appendCandidate(data: {
     '',                              // 12 interview_location
     data.expectedSalary ?? '',       // 13 salary_expected
     '',                              // 14 salary_offered
-    '',                              // 15 notice_period
+    data.noticePeriod   ?? '',       // 15 notice_period (candidate-supplied)
     'Website',                       // 16 source
     '',                              // 17 rating
-    data.linkedinUrl ?? '',          // 18 cv_url  (LinkedIn URL if provided)
+    data.linkedinUrl ?? '',          // 18 cv_url (LinkedIn URL when mode=linkedin; Drive URL set later for CV mode)
     '',                              // 19 offer_date
     '',                              // 20 start_date
     '',                              // 21 webhook_sent
     [data.cvFileName ? `CV: ${data.cvFileName}` : '', data.notes ?? ''].filter(Boolean).join(' | '),  // 22 notes
     now,                             // 23 last_updated
+    data.cityLocation    ?? '',      // 24 city_location   (col Y)
+    data.education       ?? '',      // 25 education       (col Z)
+    data.experienceYears ?? '',      // 26 experience_years(col AA)
+    data.currentCompany  ?? '',      // 27 current_company (col AB)
+    data.currentSalary   ?? '',      // 28 current_salary  (col AC)
+    data.languages       ?? '',      // 29 languages       (col AD)
+    data.skills          ?? '',      // 30 skills          (col AE)
+    data.portfolioUrl    ?? '',      // 31 portfolio_url   (col AF)
   ];
 
   await sheets.spreadsheets.values.append({
-    spreadsheetId:   process.env.GOOGLE_SHEET_ID!,
-    range:           `${CANDIDATES_TAB}!A:X`,
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${CANDIDATES_TAB}!A:AF`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
-    requestBody:     { values: [row] },
+    requestBody:      { values: [row] },
   });
 
   return id;
@@ -817,6 +852,100 @@ export async function updateCandidateJob(
         { range: `${CANDIDATES_TAB}!G${sheetRow}`, values: [[company]] },
       ],
     },
+  });
+}
+
+// ── deleteCandidate ───────────────────────────────────────────────
+export async function deleteCandidate(candidateId: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+  const sheets        = getSheets();
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+
+  const meta  = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = meta.data.sheets?.find((s) => s.properties?.title === CANDIDATES_TAB);
+  if (sheet?.properties?.sheetId === undefined) {
+    throw new Error(`Sheet tab "${CANDIDATES_TAB}" not found`);
+  }
+
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${CANDIDATES_TAB}!A2:A`,
+  });
+  const rowIndex = data.values?.findIndex((row) => row[0] === candidateId) ?? -1;
+  if (rowIndex === -1) throw new Error(`Candidate "${candidateId}" not found`);
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId:    sheet.properties.sheetId,
+            dimension:  'ROWS',
+            startIndex: rowIndex + 1, // +1 for header
+            endIndex:   rowIndex + 2,
+          },
+        },
+      }],
+    },
+  });
+}
+
+// ── deleteB2bLead ─────────────────────────────────────────────────
+export async function deleteB2bLead(leadId: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+  const sheets        = getSheets();
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+
+  const meta  = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = meta.data.sheets?.find((s) => s.properties?.title === B2B_LEADS_TAB);
+  if (sheet?.properties?.sheetId === undefined) {
+    throw new Error(`Sheet tab "${B2B_LEADS_TAB}" not found`);
+  }
+
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${B2B_LEADS_TAB}!A2:A`,
+  });
+  const rowIndex = data.values?.findIndex((row) => row[0] === leadId) ?? -1;
+  if (rowIndex === -1) throw new Error(`Lead "${leadId}" not found`);
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId:    sheet.properties.sheetId,
+            dimension:  'ROWS',
+            startIndex: rowIndex + 1,
+            endIndex:   rowIndex + 2,
+          },
+        },
+      }],
+    },
+  });
+}
+
+// ── updateCandidateCvUrl ──────────────────────────────────────────
+// Admin endpoint: allows the recruiter to paste the Google Drive URL
+// for a CV that was uploaded and processed by Make.com.
+export async function updateCandidateCvUrl(candidateId: string, cvUrl: string): Promise<void> {
+  if (!isConfigured()) return;
+  const sheets = getSheets();
+  const { data } = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${CANDIDATES_TAB}!A2:A`,
+  });
+  if (!data.values) return;
+  const rowIndex = data.values.findIndex((row) => row[0] === candidateId);
+  if (rowIndex === -1) return;
+  // cv_url is CANDIDATE_COL.cv_url = 18 → column S (1-based = 19)
+  await sheets.spreadsheets.values.update({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${CANDIDATES_TAB}!S${rowIndex + 2}`,
+    valueInputOption: 'RAW',
+    requestBody:      { values: [[cvUrl]] },
   });
 }
 

@@ -62,6 +62,15 @@ export interface Candidate {
   salaryExpected?: string;
   interviewDate?: string;
   source?: string;
+  // extended profile fields (cols Y-AF)
+  cityLocation?: string;
+  education?: string;
+  experienceYears?: string;
+  currentCompany?: string;
+  currentSalary?: string;
+  languages?: string;
+  skills?: string;
+  portfolioUrl?: string;
 }
 
 export interface B2bLead {

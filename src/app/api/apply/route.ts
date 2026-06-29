@@ -16,6 +16,16 @@ const applySchema = z
     linkedinUrl:     z.string().url().optional(),
     expectedSalary:  z.string().optional(),
     desiredCategory: z.string().optional(),
+    // extended profile fields (v3)
+    noticePeriod:    z.string().optional(),
+    cityLocation:    z.string().optional(),
+    education:       z.string().optional(),
+    experienceYears: z.string().optional(),
+    currentCompany:  z.string().optional(),
+    currentSalary:   z.string().optional(),
+    languages:       z.string().optional(),
+    skills:          z.string().optional(),
+    portfolioUrl:    z.string().optional(),
   })
   .refine(
     (d) =>
@@ -39,14 +49,23 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: message }, { status: 422 });
   }
 
-  const { fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl, expectedSalary, desiredCategory } = parsed.data;
+  const {
+    fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl,
+    expectedSalary, desiredCategory,
+    noticePeriod, cityLocation, education, experienceYears,
+    currentCompany, currentSalary, languages, skills, portfolioUrl,
+  } = parsed.data;
 
   const candidateNotes = desiredCategory ? `Category: ${desiredCategory}` : undefined;
 
   // ── 1. Write directly to Google Sheets Pipeline tab ──────────────
-  // This is the primary persistence path. Make.com is secondary (notifications/CV storage).
   try {
-    await appendCandidate({ fullName, email, phone, position, jobId, linkedinUrl, cvFileName, expectedSalary, notes: candidateNotes });
+    await appendCandidate({
+      fullName, email, phone, position, jobId, linkedinUrl, cvFileName,
+      expectedSalary, notes: candidateNotes,
+      noticePeriod, cityLocation, education, experienceYears,
+      currentCompany, currentSalary, languages, skills, portfolioUrl,
+    });
     console.log(`[apply] Candidate "${fullName}" appended to Pipeline sheet.`);
   } catch (err) {
     // Log full error server-side — this is the most important failure to surface.

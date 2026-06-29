@@ -51,10 +51,26 @@ export function useCandidates() {
     }
   }
 
+  async function deleteCandidate(id: string, name: string) {
+    const prev = data ?? [];
+    // Optimistic removal
+    mutate(prev.filter((c) => c.id !== id), false);
+    try {
+      const res = await fetch(`/api/candidates/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
+      toast.success(`${name} removed from pipeline`, { duration: 3000 });
+    } catch {
+      mutate(prev, false);
+      toast.error('Failed to delete candidate', { description: 'Please try again.', duration: 4000 });
+    }
+  }
+
   return {
     candidates: data ?? [],
     loading: isLoading,
     error: error ? 'Failed to load candidates.' : null,
     updateStage,
+    deleteCandidate,
+    mutate,
   };
 }

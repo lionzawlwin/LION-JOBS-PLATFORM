@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
-import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import type { B2bLead } from '@/types';
 
@@ -102,6 +102,60 @@ function StatusCell({ lead }: { lead: B2bLead }) {
   );
 }
 
+function DeleteLeadButton({ lead }: { lead: B2bLead }) {
+  const [confirm,  setConfirm]  = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, { method: 'DELETE' });
+      if (res.ok) mutate('/api/leads');
+    } catch (err) {
+      console.error('[B2bLeadsTable] delete error:', err);
+    } finally {
+      setDeleting(false);
+      setConfirm(false);
+    }
+  }
+
+  if (confirm) {
+    return (
+      <div
+        className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
+        <span className="text-[10px] text-red-700 dark:text-red-400 font-medium">Delete?</span>
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50"
+        >
+          {deleting ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirm(false); }}
+          className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent"
+        >
+          No
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
+      title="Delete request"
+      className="flex h-7 w-7 items-center justify-center rounded-xl border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
+    >
+      <Trash2 size={13} />
+    </button>
+  );
+}
+
 export function B2bLeadsTable() {
   const { data, isLoading, error } = useSWR<B2bLead[]>('/api/leads', fetcher);
   const [search,   setSearch]   = useState('');
@@ -175,13 +229,14 @@ export function B2bLeadsTable() {
         <div className="overflow-hidden rounded-2xl border border-border">
 
           {/* Column headers */}
-          <div className="hidden lg:grid grid-cols-[1fr_150px_130px_130px_120px_110px_40px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <div className="hidden lg:grid grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <span>Company & Role</span>
             <span>Contact</span>
             <span>Budget</span>
             <span>Urgency</span>
             <span>Status</span>
             <span>Submitted</span>
+            <span />
             <span />
           </div>
 
@@ -190,7 +245,7 @@ export function B2bLeadsTable() {
               <div key={lead.id}>
                 <div
                   onClick={() => setExpanded(expanded === lead.id ? null : lead.id)}
-                  className="grid grid-cols-[1fr_40px] lg:grid-cols-[1fr_150px_130px_130px_120px_110px_40px] items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-accent/30 transition-colors"
+                  className="grid grid-cols-[1fr_36px_36px] lg:grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-accent/30 transition-colors"
                 >
                   {/* Company & Role */}
                   <div className="min-w-0">
@@ -240,6 +295,11 @@ export function B2bLeadsTable() {
 
                   {/* Submitted */}
                   <p className="hidden lg:block text-xs text-muted-foreground whitespace-nowrap">{timeAgo(lead.submittedAt)}</p>
+
+                  {/* Delete */}
+                  <div className="flex items-center justify-end">
+                    <DeleteLeadButton lead={lead} />
+                  </div>
 
                   {/* Expand toggle */}
                   <div className="flex items-center justify-end text-muted-foreground">
