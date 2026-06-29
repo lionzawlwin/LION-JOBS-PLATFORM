@@ -44,49 +44,42 @@ function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
-// ── Jobs column map (A=0 … T=19) ─────────────────────────────────
+// ── Jobs column map — matches the actual Google Sheet layout (A=0 … P=15) ──
 //
-// Row 1 of the "Jobs" tab MUST contain these headers in this exact order:
-//   job_id | title | company | category | type | location |
-//   salary_min | salary_max | currency | description | requirements |
-//   posted_at | deadline | is_urgent | is_featured | status |
-//   source | applications_count | hired_count | notes
-//
-// v2 changes from original layout:
-//   • category   D(3)  — was E(4)
-//   • type       E(4)  — was F(5)
-//   • location   F(5)  — was D(3)
-//   • deadline   M(12) — new column
-//   • is_urgent  N(13) — was M(12)
-//   • is_featured O(14) — was N(13)
-//   • status / source / notes — new columns P–T
-//   • R(17) and S(18) are COUNTIF formula columns — never written by the API
+// A  id            0
+// B  title         1
+// C  company       2
+// D  location      3
+// E  category      4
+// F  type          5
+// G  salaryMin     6
+// H  salaryMax     7
+// I  currency      8
+// J  description   9
+// K  Requirement  10
+// L  Job Post Time 11
+// M  Condition    12  (not written by API — leave "")
+// N  days_live    13  (not written by API — leave "")
+// O  benefits     14
+// P  text         15  (pre-formatted social message for Make.com)
 //
 const JOB_COL = {
-  job_id:             0,
-  title:              1,
-  company:            2,
-  category:           3,
-  type:               4,
-  location:           5,
-  salary_min:         6,
-  salary_max:         7,
-  currency:           8,
-  description:        9,
-  requirements:      10,
-  posted_at:         11,
-  deadline:          12,
-  is_urgent:         13,
-  is_featured:       14,
-  status:            15,
-  source:            16,
-  applications_count:    17,
-  hired_count:           18,
-  notes:                 19,
-  screening_questions:   20,
-  benefits:              21,
-  // col W — pre-formatted message text read by Make.com "Watch Rows" trigger
-  text:                  22,
+  job_id:       0,
+  title:        1,
+  company:      2,
+  location:     3,
+  category:     4,
+  type:         5,
+  salary_min:   6,
+  salary_max:   7,
+  currency:     8,
+  description:  9,
+  requirements: 10,
+  posted_at:    11,
+  // 12 Condition  — not mapped (empty placeholder)
+  // 13 days_live  — not mapped (empty placeholder)
+  benefits:     14,
+  text:         15,
 } as const;
 
 // cache() deduplicates calls within a single server render (generateMetadata + page).
@@ -99,11 +92,11 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
   const sheets = getSheets();
   const { data } = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A2:V`,
+    range: `${JOBS_TAB}!A2:P`,
   });
 
   if (!data.values?.length) {
-    console.warn(`[sheets] getJobs: No data rows found in ${JOBS_TAB}!A2:T — check row 1 is a header row and data starts at row 2.`);
+    console.warn(`[sheets] getJobs: No data rows found in ${JOBS_TAB}!A2:P — check row 1 is a header row and data starts at row 2.`);
     return [];
   }
 
@@ -124,15 +117,9 @@ export const getJobs = cache(async function getJobs(): Promise<Job[]> {
         ? String(row[JOB_COL.requirements]).split('|').map((r: string) => r.trim()).filter(Boolean)
         : [],
       postedAt:   row[JOB_COL.posted_at]   || new Date().toISOString(),
-      isUrgent:          String(row[JOB_COL.is_urgent]).toUpperCase()   === 'TRUE',
-      isFeatured:        String(row[JOB_COL.is_featured]).toUpperCase() === 'TRUE',
-      applicationsCount: Number(row[JOB_COL.applications_count]) || 0,
-      deadline:          row[JOB_COL.deadline] || undefined,
-      screeningQuestions: (() => {
-        const raw = row[JOB_COL.screening_questions];
-        if (!raw) return undefined;
-        try { return JSON.parse(raw); } catch { return undefined; }
-      })(),
+      isUrgent:          false,  // not stored in this sheet layout
+      isFeatured:        false,  // not stored in this sheet layout
+      applicationsCount: 0,
       benefits: row[JOB_COL.benefits]
         ? String(row[JOB_COL.benefits]).split(',').map((b: string) => b.trim()).filter(Boolean)
         : undefined,
@@ -368,37 +355,29 @@ export async function appendJob(data: {
     `👉 Apply Now: ${SITE_URL}/jobs/${id}`,
   ].join('\n');
 
-  // Row values must align with JOB_COL indices 0–22.
-  // Indices 17 (applications_count) and 18 (hired_count) are formula columns — left blank.
-  const row: (string | number) [] = [
-    id,                                    // 0  job_id
-    data.title,                            // 1  title
-    data.company,                          // 2  company
-    data.category,                         // 3  category
-    data.type,                             // 4  type
-    data.location,                         // 5  location
-    data.salaryMin,                        // 6  salary_min
-    data.salaryMax,                        // 7  salary_max
-    data.currency,                         // 8  currency
-    data.description,                      // 9  description
-    data.requirements.join('|'),           // 10 requirements
-    postedAt,                              // 11 posted_at
-    '',                                    // 12 deadline  (set manually)
-    data.isUrgent   ? 'TRUE' : 'FALSE',   // 13 is_urgent
-    data.isFeatured ? 'TRUE' : 'FALSE',   // 14 is_featured
-    'Active',                              // 15 status
-    '',                                    // 16 source
-    '',                                    // 17 applications_count (formula — leave blank)
-    '',                                    // 18 hired_count        (formula — leave blank)
-    '',                                    // 19 notes
-    '',                                    // 20 screening_questions (set manually)
-    (data.benefits ?? []).join(', '),      // 21 benefits (comma-separated)
-    messageText,                           // 22 text (pre-formatted for Make.com)
+  // Row values aligned to the actual sheet columns A–P (16 columns total).
+  const row: (string | number)[] = [
+    id,                                    // 0  A  id
+    data.title,                            // 1  B  title
+    data.company,                          // 2  C  company
+    data.location,                         // 3  D  location
+    data.category,                         // 4  E  category
+    data.type,                             // 5  F  type
+    data.salaryMin,                        // 6  G  salaryMin
+    data.salaryMax,                        // 7  H  salaryMax
+    data.currency,                         // 8  I  currency
+    data.description,                      // 9  J  description
+    data.requirements.join('|'),           // 10 K  Requirement
+    postedAt,                              // 11 L  Job Post Time
+    '',                                    // 12 M  Condition  (placeholder — not used by API)
+    '',                                    // 13 N  days_live  (placeholder — not used by API)
+    (data.benefits ?? []).join(', '),      // 14 O  benefits
+    messageText,                           // 15 P  text (pre-formatted for Make.com)
   ];
 
   const appendRes = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: `${JOBS_TAB}!A:W`,
+    range: `${JOBS_TAB}!A:P`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
