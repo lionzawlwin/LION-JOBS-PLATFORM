@@ -23,6 +23,7 @@ import { SuccessModal } from './SuccessModal';
 import { ScreeningQuestions } from './ScreeningQuestions';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useProfile } from '@/hooks/useProfile';
 import type { ScreeningQuestion } from '@/types';
 
 // ── Zod schemas ──────────────────────────────────────────────────
@@ -62,11 +63,13 @@ interface ApplicationFormProps {
 
 export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestions = [] }: ApplicationFormProps) {
   const { t } = useLanguage();
+  const { profile, hydrated, saveProfile } = useProfile();
   const [mode, setMode] = useState<'cv' | 'linkedin'>('cv');
   const [successOpen, setSuccessOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | undefined>(undefined);
   const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
+  const [profileUsed, setProfileUsed] = useState(false);
 
   const {
     register,
@@ -90,6 +93,14 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
 
   const cvFileName = watch('cvFileName' as keyof FormData) as string | undefined;
   const watchedPosition = watch('position');
+
+  function applyProfile() {
+    if (!profile) return;
+    setValue('fullName', profile.name, { shouldValidate: true });
+    setValue('email', profile.email, { shouldValidate: true });
+    setValue('phone', profile.phone, { shouldValidate: true });
+    setProfileUsed(true);
+  }
 
   function handleModeSwitch(next: 'cv' | 'linkedin') {
     setMode(next);
@@ -120,6 +131,9 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
         throw new Error(body.error ?? `Server error ${res.status}`);
       }
 
+      // Save profile for Easy Apply on next visit
+      saveProfile({ name: data.fullName, email: data.email ?? '', phone: data.phone });
+
       setSubmittedEmail(data.email ?? undefined);
       reset();
       setSuccessOpen(true);
@@ -131,6 +145,27 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+        {/* Easy Apply banner — shown when returning user has saved profile */}
+        {hydrated && profile && !profileUsed && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-700/40 dark:bg-brand-600/10">
+            <div>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+                ⚡ Quick Apply
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Welcome back, {profile.name || 'returning applicant'}! Fill your details in one click.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={applyProfile}
+              className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 transition-colors"
+            >
+              Use Saved Profile
+            </button>
+          </div>
+        )}
+
         {/* Full Name */}
         <div className="space-y-1.5">
           <Label htmlFor="fullName">{t('form_full_name')} <span className="text-danger">*</span></Label>
