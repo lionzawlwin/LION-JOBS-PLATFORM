@@ -1,70 +1,89 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Users, LayoutDashboard, Info } from 'lucide-react';
+import { Building2, Users, LayoutDashboard, Info, PenSquare, Mail } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
+import { CompaniesView } from './CompaniesView';
+import { ContentStudio } from './ContentStudio';
+import { EmailCampaigns } from './EmailCampaigns';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { cn } from '@/lib/utils';
 
-type Tab = 'employer' | 'candidate';
+type Tab = 'candidates' | 'companies' | 'content' | 'campaigns';
 
-export function DashboardClient() {
-  const [activeTab, setActiveTab] = useState<Tab>('employer');
+const TABS: { value: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
+  { value: 'candidates', label: 'Candidates',    icon: <Users      size={14} />, adminOnly: true  },
+  { value: 'companies',  label: 'B2B Companies', icon: <Building2  size={14} />, adminOnly: true  },
+  { value: 'content',    label: 'Content Studio',icon: <PenSquare  size={14} />, adminOnly: true  },
+  { value: 'campaigns',  label: 'Email Campaigns',icon:<Mail       size={14} />, adminOnly: true  },
+];
+
+interface Props {
+  isAdmin?: boolean;
+}
+
+export function DashboardClient({ isAdmin = false }: Props) {
+  const [activeTab, setActiveTab] = useState<Tab>('candidates');
+
+  if (!isAdmin) {
+    // Non-admin: public candidate status view only
+    return (
+      <div className="rounded-2xl border border-border bg-background/50 backdrop-blur-sm">
+        <MyApplicationsClient />
+      </div>
+    );
+  }
 
   return (
     <>
       {/* Tab switcher */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1">
-          <button
-            onClick={() => setActiveTab('employer')}
-            className={cn(
-              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-              activeTab === 'employer'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Building2 size={14} />
-            Employer View
-          </button>
-          <button
-            onClick={() => setActiveTab('candidate')}
-            className={cn(
-              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-              activeTab === 'candidate'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Users size={14} />
-            Candidate View
-          </button>
+      <div className="mb-6 overflow-x-auto">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1 min-w-max">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap',
+                activeTab === tab.value
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {activeTab === 'employer' && (
+      {/* Internal notice */}
+      <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+        <Info size={14} className="mt-0.5 shrink-0" />
+        <span>
+          Admin dashboard — Lion Jobs Agency internal use only.
+          {activeTab === 'candidates'  && ' Manage candidate applications and pipeline.'}
+          {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
+          {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
+          {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
+        </span>
+      </div>
+
+      {activeTab === 'candidates' && (
         <>
-          {/* Internal notice */}
-          <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-            <Info size={14} className="mt-0.5 shrink-0" />
-            <span>
-              Internal use only — Lion Jobs Agency staff dashboard for managing candidate applications.
-            </span>
-          </div>
           <PostJobForm />
           <JobsPanel />
           <KanbanBoard />
         </>
       )}
 
-      {activeTab === 'candidate' && (
-        <div className="rounded-2xl border border-border bg-background/50 backdrop-blur-sm">
-          <MyApplicationsClient />
-        </div>
-      )}
+      {activeTab === 'companies' && <CompaniesView />}
+
+      {activeTab === 'content'   && <ContentStudio />}
+
+      {activeTab === 'campaigns' && <EmailCampaigns />}
     </>
   );
 }

@@ -67,6 +67,22 @@ export interface JobFilters {
   type: JobType | '';
 }
 
+export type CompanyStatus = 'Lead' | 'Client' | 'Inactive';
+
+export interface Company {
+  id:            string;
+  name:          string;
+  contactPerson: string;
+  email:         string;
+  phone:         string;
+  industry:      string;
+  city:          string;
+  status:        CompanyStatus;
+  notes:         string;
+  lastContacted: string;
+  createdAt:     string;
+}
+
 export interface ApplicationPayload {
   fullName: string;
   email?: string;

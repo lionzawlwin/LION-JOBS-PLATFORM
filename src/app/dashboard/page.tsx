@@ -1,34 +1,67 @@
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { DashboardClient } from '@/components/dashboard/DashboardClient';
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, LogOut, Shield } from 'lucide-react';
+import Link from 'next/link';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Dashboard | Lion Jobs Agency',
-  description: 'Manage job postings and candidate applications. Candidates can also track their application status here.',
+  description: 'Internal admin dashboard for Lion Jobs Agency.',
+  robots: { index: false },
 };
 
-export default function DashboardPage() {
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  // Redirect to login if not authenticated
+  if (!session) {
+    redirect('/login');
+  }
+
+  const isAdmin = session.user?.email === ADMIN_EMAIL;
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
 
       <main className="flex-1 py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
           {/* Page header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2">
-              <LayoutDashboard size={22} className="text-brand-600" />
-              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-                Dashboard
-              </h1>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <LayoutDashboard size={22} className="text-brand-600" />
+                <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Dashboard</h1>
+                {isAdmin && (
+                  <span className="flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
+                    <Shield size={10} /> Admin
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {isAdmin
+                  ? `Signed in as ${session.user?.email} · Full admin access`
+                  : 'Track your job applications.'}
+              </p>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Employers: manage jobs and candidates. Candidates: track your application status.
-            </p>
+
+            {/* Sign-out link */}
+            <Link
+              href="/api/auth/signout"
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <LogOut size={13} /> Sign out
+            </Link>
           </div>
 
-          <DashboardClient />
+          <DashboardClient isAdmin={isAdmin} />
         </div>
       </main>
 

@@ -1,12 +1,13 @@
 import { google } from 'googleapis';
 import { cache } from 'react';
-import type { Job, Candidate, ApplicationStatus } from '@/types';
+import type { Job, Candidate, ApplicationStatus, Company, CompanyStatus } from '@/types';
 
 // Tab names must match your Google Sheet exactly (case-sensitive).
 // Override via env vars to avoid touching code when the sheet is renamed.
 const JOBS_TAB        = process.env.GOOGLE_JOBS_TAB        ?? 'Jobs';
 const CANDIDATES_TAB  = process.env.GOOGLE_CANDIDATES_TAB  ?? 'Pipeline';
 const SUBSCRIBERS_TAB = process.env.GOOGLE_SUBSCRIBERS_TAB ?? 'Subscribers';
+const COMPANIES_TAB   = process.env.GOOGLE_COMPANIES_TAB   ?? 'Companies';
 
 function isConfigured(): boolean {
   return Boolean(
@@ -550,4 +551,106 @@ export async function getCompanyFeedback(company: string): Promise<{
     console.warn('[sheets] getCompanyFeedback: tab may not exist yet —', (err as Error).message);
     return { averageRating: 0, totalReviews: 0, wouldRecommendPct: 0 };
   }
+}
+
+// ── Companies (B2B Employer CRM) ─────────────────────────────────
+// Tab: Companies | Cols A–K
+//   A company_id | B name | C contact_person | D email | E phone
+//   F industry   | G city | H status         | I notes
+//   J last_contacted | K created_at
+
+export async function getCompanies(): Promise<Company[]> {
+  if (!isConfigured()) return [];
+  try {
+    const sheets = getSheets();
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+      range: `${COMPANIES_TAB}!A2:K`,
+    });
+    const rows = (res.data.values ?? []) as string[][];
+    return rows
+      .filter((r) => r[0])
+      .map((r) => ({
+        id:            r[0]  ?? '',
+        name:          r[1]  ?? '',
+        contactPerson: r[2]  ?? '',
+        email:         r[3]  ?? '',
+        phone:         r[4]  ?? '',
+        industry:      r[5]  ?? '',
+        city:          r[6]  ?? '',
+        status:        (r[7] as CompanyStatus) || 'Lead',
+        notes:         r[8]  ?? '',
+        lastContacted: r[9]  ?? '',
+        createdAt:     r[10] ?? '',
+      }));
+  } catch (err) {
+    console.warn('[sheets] getCompanies error:', (err as Error).message);
+    return [];
+  }
+}
+
+export async function appendCompany(data: {
+  name:          string;
+  contactPerson: string;
+  email:         string;
+  phone:         string;
+  industry:      string;
+  city:          string;
+  status?:       CompanyStatus;
+  notes?:        string;
+}): Promise<string> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+  const id  = `co-${Date.now()}`;
+  const now = new Date().toISOString();
+  const sheets = getSheets();
+  const row = [
+    id,
+    data.name,
+    data.contactPerson,
+    data.email,
+    data.phone,
+    data.industry,
+    data.city,
+    data.status ?? 'Lead',
+    data.notes ?? '',
+    now,
+    now,
+  ];
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:    process.env.GOOGLE_SHEET_ID!,
+    range:            `${COMPANIES_TAB}!A:K`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody:      { values: [row] },
+  });
+  return id;
+}
+
+export async function updateCompanyStatus(
+  companyId: string,
+  status:    CompanyStatus,
+  notes?:    string,
+): Promise<void> {
+  if (!isConfigured()) throw new Error('Google Sheets not configured.');
+  const sheets = getSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    range: `${COMPANIES_TAB}!A:K`,
+  });
+  const rows = (res.data.values ?? []) as string[][];
+  const rowIndex = rows.findIndex((r) => r[0] === companyId);
+  if (rowIndex === -1) throw new Error(`Company ${companyId} not found`);
+  const sheetRow = rowIndex + 1;
+  const now = new Date().toISOString();
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
+    requestBody: {
+      valueInputOption: 'RAW',
+      data: [
+        { range: `${COMPANIES_TAB}!H${sheetRow}`, values: [[status]] },
+        { range: `${COMPANIES_TAB}!I${sheetRow}`, values: [[notes ?? rows[rowIndex][8] ?? '']] },
+        { range: `${COMPANIES_TAB}!J${sheetRow}`, values: [[now]] },
+      ],
+    },
+  });
 }
