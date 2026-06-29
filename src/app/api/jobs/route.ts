@@ -91,9 +91,17 @@ export async function POST(req: NextRequest) {
       benefits:     Array.isArray(body.benefits) ? body.benefits : [],
     });
   } catch (err) {
-    console.error('[POST /api/jobs] Sheets append failed:', err);
-    return NextResponse.json({ error: 'Failed to write to Google Sheets' }, { status: 502 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[POST /api/jobs] Sheets append failed:', msg);
+    return NextResponse.json(
+      { error: `Failed to write to Google Sheets: ${msg}` },
+      { status: 502 },
+    );
   }
+
+  // Expose the target spreadsheet URL in the response so the admin can
+  // immediately verify the write went to the correct sheet.
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
 
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
   const SITE_URL       = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -116,5 +124,8 @@ export async function POST(req: NextRequest) {
     }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
   }
 
-  return NextResponse.json({ ok: true, jobId, socialPostingQueued: !!PUBLISH_SECRET }, { status: 201 });
+  return NextResponse.json(
+    { ok: true, jobId, socialPostingQueued: !!PUBLISH_SECRET, sheetUrl },
+    { status: 201 },
+  );
 }

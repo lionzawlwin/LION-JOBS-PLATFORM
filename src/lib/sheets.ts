@@ -396,13 +396,22 @@ export async function appendJob(data: {
     messageText,                           // 22 text (pre-formatted for Make.com)
   ];
 
-  await sheets.spreadsheets.values.append({
+  const appendRes = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEET_ID!,
     range: `${JOBS_TAB}!A:W`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [row] },
   });
+
+  // Log the actual range written so Vercel logs reveal if the wrong
+  // spreadsheet / tab is being targeted (root cause of silent failures).
+  const updatedRange  = appendRes.data.updates?.updatedRange ?? '(unknown)';
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+  const sheetUrl      = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+  console.log(
+    `[appendJob] ✅ Row written — id=${id} | range=${updatedRange} | sheet=${sheetUrl}`,
+  );
 
   return id;
 }
