@@ -69,10 +69,11 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
 
 // ── Component ────────────────────────────────────────────────────
 export function PostJobForm() {
-  const [open,    setOpen]    = useState(false);
-  const [status,  setStatus]  = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-  const [newJobId, setNewJobId] = useState('');
+  const [open,               setOpen]               = useState(false);
+  const [status,             setStatus]             = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message,            setMessage]            = useState('');
+  const [newJobId,           setNewJobId]           = useState('');
+  const [socialPostingQueued, setSocialPostingQueued] = useState(false);
 
   const {
     register,
@@ -132,7 +133,12 @@ export function PostJobForm() {
 
       setStatus('success');
       setNewJobId(json.jobId ?? '');
-      setMessage('Job posted successfully! Publish webhook fired to your social channels.');
+      setSocialPostingQueued(Boolean(json.socialPostingQueued));
+      setMessage(
+        json.socialPostingQueued
+          ? 'Job saved! GitHub Actions is generating the job card and will post it to Telegram & Facebook within ~60 seconds.'
+          : 'Job saved to Google Sheets. Set PUBLISH_WEBHOOK_SECRET in Vercel to enable automatic social posting.',
+      );
     } catch {
       setStatus('error');
       setMessage('Network error — check your connection and try again.');
@@ -146,6 +152,7 @@ export function PostJobForm() {
     setStatus('idle');
     setMessage('');
     setNewJobId('');
+    setSocialPostingQueued(false);
   }
 
   return (
@@ -175,21 +182,31 @@ export function PostJobForm() {
 
           {/* Success state */}
           {status === 'success' && (
-            <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-700/30 dark:bg-green-900/20">
-              <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-green-600 dark:text-green-400" />
-              <div>
-                <p className="text-sm font-semibold text-green-700 dark:text-green-400">{message}</p>
-                {newJobId && (
-                  <p className="mt-1 font-mono text-xs text-green-600 dark:text-green-500">Job ID: {newJobId}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={handlePostAnother}
-                  className="mt-3 rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition-colors"
-                >
-                  Post Another Job
-                </button>
+            <div className="mb-5 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-700/30 dark:bg-green-900/20">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-green-600 dark:text-green-400" />
+                <div>
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">{message}</p>
+                  {newJobId && (
+                    <p className="mt-1 font-mono text-xs text-green-600 dark:text-green-500">Job ID: {newJobId}</p>
+                  )}
+                </div>
               </div>
+              {socialPostingQueued && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2 dark:bg-green-800/30">
+                  <span className="text-base">📲</span>
+                  <p className="text-xs text-green-700 dark:text-green-400">
+                    Posting to <strong>Telegram</strong> and <strong>Facebook</strong> via GitHub Actions
+                  </p>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handlePostAnother}
+                className="mt-3 rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition-colors"
+              >
+                Post Another Job
+              </button>
             </div>
           )}
 

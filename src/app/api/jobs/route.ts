@@ -98,5 +98,5 @@ export async function POST(req: NextRequest) {
     }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
   }
 
-  return NextResponse.json({ ok: true, jobId }, { status: 201 });
+  return NextResponse.json({ ok: true, jobId, socialPostingQueued: !!PUBLISH_SECRET }, { status: 201 });
 }
