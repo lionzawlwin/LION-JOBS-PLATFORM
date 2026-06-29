@@ -1,23 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Users, LayoutDashboard, Info, PenSquare, Mail } from 'lucide-react';
+import { BarChart2, Building2, Users, Info, PenSquare, Mail } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
 import { CompaniesView } from './CompaniesView';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
+import { AnalyticsOverview } from './AnalyticsOverview';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { cn } from '@/lib/utils';
 
-type Tab = 'candidates' | 'companies' | 'content' | 'campaigns';
+type Tab = 'overview' | 'candidates' | 'companies' | 'content' | 'campaigns';
 
-const TABS: { value: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
-  { value: 'candidates', label: 'Candidates',    icon: <Users      size={14} />, adminOnly: true  },
-  { value: 'companies',  label: 'B2B Companies', icon: <Building2  size={14} />, adminOnly: true  },
-  { value: 'content',    label: 'Content Studio',icon: <PenSquare  size={14} />, adminOnly: true  },
-  { value: 'campaigns',  label: 'Email Campaigns',icon:<Mail       size={14} />, adminOnly: true  },
+const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
+  { value: 'overview',   label: 'Overview',       icon: <BarChart2  size={14} /> },
+  { value: 'candidates', label: 'Candidates',      icon: <Users      size={14} /> },
+  { value: 'companies',  label: 'B2B Companies',   icon: <Building2  size={14} /> },
+  { value: 'content',    label: 'Content Studio',  icon: <PenSquare  size={14} /> },
+  { value: 'campaigns',  label: 'Email Campaigns', icon: <Mail       size={14} /> },
 ];
 
 interface Props {
@@ -25,7 +27,7 @@ interface Props {
 }
 
 export function DashboardClient({ isAdmin = false }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('candidates');
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only
@@ -59,17 +61,20 @@ export function DashboardClient({ isAdmin = false }: Props) {
         </div>
       </div>
 
-      {/* Internal notice */}
+      {/* Context banner */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
         <span>
           Admin dashboard — Lion Jobs Agency internal use only.
-          {activeTab === 'candidates'  && ' Manage candidate applications and pipeline.'}
+          {activeTab === 'overview'    && ' Real-time analytics across candidates, jobs, and companies.'}
+          {activeTab === 'candidates'  && ' Manage candidate applications and pipeline stages.'}
           {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
           {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
           {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
         </span>
       </div>
+
+      {activeTab === 'overview' && <AnalyticsOverview />}
 
       {activeTab === 'candidates' && (
         <>
