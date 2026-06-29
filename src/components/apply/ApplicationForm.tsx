@@ -60,6 +60,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
   const [mode, setMode] = useState<'cv' | 'linkedin'>('cv');
   const [successOpen, setSuccessOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -113,6 +114,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
         throw new Error(body.error ?? `Server error ${res.status}`);
       }
 
+      setSubmittedEmail(data.email ?? undefined);
       reset();
       setSuccessOpen(true);
     } catch (err) {
@@ -285,6 +287,7 @@ export function ApplicationForm({ jobId, defaultPosition = '' }: ApplicationForm
         open={successOpen}
         jobTitle={watchedPosition || defaultPosition || 'this position'}
         onClose={() => setSuccessOpen(false)}
+        candidateEmail={submittedEmail}
       />
     </>
   );

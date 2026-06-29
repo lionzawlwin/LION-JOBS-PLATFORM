@@ -49,12 +49,13 @@ const btnBase =
   'flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80 cursor-pointer';
 
 interface SuccessModalProps {
-  open:     boolean;
-  jobTitle: string;
-  onClose:  () => void;
+  open:              boolean;
+  jobTitle:          string;
+  onClose:           () => void;
+  candidateEmail?:   string;
 }
 
-export function SuccessModal({ open, jobTitle, onClose }: SuccessModalProps) {
+export function SuccessModal({ open, jobTitle, onClose, candidateEmail }: SuccessModalProps) {
   return (
     <AnimatePresence>
       {open && (
@@ -109,6 +110,11 @@ export function SuccessModal({ open, jobTitle, onClose }: SuccessModalProps) {
               <span className="font-medium text-foreground">{jobTitle}</span>{' '}
               has been received. Our team will review it and reach out within 48 hours.
             </p>
+            {candidateEmail && (
+              <p className="mt-2 text-center text-xs text-brand-600 dark:text-brand-400">
+                📧 Confirmation sent to <span className="font-semibold">{candidateEmail}</span>
+              </p>
+            )}
 
             {/* ── Social follow-up — 2×2 grid ──────────────────────── */}
             <div className="mt-5 space-y-2">

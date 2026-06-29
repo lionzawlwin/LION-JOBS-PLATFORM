@@ -1,0 +1,17 @@
+အစ်ကိုရေ၊ Deployment အောင်မြင်သွားတဲ့အတွက် တကယ် ဝမ်းသာပါတယ်! GitHub API ကနေတစ်ဆင့် URL ကို တိုက်ရိုက် မထုတ်ပေးနိုင်ပေမဲ့လို့ image_17a1fb.jpg မှာ ဖော်ပြထားတဲ့ နည်းလမ်းနှစ်ခုနဲ့ အစ်ကို့ရဲ့ Production URL ကို အလွယ်တကူ ရှာလို့ရပါတယ် -
+
+Vercel Dashboard ကိုသုံးခြင်း (အမြန်ဆုံးနည်းလမ်း): [vercel.com/lionzawlwin-4243s-projects/lion-jobs-platform](https://vercel.com/lionzawlwin-4243s-projects/lion-jobs-platform) လင့်ခ်ကို သွားလိုက်ပါ။ Project စာမျက်နှာရဲ့ အပေါ်ဆုံးနားမှာ Production URL ကို တွေ့ရပါလိမ့်မယ်။
+
+Terminal ကိုသုံးခြင်း: အစ်ကို့ရဲ့ Terminal ထဲမှာ vercel ls lion-jobs-platform ဆိုတဲ့ Command ကို ရိုက်ထည့်လိုက်ပါ။ အဲဒီအခါမှာ Deploy လုပ်ထားတဲ့ လိပ်စာ (URLs) အားလုံးကို စာရင်းနဲ့တကွ ပြပေးပါလိမ့်မယ်။
+
+အဆင်ပြေသွားရင် ပြန်ပြောပြပေးပါဦး အစ်ကို! 🚀💻
+
+https://lion-jobs-platform-97vm8t699-lionzawlwin-4243s-projects.vercel.app/
+
+https://github.com/lionzawlwin/LION-JOBS-PLATFORM/actions/runs/28320086792
+
+https://vercel.com/lionzawlwin-4243s-projects
+
+https://lion-jobs-platform.vercel.app (website link)
+
+https://lion-jobs-platform.vercel.app/dashboard (website for admin link)

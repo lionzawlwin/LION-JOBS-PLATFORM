@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { Bookmark } from 'lucide-react';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { StatsBar } from '@/components/landing/StatsBar';
+import { Testimonials } from '@/components/landing/Testimonials';
 import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
 import { JobGrid } from '@/components/jobs/JobGrid';
 import { useJobs, filterJobs } from '@/hooks/useJobs';
+import { useSavedJobs } from '@/hooks/useSavedJobs';
 import { JoinCommunity } from '@/components/JoinCommunity';
+import { cn } from '@/lib/utils';
 import type { Job, JobCategory, JobFilters as FiltersType } from '@/types';
 
 const DEFAULT_FILTERS: FiltersType = {
@@ -24,12 +28,15 @@ interface Props {
 }
 
 export function HomeClient({ initialJobs }: Props) {
-  // SWR seeded with server-fetched data — Googlebot sees pre-rendered HTML,
-  // returning users get a background refresh without a loading flash.
   const { jobs, loading, error } = useJobs(initialJobs);
   const [filters, setFilters] = useState<FiltersType>(DEFAULT_FILTERS);
+  const [showSaved, setShowSaved] = useState(false);
+  const { savedIds } = useSavedJobs();
 
   const filtered = filterJobs(jobs, filters);
+  const displayJobs = showSaved
+    ? filtered.filter((j) => savedIds.includes(j.id))
+    : filtered;
 
   function handleFilterChange(patch: Partial<FiltersType>) {
     setFilters((prev) => ({ ...prev, ...patch }));
@@ -37,12 +44,13 @@ export function HomeClient({ initialJobs }: Props) {
 
   function handleHeroSearch(keyword: string, category: JobCategory | '') {
     setFilters((prev) => ({ ...prev, keyword, category }));
+    setShowSaved(false);
   }
 
   return (
     <>
       <HeroSection onSearch={handleHeroSearch} />
-      <StatsBar />
+      <StatsBar liveJobCount={jobs.length || initialJobs.length} />
 
       <section id="jobs" className="myanmar-pattern py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -60,25 +68,71 @@ export function HomeClient({ initialJobs }: Props) {
                 Every role is vetted and salary-verified by our team before it goes live.
               </p>
             </div>
-            {!loading && (
-              <span className="shrink-0 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
-                {filtered.length} {filtered.length === 1 ? 'role' : 'roles'} live
-              </span>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Saved Jobs toggle */}
+              <button
+                type="button"
+                onClick={() => setShowSaved((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                  showSaved
+                    ? 'border-brand-400 bg-brand-50 text-brand-700 dark:border-brand-600/40 dark:bg-brand-600/10 dark:text-brand-300'
+                    : 'border-border text-muted-foreground hover:border-brand-300 hover:text-brand-600',
+                )}
+              >
+                <Bookmark size={12} className={cn(showSaved && 'fill-current')} />
+                Saved
+                {savedIds.length > 0 && (
+                  <span className={cn(
+                    'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                    showSaved ? 'bg-brand-600 text-white' : 'bg-muted text-muted-foreground',
+                  )}>
+                    {savedIds.length}
+                  </span>
+                )}
+              </button>
+
+              {!loading && (
+                <span className="rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
+                  {filtered.length} {filtered.length === 1 ? 'role' : 'roles'} live
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Search + filters */}
           <div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4 backdrop-blur-sm shadow-sm">
             <SearchBar filters={filters} onChange={handleFilterChange} />
             <div className="border-t border-border/50 pt-3">
-              <JobFilters filters={filters} onChange={handleFilterChange} total={filtered.length} />
+              <JobFilters filters={filters} onChange={handleFilterChange} total={displayJobs.length} />
             </div>
           </div>
 
-          <JobGrid jobs={filtered} loading={loading} error={error} />
+          {/* Empty saved state */}
+          {showSaved && savedIds.length === 0 && (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
+              <Bookmark size={32} className="text-muted-foreground/40" />
+              <p className="text-sm font-medium text-muted-foreground">No saved jobs yet</p>
+              <p className="text-xs text-muted-foreground">
+                Click the bookmark icon on any job card to save it here.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowSaved(false)}
+                className="mt-1 rounded-lg bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition-colors"
+              >
+                Browse All Jobs
+              </button>
+            </div>
+          )}
+
+          {(!showSaved || savedIds.length > 0) && (
+            <JobGrid jobs={displayJobs} loading={loading} error={error} />
+          )}
         </div>
       </section>
 
+      <Testimonials />
       <JoinCommunity />
     </>
   );

@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 
 interface Stat { label: string; value: number; suffix: string }
 
-const STATS: Stat[] = [
-  { label: 'Open Positions', value: 500, suffix: '+' },
-  { label: 'Successful Placements', value: 200, suffix: '+' },
-  { label: 'Partner Companies', value: 50, suffix: '+' },
-  { label: 'Average Match Score', value: 87, suffix: '%' },
-];
+function buildStats(liveJobCount?: number): Stat[] {
+  return [
+    { label: 'Open Positions',       value: Math.max(liveJobCount ?? 0, 500), suffix: '+' },
+    { label: 'Successful Placements', value: 200, suffix: '+' },
+    { label: 'Partner Companies',     value: 50,  suffix: '+' },
+    { label: 'Average Match Score',   value: 87,  suffix: '%' },
+  ];
+}
 
 function useCountUp(target: number, duration = 1400, triggered: boolean) {
   const [count, setCount] = useState(0);
@@ -39,9 +41,10 @@ function StatItem({ stat, triggered }: { stat: Stat; triggered: boolean }) {
   );
 }
 
-export function StatsBar() {
+export function StatsBar({ liveJobCount }: { liveJobCount?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [triggered, setTriggered] = useState(false);
+  const STATS = buildStats(liveJobCount);
 
   useEffect(() => {
     const el = ref.current;

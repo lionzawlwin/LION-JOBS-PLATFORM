@@ -1,0 +1,202 @@
+{
+  "name": "Lion Jobs — Omnichannel Job Distribution",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 1,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "label": "Lion Jobs Publish Webhook",
+              "data": {
+                "editable": "true",
+                "types": ["application/json"]
+              }
+            }
+          }
+        },
+        "expect": [
+          { "name": "title",        "type": "text",    "label": "Job Title" },
+          { "name": "company",      "type": "text",    "label": "Company" },
+          { "name": "location",     "type": "text",    "label": "Location" },
+          { "name": "type",         "type": "text",    "label": "Job Type" },
+          { "name": "category",     "type": "text",    "label": "Category" },
+          { "name": "salary",       "type": "text",    "label": "Salary (formatted)" },
+          { "name": "description",  "type": "text",    "label": "Job Description (excerpt)" },
+          { "name": "isUrgent",     "type": "boolean", "label": "Is Urgent" },
+          { "name": "isFeatured",   "type": "boolean", "label": "Is Featured" },
+          { "name": "url",          "type": "url",     "label": "Job Detail URL" },
+          { "name": "applyUrl",     "type": "url",     "label": "Apply Page URL" },
+          { "name": "applyWhatsApp","type": "url",     "label": "WhatsApp Apply URL" },
+          { "name": "messageShort", "type": "text",    "label": "Pre-formatted Message (Telegram/Viber/FB)" },
+          { "name": "postedAt",     "type": "date",    "label": "Posted At (ISO 8601)" }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parameters": {},
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      },
+      "routes": [
+
+        {
+          "flow": [
+            {
+              "id": 3,
+              "module": "telegram-bot-api:sendMessage",
+              "version": 1,
+              "parameters": {
+                "token": 1
+              },
+              "filter": {
+                "name": "Telegram Branch",
+                "conditions": []
+              },
+              "mapper": {
+                "chat_id":                  "YOUR_TELEGRAM_CHANNEL_ID",
+                "text":                     "{{1.messageShort}}",
+                "parse_mode":               "Markdown",
+                "disable_web_page_preview": false,
+                "disable_notification":     false
+              },
+              "metadata": {
+                "designer": {
+                  "x": 700,
+                  "y": -250
+                },
+                "restore": {
+                  "parameters": {
+                    "token": {
+                      "label": "Lion Jobs Telegram Bot"
+                    }
+                  },
+                  "mapper": {
+                    "parse_mode": {
+                      "label": "Markdown"
+                    }
+                  }
+                },
+                "notes": "SETUP: 1) Connect your Telegram Bot token. 2) Replace YOUR_TELEGRAM_CHANNEL_ID with your channel ID (e.g. @LionJobsMyanmar or -1001234567890). The bot must be an admin of the channel."
+              }
+            }
+          ]
+        },
+
+        {
+          "flow": [
+            {
+              "id": 4,
+              "module": "facebook-pages:createPost",
+              "version": 1,
+              "parameters": {
+                "pageId": 1
+              },
+              "filter": {
+                "name": "Facebook Branch",
+                "conditions": []
+              },
+              "mapper": {
+                "message": "{{1.messageShort}}",
+                "link":    "{{1.url}}"
+              },
+              "metadata": {
+                "designer": {
+                  "x": 700,
+                  "y": 0
+                },
+                "restore": {
+                  "parameters": {
+                    "pageId": {
+                      "label": "Lion Jobs Facebook Page"
+                    }
+                  }
+                },
+                "notes": "SETUP: 1) Connect your Facebook Pages account. 2) Select your Lion Jobs Facebook Page in the pageId parameter. The 'link' field makes Facebook auto-generate a rich job card preview."
+              }
+            }
+          ]
+        },
+
+        {
+          "flow": [
+            {
+              "id": 5,
+              "module": "viber:sendMessage",
+              "version": 1,
+              "parameters": {
+                "token": 1
+              },
+              "filter": {
+                "name": "Viber Branch",
+                "conditions": []
+              },
+              "mapper": {
+                "receiver": "YOUR_VIBER_USER_OR_GROUP_ID",
+                "type":     "text",
+                "text":     "{{1.messageShort}}",
+                "sender": {
+                  "name":   "Lion Jobs Agency",
+                  "avatar": ""
+                },
+                "min_api_version": 1
+              },
+              "metadata": {
+                "designer": {
+                  "x": 700,
+                  "y": 250
+                },
+                "restore": {
+                  "parameters": {
+                    "token": {
+                      "label": "Lion Jobs Viber Bot"
+                    }
+                  }
+                },
+                "notes": "SETUP: 1) Connect your Viber Public Account bot token. 2) For group broadcasts use the 'Broadcast Message' action instead of 'Send Message'. 3) If 'viber' app is not visible, search for 'Viber for Business' in the Make.com app library."
+              }
+            }
+          ]
+        }
+
+      ]
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu1.make.com"
+  }
+}

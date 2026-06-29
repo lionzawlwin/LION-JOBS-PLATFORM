@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { cn, formatSalary, timeAgo, truncate, buildJobSlug } from '@/lib/utils';
 import { ShareButton } from '@/components/jobs/ShareButton';
+import { SaveButton } from '@/components/jobs/SaveButton';
 import type { Job } from '@/types';
 
 const SITE_URL =
@@ -47,8 +48,9 @@ export function JobCard({ job }: { job: Job }) {
             </span>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <span className="text-xs text-muted-foreground">{timeAgo(job.postedAt)}</span>
+          <SaveButton jobId={job.id} />
           <ShareButton url={jobUrl} title={job.title} company={job.company} />
         </div>
       </div>
@@ -96,11 +98,17 @@ export function JobCard({ job }: { job: Job }) {
       {/* Salary + CTA */}
       <div className="mt-auto flex items-center justify-between gap-3 pt-1">
         <div>
-          <div className="flex items-center gap-1 text-sm font-bold text-foreground">
-            <DollarSign size={13} className="text-brand-600" />
-            {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
-          </div>
-          <p className="text-xs text-muted-foreground">per month</p>
+          {job.salaryMin > 0 ? (
+            <>
+              <div className="flex items-center gap-1 text-sm font-bold text-foreground">
+                <DollarSign size={13} className="text-brand-600" />
+                {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
+              </div>
+              <p className="text-xs text-muted-foreground">per month</p>
+            </>
+          ) : (
+            <span className="text-sm font-medium text-muted-foreground">Negotiable</span>
+          )}
         </div>
         <Link
           href={`/apply/${job.id}`}

@@ -57,15 +57,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── 2. Forward to Make.com (CV storage / notifications) ──────────
+  // ── 2. Forward to Make.com (CV storage / email confirmation) ──────
   // Non-critical: if Make.com is down or unconfigured we still return success
   // because the data is already in Google Sheets.
   try {
-    await forwardToMake({ fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl });
+    await forwardToMake({
+      fullName, email, phone, position, jobId, cvBase64, cvFileName, linkedinUrl,
+      // Fields Make.com uses to route & send the confirmation email
+      event:                'application_submitted',
+      applicationStatus:    'Under Review',
+      confirmationEmailTo:  email ?? null,
+      confirmationMessage:  'Your application is being reviewed. Our team will contact you within 48 hours.',
+    } as Parameters<typeof forwardToMake>[0] & Record<string, unknown>);
   } catch (err) {
     console.error('[apply] Make.com webhook error (non-critical — sheet write succeeded):', err);
     // Intentionally NOT returning an error response here.
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, confirmationSent: Boolean(email) });
 }

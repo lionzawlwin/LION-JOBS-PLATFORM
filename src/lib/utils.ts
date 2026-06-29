@@ -6,13 +6,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatSalary(min: number, max: number, currency = 'USD'): string {
+export function formatSalary(min: number, max: number, currency = 'MMK'): string {
+  if (min <= 0) return 'Negotiable';
+
+  if (currency === 'MMK') {
+    const k = (n: number) => `K ${n.toLocaleString('en-US')}`;
+    return max > min ? `${k(min)} – ${k(max)}` : k(min);
+  }
+
   const fmt = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
   });
-  return `${fmt.format(min)} – ${fmt.format(max)}`;
+  return max > min ? `${fmt.format(min)} – ${fmt.format(max)}` : fmt.format(min);
 }
 
 export function timeAgo(dateString: string): string {
