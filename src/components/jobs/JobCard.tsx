@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn, formatSalary, timeAgo, truncate, buildJobSlug } from '@/lib/utils';
 import { ShareButton } from '@/components/jobs/ShareButton';
 import { SaveButton } from '@/components/jobs/SaveButton';
+import { MatchBadge } from '@/components/jobs/MatchBadge';
 import { getJobSignals } from '@/lib/jobSignals';
 import type { Job } from '@/types';
 
@@ -90,8 +91,8 @@ export function JobCard({ job }: { job: Job }) {
         <Badge variant="secondary" className="text-xs font-medium">{job.category}</Badge>
       </div>
 
-      {/* Social proof signals */}
-      {signals.length > 0 && (
+      {/* Social proof signals + match badge */}
+      {(signals.length > 0 || job.requirements.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
           {signals.map((s) => (
             <span
@@ -105,6 +106,7 @@ export function JobCard({ job }: { job: Job }) {
               {s.label}
             </span>
           ))}
+          <MatchBadge requirements={job.requirements} />
         </div>
       )}
 
