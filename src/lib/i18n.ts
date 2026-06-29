@@ -71,6 +71,12 @@ export const translations = {
     alerts_all:         'All Categories',
     alerts_note:        'Free. Unsubscribe anytime.',
 
+    // Hero CTA cards
+    hero_drop_cv_title:   'Drop Your CV — No Job Required',
+    hero_drop_cv_sub:     'Join our talent pool. We\'ll match you when the perfect job arrives. Free & no spam.',
+    hero_hire_title:      'Looking to Hire? Tell Us Your Needs',
+    hero_hire_sub:        'Find pre-vetted talent for your company — free employer consultation, fast turnaround.',
+
     // Email alerts
     email_alerts_title:       'Get Job Alerts by Email',
     email_alerts_sub:         'Be the first to know when new jobs match your skills. We send only the good stuff.',
@@ -149,6 +155,12 @@ export const translations = {
     alerts_subscribe:   'Telegram တွင် ဝင်ရောက်ပါ',
     alerts_all:         'အမျိုးအစားအားလုံး',
     alerts_note:        'အခမဲ့။ မည်သည့်အချိန်မဆို ဖြုတ်သိမ်းနိုင်သည်။',
+
+    // Hero CTA cards
+    hero_drop_cv_title:   'CV ထည့်ပါ — အလုပ်မလိုအပ်ပါ',
+    hero_drop_cv_sub:     'Talent Pool တွင် ပါဝင်ပါ။ ကိုက်ညီသောအလုပ် ရောက်သည်နှင့် ဆက်သွယ်ပေးပါမည်။ အခမဲ့ & spam မပေးပါ။',
+    hero_hire_title:      'ဝန်ထမ်းရှာနေသလား? လိုအပ်ချက်ကို ပြောပြပါ',
+    hero_hire_sub:        'စစ်ဆေးပြီးသော ဝန်ထမ်းများကို ရှာဖွေပါ — အခမဲ့ အတိုင်ပင်ခံ၊ မြန်ဆန်သောရလဒ်။',
 
     // Email alerts
     email_alerts_title:       'အီးမေးလ်ဖြင့် အလုပ်သတိပေးချက် ရယူပါ',

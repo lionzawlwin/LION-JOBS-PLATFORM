@@ -158,8 +158,8 @@ export function HeroSection({ onSearch }: Props) {
                 <Inbox size={22} />
               </div>
               <div className="flex-1 text-left">
-                <p className="text-base font-bold text-foreground">Drop Your CV — No Job Required</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">Join our talent pool. We'll match you when the perfect job arrives. Free &amp; no spam.</p>
+                <p className="text-base font-bold text-foreground">{t('hero_drop_cv_title')}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{t('hero_drop_cv_sub')}</p>
               </div>
               <ArrowRight size={20} className="shrink-0 text-brand-600 group-hover:translate-x-1 transition-transform duration-200" />
             </div>
@@ -177,8 +177,8 @@ export function HeroSection({ onSearch }: Props) {
                 <Building2 size={22} />
               </div>
               <div className="flex-1 text-left">
-                <p className="text-base font-bold text-foreground">Looking to Hire? Tell Us Your Needs</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">Find pre-vetted talent for your company — free employer consultation, fast turnaround.</p>
+                <p className="text-base font-bold text-foreground">{t('hero_hire_title')}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{t('hero_hire_sub')}</p>
               </div>
               <ArrowRight size={20} className="shrink-0 text-amber-600 group-hover:translate-x-1 transition-transform duration-200" />
             </div>

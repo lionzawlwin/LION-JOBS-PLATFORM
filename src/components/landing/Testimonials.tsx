@@ -6,7 +6,7 @@ const TESTIMONIALS = [
   {
     name:     'Mg Kyaw Zin Thu',
     role:     'Software Engineer',
-    company:  'City Bank Myanmar',
+    company:  'Atom Myanmar Limited (Distributor)',
     avatar:   'KZ',
     bg:       'from-brand-600 to-brand-700',
     quote:    'Lion Jobs matched me with my dream role in just 2 weeks. The team understood exactly what I was looking for and prepared me well for interviews.',
@@ -24,7 +24,7 @@ const TESTIMONIALS = [
   {
     name:     'Ko Win Myat Aung',
     role:     'Operations Lead',
-    company:  'Myanmar Brewery Ltd.',
+    company:  'Blue Sky International Co., Ltd',
     avatar:   'WM',
     bg:       'from-green-600 to-green-700',
     quote:    'Thanks to Lion Jobs, I am now earning 40% more than my previous role. The salary negotiation support alone was worth everything.',
