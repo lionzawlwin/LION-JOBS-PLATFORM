@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Environment } from '@react-three/drei';
+import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Camera at z=9, fov=50 → visible half-width at z=0 ≈ 4.2 units.
@@ -243,13 +243,13 @@ const Hero3D = memo(function Hero3D() {
       dpr={[1, 1.5]}
       style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
     >
-      {/* IBL — critical for metallic PBR; without it, metals appear black */}
-      <Environment preset="sunset" />
+      {/* Hemisphere light simulates sky/ground IBL for metallic PBR — no CDN fetch */}
+      <hemisphereLight args={['#FFF3B0', '#1B3A6B', 1.1]} />
 
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[4, 6, 4]}  intensity={1.8} color="#FFF3B0" />
-      <pointLight       position={[-5, 3, 2]}  intensity={2.0} color="#D4AF37" />
-      <pointLight       position={[5, -3, 1]}  intensity={1.2} color="#3B6FC7" />
+      <ambientLight intensity={0.35} />
+      <directionalLight position={[4, 6, 4]}  intensity={2.0} color="#FFF3B0" />
+      <pointLight       position={[-5, 3, 2]}  intensity={2.2} color="#D4AF37" />
+      <pointLight       position={[5, -3, 1]}  intensity={1.4} color="#3B6FC7" />
 
       <Scene />
     </Canvas>

@@ -2,17 +2,18 @@ import { supabase } from '@/lib/supabase';
 import type { Job, JobCategory, JobType } from '@/types';
 
 export async function getJobs(): Promise<Job[]> {
-  const { data, error } = await supabase
-    .from('jobs')
-    .select('*')
-    .order('posted_at', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .order('posted_at', { ascending: false });
 
-  if (error) {
-    console.error('[db/jobs] getJobs error:', error.message);
-    return [];
-  }
+    if (error) {
+      console.error('[db/jobs] getJobs error:', error.message);
+      return [];
+    }
 
-  return (data ?? []).map((row) => ({
+    return (data ?? []).map((row) => ({
     id:           row.id,
     title:        row.title,
     company:      row.company,
@@ -29,6 +30,10 @@ export async function getJobs(): Promise<Job[]> {
     isUrgent:     row.is_urgent ?? false,
     isFeatured:   row.is_featured ?? false,
   }));
+  } catch (err) {
+    console.error('[db/jobs] getJobs error:', err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 export async function appendJob(data: {

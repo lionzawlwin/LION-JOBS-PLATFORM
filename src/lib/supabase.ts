@@ -7,6 +7,11 @@ if (!url || !key) {
   console.warn('[supabase] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — DB calls will fail.');
 }
 
-export const supabase = createClient(url ?? '', key ?? '', {
-  auth: { persistSession: false },
-});
+// Use placeholder values when env vars are missing so createClient() doesn't
+// throw during Next.js build-time page-data collection. Actual DB calls will
+// fail gracefully (caught by callers) if the placeholders are used.
+export const supabase = createClient(
+  url ?? 'https://placeholder.supabase.co',
+  key ?? 'placeholder-service-role-key',
+  { auth: { persistSession: false } },
+);
