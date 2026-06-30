@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCompanyStatus } from '@/lib/db';
+import { updateCompanyStatus, deleteCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus } from '@/types';
 
@@ -21,6 +21,23 @@ export async function PATCH(
   }
   try {
     await updateCompanyStatus(id, body.status, body.notes);
+    return Response.json({ ok: true });
+  } catch (err) {
+    return Response.json({ error: (err as Error).message }, { status: 502 });
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user?.email !== ADMIN_EMAIL) {
+    return Response.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+  const { id } = await params;
+  try {
+    await deleteCompany(id);
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

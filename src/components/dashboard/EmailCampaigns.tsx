@@ -69,7 +69,12 @@ export function EmailCampaigns() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const onRevalidate = () => load();
+    window.addEventListener('companies:revalidate', onRevalidate);
+    return () => window.removeEventListener('companies:revalidate', onRevalidate);
+  }, [load]);
 
   const eligible    = companies.filter((c) => c.email && c.status !== 'Inactive');
   const activeType  = EMAIL_TYPES.find((e) => e.value === emailType)!;

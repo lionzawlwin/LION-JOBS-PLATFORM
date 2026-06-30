@@ -64,10 +64,10 @@ const formSchema = z.discriminatedUnion('mode', [cvSchema, linkedinSchema]);
 type FormData = z.infer<typeof formSchema>;
 
 type TabId = 'personal' | 'experience' | 'documents';
-const TABS: { id: TabId; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'personal',   label: 'Personal',   icon: User      },
-  { id: 'experience', label: 'Experience', icon: Briefcase },
-  { id: 'documents',  label: 'Documents',  icon: FileText  },
+const TABS: { id: TabId; labelKey: 'form_tab_personal' | 'form_tab_experience' | 'form_tab_documents'; icon: React.ComponentType<{ size?: number }> }[] = [
+  { id: 'personal',   labelKey: 'form_tab_personal',   icon: User      },
+  { id: 'experience', labelKey: 'form_tab_experience', icon: Briefcase },
+  { id: 'documents',  labelKey: 'form_tab_documents',  icon: FileText  },
 ];
 
 const EDUCATION_OPTIONS = [
@@ -81,6 +81,17 @@ const EDUCATION_OPTIONS = [
   'Other',
 ];
 
+const EDUCATION_OPTIONS_MY: Record<string, string> = {
+  'High School / GED':          'အထက်တန်းပညာ',
+  'Diploma / Associate Degree': 'ဒီပလိုမာ / ဒုတိယဘွဲ့',
+  'Bachelor\'s Degree':         'ဘွဲ့ (တက်သိုလ်)',
+  'Master\'s Degree':           'မဟာဘွဲ့',
+  'MBA':                        'စီးပွားရေးပညာ မဟာဘွဲ့ (MBA)',
+  'PhD / Doctorate':            'ပါရဂူဘွဲ့',
+  'Professional Certification': 'ပညာရပ်ဆိုင်ရာ လက်မှတ်',
+  'Other':                      'အခြား',
+};
+
 const NOTICE_OPTIONS = [
   'Immediately available',
   '1 week',
@@ -90,6 +101,16 @@ const NOTICE_OPTIONS = [
   '3 months',
   'More than 3 months',
 ];
+
+const NOTICE_OPTIONS_MY: Record<string, string> = {
+  'Immediately available':  'ချက်ချင်းစတင်နိုင်',
+  '1 week':                 '၁ ပတ်',
+  '2 weeks':                '၂ ပတ်',
+  '1 month':                '၁ လ',
+  '2 months':               '၂ လ',
+  '3 months':               '၃ လ',
+  'More than 3 months':     '၃ လ ကျော်',
+};
 
 const EXPERIENCE_OPTIONS = [
   'Less than 1 year',
@@ -104,6 +125,19 @@ const EXPERIENCE_OPTIONS = [
   '15+ years',
 ];
 
+const EXPERIENCE_OPTIONS_MY: Record<string, string> = {
+  'Less than 1 year': '၁ နှစ်အောက်',
+  '1 year':           '၁ နှစ်',
+  '2 years':          '၂ နှစ်',
+  '3 years':          '၃ နှစ်',
+  '4 years':          '၄ နှစ်',
+  '5 years':          '၅ နှစ်',
+  '6–8 years':        '၆–၈ နှစ်',
+  '9–12 years':       '၉–၁၂ နှစ်',
+  '13–15 years':      '၁၃–၁၅ နှစ်',
+  '15+ years':        '၁၅ နှစ်ကျော်',
+};
+
 interface ApplicationFormProps {
   jobId?: string;
   defaultPosition?: string;
@@ -111,7 +145,7 @@ interface ApplicationFormProps {
 }
 
 export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestions = [] }: ApplicationFormProps) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { profile, hydrated, saveProfile } = useProfile();
   const [mode, setMode] = useState<'cv' | 'linkedin'>('cv');
   const [activeTab, setActiveTab] = useState<TabId>('personal');
@@ -218,11 +252,11 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
         {hydrated && profile && !profileUsed && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-700/40 dark:bg-brand-600/10">
             <div>
-              <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">⚡ Quick Apply</p>
-              <p className="text-xs text-muted-foreground">Welcome back, {profile.name || 'returning applicant'}!</p>
+              <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">{t('form_quick_apply')}</p>
+              <p className="text-xs text-muted-foreground">{t('form_welcome_back')}{profile.name ? `, ${profile.name}` : ''}!</p>
             </div>
             <button type="button" onClick={applyProfile} className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 transition-colors">
-              Use Saved Profile
+              {t('form_use_saved')}
             </button>
           </div>
         )}
@@ -252,7 +286,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                 ) : (
                   <Icon size={13} />
                 )}
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="hidden sm:inline">{t(tab.labelKey)}</span>
                 <span className="sm:hidden">{idx + 1}</span>
               </button>
             );
@@ -305,10 +339,10 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="cityLocation">City / Township</Label>
+              <Label htmlFor="cityLocation">{t('form_city')}</Label>
               <Input
                 id="cityLocation"
-                placeholder="e.g. Yangon, Mandalay, Naypyidaw…"
+                placeholder={lang === 'my' ? 'ဥပမာ၊ ရန်ကုန်၊ မန္တလေး၊ နေပြည်တော်…' : 'e.g. Yangon, Mandalay, Naypyidaw…'}
                 {...register('cityLocation' as keyof FormData)}
               />
             </div>
@@ -320,79 +354,85 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="education">Highest Education</Label>
+                <Label htmlFor="education">{t('form_education')}</Label>
                 <select
                   id="education"
                   {...register('education' as keyof FormData)}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
                 >
-                  <option value="">Select education level…</option>
-                  {EDUCATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  <option value="">{t('form_select_education')}</option>
+                  {EDUCATION_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{lang === 'my' ? (EDUCATION_OPTIONS_MY[o] ?? o) : o}</option>
+                  ))}
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="experienceYears">Years of Experience</Label>
+                <Label htmlFor="experienceYears">{t('form_experience')}</Label>
                 <select
                   id="experienceYears"
                   {...register('experienceYears' as keyof FormData)}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
                 >
-                  <option value="">Select experience…</option>
-                  {EXPERIENCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  <option value="">{t('form_select_experience')}</option>
+                  {EXPERIENCE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{lang === 'my' ? (EXPERIENCE_OPTIONS_MY[o] ?? o) : o}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="currentCompany">Current / Last Employer</Label>
+                <Label htmlFor="currentCompany">{t('form_current_company')}</Label>
                 <Input
                   id="currentCompany"
-                  placeholder="e.g. Acme Corp"
+                  placeholder={lang === 'my' ? 'ဥပမာ၊ ABC Company' : 'e.g. Acme Corp'}
                   {...register('currentCompany' as keyof FormData)}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="currentSalary">Current Salary (MMK/month)</Label>
+                <Label htmlFor="currentSalary">{t('form_current_salary')}</Label>
                 <Input
                   id="currentSalary"
-                  placeholder="e.g. 800,000"
+                  placeholder={lang === 'my' ? 'ဥပမာ၊ ၈၀၀,၀၀၀' : 'e.g. 800,000'}
                   {...register('currentSalary' as keyof FormData)}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="noticePeriod">Notice Period</Label>
+              <Label htmlFor="noticePeriod">{t('form_notice_period')}</Label>
               <select
                 id="noticePeriod"
                 {...register('noticePeriod' as keyof FormData)}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
               >
-                <option value="">Select notice period…</option>
-                {NOTICE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                <option value="">{t('form_select_notice')}</option>
+                {NOTICE_OPTIONS.map((o) => (
+                  <option key={o} value={o}>{lang === 'my' ? (NOTICE_OPTIONS_MY[o] ?? o) : o}</option>
+                ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="languages">Languages Spoken</Label>
+              <Label htmlFor="languages">{t('form_languages')}</Label>
               <Input
                 id="languages"
-                placeholder="e.g. Burmese (Native), English (Fluent), Thai (Basic)"
+                placeholder={lang === 'my' ? 'ဥပမာ၊ မြန်မာ (မိခင်ဘာသာ)၊ အင်္ဂလိပ် (ကျွမ်းကျင်)' : 'e.g. Burmese (Native), English (Fluent), Thai (Basic)'}
                 {...register('languages' as keyof FormData)}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="skills">Key Skills</Label>
+              <Label htmlFor="skills">{t('form_skills')}</Label>
               <Input
                 id="skills"
-                placeholder="e.g. Python, Project Management, Photoshop, SQL…"
+                placeholder={lang === 'my' ? 'ဥပမာ၊ Python၊ စီမံကိန်းစီမံခန့်ခွဲမှု၊ Photoshop…' : 'e.g. Python, Project Management, Photoshop, SQL…'}
                 {...register('skills' as keyof FormData)}
               />
-              <p className="text-xs text-muted-foreground">Separate skills with commas</p>
+              <p className="text-xs text-muted-foreground">{t('form_skills_hint')}</p>
             </div>
           </div>
         )}
@@ -412,16 +452,16 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="expectedSalary">Expected Salary (MMK/month)</Label>
+              <Label htmlFor="expectedSalary">{t('form_expected_salary')}</Label>
               <Input
                 id="expectedSalary"
-                placeholder="e.g. 1,200,000"
+                placeholder={lang === 'my' ? 'ဥပမာ၊ ၁,၂၀၀,၀၀၀' : 'e.g. 1,200,000'}
                 {...register('expectedSalary' as keyof FormData)}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="portfolioUrl">Portfolio / Website URL</Label>
+              <Label htmlFor="portfolioUrl">{t('form_portfolio_url')}</Label>
               <Input
                 id="portfolioUrl"
                 type="url"
@@ -509,7 +549,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
               onClick={() => setActiveTab(activeTab === 'documents' ? 'experience' : 'personal')}
               className="flex items-center gap-1.5 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
             >
-              <ChevronLeft size={15} /> Back
+              <ChevronLeft size={15} /> {t('form_back')}
             </button>
           )}
 
@@ -519,7 +559,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
               onClick={handleNext}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 shadow-lg shadow-brand-600/20 transition-colors"
             >
-              Next <ChevronRight size={15} />
+              {t('form_next')} <ChevronRight size={15} />
             </button>
           ) : (
             <Button

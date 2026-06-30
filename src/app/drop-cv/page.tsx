@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inbox } from 'lucide-react';
+import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { TalentPoolForm } from '@/components/apply/TalentPoolForm';
@@ -48,6 +49,20 @@ export default function DropCVPage() {
         <div className="mx-auto max-w-lg px-4">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
             <TalentPoolForm />
+          </div>
+
+          {/* Resume Builder CTA */}
+          <div className="mt-6 rounded-2xl border border-border bg-muted/40 px-6 py-5 text-center">
+            <p className="text-sm font-semibold text-foreground">Don&rsquo;t have a CV yet?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create a professional resume in minutes — completely free.
+            </p>
+            <Link
+              href="/resume-builder"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors shadow-sm shadow-brand-600/20"
+            >
+              Create My CV with Resume Builder →
+            </Link>
           </div>
         </div>
       </main>

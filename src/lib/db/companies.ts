@@ -75,3 +75,8 @@ export async function updateCompanyStatus(
     .eq('id', id);
   if (error) throw new Error(`Failed to update company status: ${error.message}`);
 }
+
+export async function deleteCompany(id: string): Promise<void> {
+  const { error } = await supabase.from('companies').delete().eq('id', id);
+  if (error) throw new Error(`Failed to delete company: ${error.message}`);
+}

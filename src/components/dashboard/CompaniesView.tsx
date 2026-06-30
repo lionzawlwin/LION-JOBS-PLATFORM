@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send } from 'lucide-react';
+import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Company, CompanyStatus } from '@/types';
 
@@ -21,8 +21,10 @@ export function CompaniesView() {
   const [saving, setSaving]           = useState(false);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
-  const [emailSending, setEmailSending] = useState<string | null>(null);
-  const [emailType, setEmailType]       = useState<'welcome' | 'outreach'>('welcome');
+  const [emailSending, setEmailSending]       = useState<string | null>(null);
+  const [emailType, setEmailType]             = useState<'welcome' | 'outreach'>('welcome');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId]           = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '', contactPerson: '', email: '', phone: '',
@@ -67,6 +69,20 @@ export function CompaniesView() {
       body: JSON.stringify({ status }),
     });
     setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, status } : c));
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/companies/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCompanies((prev) => prev.filter((c) => c.id !== id));
+        window.dispatchEvent(new CustomEvent('companies:revalidate'));
+      }
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
   }
 
   async function sendEmail(company: Company) {
@@ -203,18 +219,47 @@ export function CompaniesView() {
                     {co.contactPerson && <p className="text-xs text-muted-foreground">{co.contactPerson}</p>}
                   </div>
                 </div>
-                {/* Status dropdown */}
-                <div className="relative group">
-                  <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
-                    {co.status} <ChevronDown size={10} />
-                  </button>
-                  <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
-                    {STATUSES.map((s) => (
-                      <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
-                        {s}
-                      </button>
-                    ))}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Status dropdown */}
+                  <div className="relative group">
+                    <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
+                      {co.status} <ChevronDown size={10} />
+                    </button>
+                    <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
+                      {STATUSES.map((s) => (
+                        <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                  {/* Delete button */}
+                  {confirmDeleteId === co.id ? (
+                    <div className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1">
+                      <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
+                      <button
+                        onClick={() => handleDelete(co.id)}
+                        disabled={deletingId === co.id}
+                        className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                      >
+                        {deletingId === co.id ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(co.id)}
+                      title="Delete company"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
                 </div>
               </div>
 

@@ -46,7 +46,7 @@ export const translations = {
     featured:           'Featured',
     back_to_jobs:       'Back to all jobs',
 
-    // Apply form
+    // Apply form — personal tab
     form_full_name:     'Full Name',
     form_email:         'Email Address',
     form_phone:         'Phone Number',
@@ -57,6 +57,31 @@ export const translations = {
     form_submit:        'Submit Application',
     form_submitting:    'Submitting…',
     form_consent:       'By submitting, you agree that Lion Jobs Agency may share your details with the hiring company.',
+    form_city:          'City / Township',
+    // Apply form — experience tab
+    form_education:         'Highest Education',
+    form_select_education:  'Select education level…',
+    form_experience:        'Years of Experience',
+    form_select_experience: 'Select experience…',
+    form_current_company:   'Current / Last Employer',
+    form_current_salary:    'Current Salary (MMK/month)',
+    form_notice_period:     'Notice Period',
+    form_select_notice:     'Select notice period…',
+    form_languages:         'Languages Spoken',
+    form_skills:            'Key Skills',
+    form_skills_hint:       'Separate skills with commas',
+    // Apply form — documents tab
+    form_expected_salary:   'Expected Salary (MMK/month)',
+    form_portfolio_url:     'Portfolio / Website URL',
+    // Apply form — navigation & misc
+    form_next:              'Next',
+    form_back:              'Back',
+    form_quick_apply:       '⚡ Quick Apply',
+    form_welcome_back:      'returning applicant',
+    form_use_saved:         'Use Saved Profile',
+    form_tab_personal:      'Personal',
+    form_tab_experience:    'Experience',
+    form_tab_documents:     'Documents',
 
     // Success modal
     modal_title:        'Application Submitted!',
@@ -131,7 +156,7 @@ export const translations = {
     featured:           'အထူးသတိပြု',
     back_to_jobs:       'အလုပ်အားလုံးသို့ ပြန်',
 
-    // Apply form
+    // Apply form — personal tab
     form_full_name:     'အမည်အပြည့်အစုံ',
     form_email:         'အီးမေးလ်လိပ်စာ',
     form_phone:         'ဖုန်းနံပါတ်',
@@ -142,6 +167,31 @@ export const translations = {
     form_submit:        'လျှောက်လွှာ တင်ပါ',
     form_submitting:    'တင်သွင်းနေသည်…',
     form_consent:       'တင်ပြခြင်းဖြင့် Lion Jobs Agency မှ သင်၏အချက်အလက်ကို ငှားရမ်းသူနှင့် မျှဝေနိုင်ကြောင်း သဘောတူသည်။',
+    form_city:          'မြို့ / မြို့နယ်',
+    // Apply form — experience tab
+    form_education:         'အမြင့်ဆုံးပညာအရည်အချင်း',
+    form_select_education:  'ပညာရည် ရွေးချယ်ပါ…',
+    form_experience:        'အလုပ်သက်တမ်း',
+    form_select_experience: 'အတွေ့အကြုံ ရွေးချယ်ပါ…',
+    form_current_company:   'လက်ရှိ / နောက်ဆုံး လုပ်ခဲ့သောကုမ္ပဏီ',
+    form_current_salary:    'လက်ရှိလစာ (MMK/လ)',
+    form_notice_period:     'အသိပေးကာလ',
+    form_select_notice:     'အသိပေးကာလ ရွေးချယ်ပါ…',
+    form_languages:         'တတ်ကျွမ်းသောဘာသာစကားများ',
+    form_skills:            'အဓိကကျွမ်းကျင်မှုများ',
+    form_skills_hint:       'ကော်မာဖြင့် ခွဲခြားပါ',
+    // Apply form — documents tab
+    form_expected_salary:   'မျှော်မှန်းလစာ (MMK/လ)',
+    form_portfolio_url:     'Portfolio / ဝဘ်ဆိုဒ် URL',
+    // Apply form — navigation & misc
+    form_next:              'ရှေ့သို့',
+    form_back:              'နောက်သို့',
+    form_quick_apply:       '⚡ အမြန်လျှောက်ထားရန်',
+    form_welcome_back:      'ကြိုဆိုပါသည်',
+    form_use_saved:         'သိမ်းဆည်းထားသောပရိုဖိုင် သုံးပါ',
+    form_tab_personal:      'ကိုယ်ရေးအချက်',
+    form_tab_experience:    'အတွေ့အကြုံ',
+    form_tab_documents:     'စာရွက်စာတမ်း',
 
     // Success modal
     modal_title:        'လျှောက်လွှာ တင်ပြပြီးပါပြီ!',

@@ -58,16 +58,14 @@ export default async function ApplyPage(props: PageProps<'/apply/[jobId]'>) {
               </p>
 
               {job.requirements.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <ul className="mt-3 space-y-1 list-none pl-0">
                   {job.requirements.map((req) => (
-                    <span
-                      key={req}
-                      className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                    >
+                    <li key={req} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
                       {req}
-                    </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
           ) : (
