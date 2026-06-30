@@ -1,5 +1,6 @@
 import { getJobs, appendJob } from '@/lib/sheets';
 import { NextRequest, NextResponse } from 'next/server';
+import { secureCompare } from '@/lib/apiSecurity';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
 // Accepts optional filter query params so the client avoids downloading
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
       { status: 503 },
     );
   }
-  if (req.headers.get('x-admin-key') !== ADMIN_KEY) {
+  // Timing-safe comparison — prevents secret extraction via response-time analysis
+  if (!secureCompare(req.headers.get('x-admin-key') ?? '', ADMIN_KEY)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -71,6 +73,18 @@ export async function POST(req: NextRequest) {
       { error: 'Missing required fields: title, company, location, category, type, description' },
       { status: 422 },
     );
+  }
+
+  // Field length caps — prevent oversized content reaching Google Sheets
+  if (
+    String(title).length       > 200  ||
+    String(company).length     > 200  ||
+    String(location).length    > 200  ||
+    String(category).length    > 100  ||
+    String(type).length        > 50   ||
+    String(description).length > 10_000
+  ) {
+    return NextResponse.json({ error: 'One or more fields exceed the maximum allowed length.' }, { status: 422 });
   }
 
   let jobId: string;
@@ -113,7 +127,7 @@ export async function POST(req: NextRequest) {
     fetch(`${SITE_URL}/api/webhooks/publish-job`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':     'application/json',
         'x-webhook-secret': PUBLISH_SECRET,
       },
       body: JSON.stringify({
@@ -124,6 +138,7 @@ export async function POST(req: NextRequest) {
         isUrgent: Boolean(body.isUrgent), postedAt: new Date().toISOString(),
         benefits: Array.isArray(body.benefits) ? body.benefits : [],
       }),
+      signal: AbortSignal.timeout(9_000),
     }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
   }
 

@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { forwardToMake } from '@/lib/makeWebhook';
 import { appendCandidate, updateCandidateCvUrl } from '@/lib/sheets';
 import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
+import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
+
+// 5 submissions per IP per 10 minutes — generous for real applicants,
+// blocks scripted floods.
+const RATE_LIMIT_WINDOW_S = 600;
+const RATE_LIMIT_MAX      = 5;
 
 const applySchema = z
   .object({
@@ -12,8 +18,9 @@ const applySchema = z
     position:        z.string().min(2),
     jobId:           z.string().optional(),
     mode:            z.enum(['cv', 'linkedin']),
-    cvBase64:        z.string().optional(),
-    cvFileName:      z.string().optional(),
+    // base64 of a 5 MB file ≈ 6.7 M chars; 7 M gives comfortable headroom
+    cvBase64:        z.string().max(7_000_000, 'CV file must be 5 MB or smaller.').optional(),
+    cvFileName:      z.string().max(255).optional(),
     linkedinUrl:     z.string().url().optional(),
     expectedSalary:  z.string().optional(),
     desiredCategory: z.string().optional(),
@@ -37,6 +44,24 @@ const applySchema = z
   );
 
 export async function POST(req: NextRequest) {
+  // ── Rate limit: 5 applications per IP per 10 minutes ─────────────
+  const ip  = getClientIp(req);
+  const rl  = checkRateLimit(`apply:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: 'Too many submissions. Please wait a few minutes and try again.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After':      String(rl.resetIn),
+          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.floor(Date.now() / 1000) + rl.resetIn),
+        },
+      },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

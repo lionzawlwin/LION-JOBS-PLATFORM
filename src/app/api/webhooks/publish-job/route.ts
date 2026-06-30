@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getJobs } from '@/lib/sheets';
 import { buildJobSlug, formatSalary } from '@/lib/utils';
+import { secureCompare } from '@/lib/apiSecurity';
 import type { Job } from '@/types';
+
+// ── Zod schema for Mode B (raw field input from Make.com) ─────────────
+// Validates and caps field lengths to prevent oversized content injection
+// into Google Sheets and the social media messages distributed downstream.
+const rawJobSchema = z.object({
+  id:           z.string().min(1).max(64),
+  title:        z.string().min(1).max(200),
+  company:      z.string().max(200).optional(),
+  location:     z.string().max(200).optional(),
+  category:     z.string().max(100).optional(),
+  type:         z.string().max(50).optional(),
+  salaryMin:    z.union([z.number(), z.string()]).optional(),
+  salaryMax:    z.union([z.number(), z.string()]).optional(),
+  currency:     z.string().max(10).optional(),
+  description:  z.string().max(5000).optional(),
+  requirements: z.unknown().optional(),
+  postedAt:     z.string().optional(),
+  isUrgent:     z.unknown().optional(),
+  isFeatured:   z.unknown().optional(),
+  benefits:     z.unknown().optional(),
+});
 
 // NEXT_PUBLIC_ vars are inlined as "" by Turbopack when unset — use runtime var.
 const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
@@ -49,12 +72,15 @@ async function triggerGitHubActions(payload: object): Promise<void> {
 }
 
 // ── Auth helper ───────────────────────────────────────────────────
+// Uses timing-safe comparison to prevent timing-based secret extraction.
 function isAuthorized(req: NextRequest): boolean {
   if (!WEBHOOK_SECRET) return false;
-  // Accept either standard Bearer token OR a lightweight custom header
-  const bearer = req.headers.get('authorization');
-  const secret = req.headers.get('x-webhook-secret');
-  return bearer === `Bearer ${WEBHOOK_SECRET}` || secret === WEBHOOK_SECRET;
+  const bearer = req.headers.get('authorization') ?? '';
+  const secret = req.headers.get('x-webhook-secret') ?? '';
+  return (
+    secureCompare(bearer, `Bearer ${WEBHOOK_SECRET}`) ||
+    secureCompare(secret, WEBHOOK_SECRET)
+  );
 }
 
 // ── Payload builder ───────────────────────────────────────────────
@@ -139,22 +165,28 @@ export async function POST(req: NextRequest) {
   } else if (typeof body.id === 'string' && typeof body.title === 'string') {
     // ── Mode B: raw fields (Make.com Google Sheets "Watch Rows" ──
     //    passes the sheet row directly to this endpoint)
+    const parsed = rawJobSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? 'Invalid raw job fields.';
+      return NextResponse.json({ error: msg }, { status: 422 });
+    }
+    const d = parsed.data;
     const syntheticJob: Job = {
-      id: body.id,
-      title: body.title,
-      company: body.company ?? 'Lion Jobs Agency',
-      location: body.location ?? 'Yangon, Myanmar',
-      category: body.category ?? 'Other',
-      type: body.type ?? 'Full-time',
-      salaryMin: Number(body.salaryMin) || 0,
-      salaryMax: Number(body.salaryMax) || 0,
-      currency: body.currency ?? 'MMK',
-      description: body.description ?? '',
-      requirements: Array.isArray(body.requirements) ? body.requirements : [],
-      postedAt: body.postedAt ?? new Date().toISOString(),
-      isUrgent: Boolean(body.isUrgent),
-      isFeatured: Boolean(body.isFeatured),
-      benefits: Array.isArray(body.benefits) ? body.benefits : [],
+      id:           d.id,
+      title:        d.title,
+      company:      d.company      ?? 'Lion Jobs Agency',
+      location:     d.location     ?? 'Yangon, Myanmar',
+      category:     (d.category    ?? 'Other') as Job['category'],
+      type:         (d.type        ?? 'Full-time') as Job['type'],
+      salaryMin:    Number(d.salaryMin)  || 0,
+      salaryMax:    Number(d.salaryMax)  || 0,
+      currency:     d.currency     ?? 'MMK',
+      description:  d.description  ?? '',
+      requirements: Array.isArray(d.requirements) ? d.requirements as string[] : [],
+      postedAt:     d.postedAt     ?? new Date().toISOString(),
+      isUrgent:     Boolean(d.isUrgent),
+      isFeatured:   Boolean(d.isFeatured),
+      benefits:     Array.isArray(d.benefits) ? d.benefits as string[] : [],
     };
     payload = buildPayload(syntheticJob);
   } else {
@@ -185,8 +217,11 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
 
+    // Always drain the body to prevent connection-keep-alive leaks
+    const makeBody = await makeRes.text().catch(() => '');
+
     if (!makeRes.ok) {
-      console.error('[publish-job] Make.com returned HTTP', makeRes.status);
+      console.error('[publish-job] Make.com returned HTTP', makeRes.status, makeBody.slice(0, 200));
       return NextResponse.json({ error: 'Make.com delivery failed', upstreamStatus: makeRes.status }, { status: 502 });
     }
   } catch (err) {
