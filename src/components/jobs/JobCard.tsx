@@ -162,23 +162,12 @@ export function JobCard({ job }: { job: Job }) {
           {job.description}
         </p>
 
-        {/* Row 6: Requirement tags */}
+        {/* Row 6: Key requirements — flat readable text, no pills */}
         {job.requirements.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {job.requirements.slice(0, 3).map((req) => (
-              <span
-                key={req}
-                className="rounded-md bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground"
-              >
-                {req}
-              </span>
-            ))}
-            {job.requirements.length > 3 && (
-              <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground">
-                +{job.requirements.length - 3}
-              </span>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground/75 leading-relaxed line-clamp-1">
+            {job.requirements.slice(0, 4).join(' · ')}
+            {job.requirements.length > 4 ? ` · +${job.requirements.length - 4} more` : ''}
+          </p>
         )}
       </div>
 

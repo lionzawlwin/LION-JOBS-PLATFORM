@@ -144,6 +144,22 @@ interface ApplicationFormProps {
   screeningQuestions?: ScreeningQuestion[];
 }
 
+const VALIDATION_MY: Record<string, string> = {
+  'Full name must be at least 2 characters': 'အမည် အနည်းဆုံး ၂ လုံး ဖြည့်ပါ',
+  'Enter a valid email address':             'မှန်ကန်သော အီးမေးလ်လိပ်စာ ထည့်ပါ',
+  'Enter a valid phone number':              'မှန်ကန်သော ဖုန်းနံပါတ် ထည့်ပါ',
+  'Invalid phone number':                    'ဖုန်းနံပါတ် မမှန်ကန်ပါ',
+  'Position must be at least 2 characters': 'ရာထူး အနည်းဆုံး ၂ လုံး ဖြည့်ပါ',
+  'Please upload your CV':                   'CV တင်ပြပါ',
+  'Enter a valid URL':                       'မှန်ကန်သော URL ထည့်ပါ',
+  'Must be a LinkedIn profile URL':          'LinkedIn ပရိုဖိုင် URL ဖြည့်ပါ',
+};
+
+function xlateErr(msg: string | undefined, lang: string): string | undefined {
+  if (!msg || lang === 'en') return msg;
+  return VALIDATION_MY[msg] ?? msg;
+}
+
 export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestions = [] }: ApplicationFormProps) {
   const { t, lang } = useLanguage();
   const { profile, hydrated, saveProfile } = useProfile();
@@ -305,7 +321,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                 {...register('fullName')}
                 className={cn(errors.fullName && 'border-danger focus-visible:ring-danger/30')}
               />
-              {errors.fullName && <p className="text-xs text-danger">{errors.fullName.message}</p>}
+              {errors.fullName && <p className="text-xs text-danger">{xlateErr(errors.fullName.message, lang)}</p>}
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -320,7 +336,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                   {...register('email')}
                   className={cn(errors.email && 'border-danger focus-visible:ring-danger/30')}
                 />
-                {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+                {errors.email && <p className="text-xs text-danger">{xlateErr(errors.email.message, lang)}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -334,7 +350,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                   {...register('phone')}
                   className={cn(errors.phone && 'border-danger focus-visible:ring-danger/30')}
                 />
-                {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
+                {errors.phone && <p className="text-xs text-danger">{xlateErr(errors.phone.message, lang)}</p>}
               </div>
             </div>
 
@@ -448,7 +464,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                 {...register('position')}
                 className={cn(errors.position && 'border-danger focus-visible:ring-danger/30')}
               />
-              {errors.position && <p className="text-xs text-danger">{errors.position.message}</p>}
+              {errors.position && <p className="text-xs text-danger">{xlateErr(errors.position.message, lang)}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -511,7 +527,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                   onChange={handleCVChange}
                   onClear={handleCVClear}
                   fileName={cvFileName}
-                  error={errs['cvBase64']?.message}
+                  error={xlateErr(errs['cvBase64']?.message, lang)}
                 />
               )}
 
@@ -526,7 +542,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                     className={cn(errs['linkedinUrl'] && 'border-danger focus-visible:ring-danger/30')}
                   />
                   {errs['linkedinUrl']?.message && (
-                    <p className="text-xs text-danger">{errs['linkedinUrl'].message}</p>
+                    <p className="text-xs text-danger">{xlateErr(errs['linkedinUrl'].message, lang)}</p>
                   )}
                 </div>
               )}
