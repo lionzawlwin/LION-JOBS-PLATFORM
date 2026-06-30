@@ -7,7 +7,7 @@ import {
   Calendar, FileText, Star, ExternalLink, Clock,
   Download, Link2, Loader2, Pencil, Unlink, CheckCircle2,
   Trash2, AlertTriangle, MapPin, GraduationCap, Globe,
-  Languages, Zap, Building2,
+  Languages, Zap, Building2, Bot, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import type { Candidate, ApplicationStatus, Job } from '@/types';
@@ -49,6 +49,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   const [linkedJob,    setLinkedJob]    = useState<{ id: string; title: string; company: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting,      setDeleting]      = useState(false);
+  const [showReasoning, setShowReasoning] = useState(false);
   // CV URL editing
   const [cvUrlEdit,    setCvUrlEdit]    = useState(false);
   const [cvUrlValue,   setCvUrlValue]   = useState('');
@@ -418,24 +419,83 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
             )}
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-border bg-muted/30 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Applied</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
-                {new Date(candidate.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-            </div>
-            {candidate.matchScore > 0 && (
-              <div className="rounded-2xl border border-border bg-muted/30 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Rating</p>
-                <p className="mt-1 text-sm font-semibold text-foreground flex items-center gap-1">
-                  {'★'.repeat(candidate.matchScore)}{'☆'.repeat(5 - candidate.matchScore)}
-                  <span className="text-muted-foreground text-xs ml-1">{candidate.matchScore}/5</span>
-                </p>
-              </div>
-            )}
+          {/* Applied date */}
+          <div className="rounded-2xl border border-border bg-muted/30 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Applied</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {new Date(candidate.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           </div>
+
+          {/* AI Analysis card */}
+          {candidate.matchScore > 0 ? (
+            <div className="rounded-2xl border border-border bg-muted/30 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                  <Bot size={11} /> AI Match Analysis
+                </p>
+                <span className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-bold',
+                  candidate.matchScore >= 80
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : candidate.matchScore >= 60
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                )}>
+                  <Star size={10} className="inline mr-0.5" />
+                  {candidate.matchScore}% Match
+                </span>
+              </div>
+              {candidate.aiSummary && (
+                <div className="px-4 py-3 space-y-2">
+                  <p className="text-sm text-foreground leading-relaxed">{candidate.aiSummary}</p>
+                  {candidate.aiReasoning && (
+                    <div>
+                      <button
+                        onClick={() => setShowReasoning((v) => !v)}
+                        className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors"
+                      >
+                        {showReasoning ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        {showReasoning ? 'Hide reasoning' : 'Show fit reasoning'}
+                      </button>
+                      {showReasoning && (
+                        <p className="mt-2 rounded-xl border border-border bg-background/60 px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+                          {candidate.aiReasoning}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {candidate.aiProcessedAt && (
+                    <p className="text-[10px] text-muted-foreground/60">
+                      Analysed {new Date(candidate.aiProcessedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Bot size={14} className="text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground">AI scoring pending — processes automatically after submission.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch('/api/analyze-cv', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ applicationId: candidate.id }),
+                    });
+                    globalMutate('/api/candidates');
+                  } catch (err) { console.error(err); }
+                }}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition-colors dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300"
+              >
+                <Bot size={11} /> Run AI
+              </button>
+            </div>
+          )}
 
           {/* CV / Resume section */}
           <div className="rounded-2xl border border-border bg-muted/20 overflow-hidden">

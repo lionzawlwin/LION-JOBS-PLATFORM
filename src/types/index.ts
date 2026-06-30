@@ -62,7 +62,7 @@ export interface Candidate {
   salaryExpected?: string;
   interviewDate?: string;
   source?: string;
-  // extended profile fields (cols Y-AF)
+  // extended profile fields
   cityLocation?: string;
   education?: string;
   experienceYears?: string;
@@ -71,6 +71,10 @@ export interface Candidate {
   languages?: string;
   skills?: string;
   portfolioUrl?: string;
+  // AI scoring fields (populated asynchronously after submission)
+  aiSummary?:   string;
+  aiReasoning?: string;
+  aiProcessedAt?: string;
 }
 
 export interface B2bLead {

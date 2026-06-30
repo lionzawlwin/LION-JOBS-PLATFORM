@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { appendCandidate, updateCandidateCvUrl } from '@/lib/db';
+import { appendCandidate, updateCandidateCvUrl, saveAiScore } from '@/lib/db';
 import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
+import { scoreCandidateAgainstJob, extractTextFromBase64 } from '@/lib/ai/cvAnalyzer';
+import { getJobs } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 // 5 submissions per IP per 10 minutes — generous for real applicants,
@@ -129,6 +131,63 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         // Non-fatal — database row already exists
         console.error('[apply] Drive upload error (non-critical — DB write succeeded):', err);
+      }
+    })();
+  }
+
+  // ── 3. AI scoring (background, non-blocking) ─────────────────────
+  // Fire-and-forget: client already received { ok: true } above.
+  if (applicationId) {
+    (async () => {
+      try {
+        // Attempt PDF text extraction if a CV file was uploaded
+        let cvText: string | undefined;
+        if (cvBase64 && cvFileName) {
+          const mimeType = cvFileName.toLowerCase().endsWith('.pdf')
+            ? 'application/pdf'
+            : 'text/plain';
+          const extracted = await extractTextFromBase64(cvBase64, mimeType);
+          if (extracted) cvText = extracted;
+        }
+
+        // Find the job to score against
+        const jobs = await getJobs();
+        const job = jobId ? jobs.find((j) => j.id === jobId) : null;
+
+        const result = await scoreCandidateAgainstJob(
+          {
+            name:            fullName,
+            position,
+            experienceYears,
+            education,
+            skills,
+            currentCompany,
+            languages,
+            cityLocation,
+            linkedinUrl,
+          },
+          job
+            ? {
+                title:        job.title,
+                description:  job.description,
+                requirements: job.requirements,
+                category:     job.category,
+                type:         job.type,
+              }
+            : {
+                title:        position,
+                description:  '',
+                requirements: [],
+              },
+          cvText,
+        );
+
+        if (result) {
+          await saveAiScore(applicationId, result.score, result.summary, result.reasoning);
+          console.log(`[apply] AI score ${result.score}/100 saved for application ${applicationId}`);
+        }
+      } catch (err) {
+        console.error('[apply] AI scoring error (non-critical):', err);
       }
     })();
   }

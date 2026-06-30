@@ -34,6 +34,10 @@ interface AppRow {
   interview_date: string | null;
   google_drive_cv_url: string | null;
   linkedin_url: string | null;
+  ai_score: number | null;
+  ai_summary: string | null;
+  ai_reasoning: string | null;
+  ai_processed_at: string | null;
 }
 
 interface CandidateRow {
@@ -65,7 +69,7 @@ function mapToCandidate(candidate: CandidateRow, app: AppRow): Candidate {
     company:         app.company ?? undefined,
     cvUrl:           app.google_drive_cv_url ?? undefined,
     linkedinUrl:     app.linkedin_url ?? undefined,
-    matchScore:      0,
+    matchScore:      app.ai_score ?? 0,
     stage:           app.stage as ApplicationStatus,
     appliedAt:       app.applied_at,
     notes:           app.notes ?? undefined,
@@ -80,6 +84,9 @@ function mapToCandidate(candidate: CandidateRow, app: AppRow): Candidate {
     languages:       candidate.languages ?? undefined,
     skills:          candidate.skills ?? undefined,
     portfolioUrl:    candidate.portfolio_url ?? undefined,
+    aiSummary:       app.ai_summary ?? undefined,
+    aiReasoning:     app.ai_reasoning ?? undefined,
+    aiProcessedAt:   app.ai_processed_at ?? undefined,
   };
 }
 
@@ -96,7 +103,8 @@ export async function getCandidates(): Promise<Candidate[]> {
       applications (
         id, job_id, job_title, company, stage, applied_at,
         notes, salary_expected, interview_date,
-        google_drive_cv_url, linkedin_url
+        google_drive_cv_url, linkedin_url,
+        ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
     `)
     .order('created_at', { ascending: false });
@@ -293,6 +301,24 @@ export async function deleteCandidateWithDriveFile(
   return { ok: true, driveFileDeleted };
 }
 
+export async function saveAiScore(
+  applicationId: string,
+  score: number,
+  summary: string,
+  reasoning: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('applications')
+    .update({
+      ai_score:        score,
+      ai_summary:      summary,
+      ai_reasoning:    reasoning,
+      ai_processed_at: new Date().toISOString(),
+    })
+    .eq('id', applicationId);
+  if (error) throw new Error(`Failed to save AI score: ${error.message}`);
+}
+
 export async function getCandidatesByEmailOrPhone(
   query: string,
 ): Promise<Candidate[]> {
@@ -306,7 +332,8 @@ export async function getCandidatesByEmailOrPhone(
       applications (
         id, job_id, job_title, company, stage, applied_at,
         notes, salary_expected, interview_date,
-        google_drive_cv_url, linkedin_url
+        google_drive_cv_url, linkedin_url,
+        ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
     `)
     .or(`email.ilike.%${query}%,phone.ilike.%${query}%`);
