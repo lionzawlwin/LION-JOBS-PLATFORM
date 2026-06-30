@@ -10,8 +10,9 @@ if (!url || !key) {
 // Use placeholder values when env vars are missing so createClient() doesn't
 // throw during Next.js build-time page-data collection. Actual DB calls will
 // fail gracefully (caught by callers) if the placeholders are used.
+// Use || not ?? — Vercel can store env vars as empty strings which ?? won't catch.
 export const supabase = createClient(
-  url ?? 'https://placeholder.supabase.co',
-  key ?? 'placeholder-service-role-key',
+  url || 'https://placeholder.supabase.co',
+  key || 'placeholder-service-role-key',
   { auth: { persistSession: false } },
 );
