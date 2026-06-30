@@ -23,6 +23,10 @@
   --gold-600: #B8941F;
   --gold-700: #9A7A10;
 
+  /* ── Brand depth (dark mode / footer) ─────────────────────── */
+  --brand-900: #071730;
+  --brand-950: #040D1C;
+
   /* ── Deep Ruby Red (urgent / cta variant) ───────────────────── */
   --ruby-50:  #FFF0F3;
   --ruby-100: #FFE0E7;
@@ -135,6 +139,8 @@
   --color-brand-500: var(--brand-500);
   --color-brand-600: var(--brand-600);
   --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
 
   /* gold */
   --color-gold-50:  var(--gold-50);
@@ -294,6 +300,67 @@ body {
   background: rgba(15, 37, 71, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Cinematic utilities ─────────────────────────────────────── */
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px 0 rgba(27, 58, 107, 0.35); }
+  50%       { box-shadow: 0 0 36px 8px rgba(27, 58, 107, 0.55); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmering gold gradient text */
+.text-gradient-gold {
+  background: linear-gradient(120deg, var(--gold-400) 0%, var(--gold-500) 40%, var(--gold-400) 80%, var(--gold-500) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Brand gradient text (no shimmer — static) */
+.text-gradient-brand {
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-600) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Pulsing glow on interactive elements */
+.btn-glow {
+  animation: glow-pulse 2.8s ease-in-out infinite;
+}
+
+/* Floating animation for decorative elements */
+.float-y {
+  animation: float-y 4s ease-in-out infinite;
+}
+
+/* Cinematic entrance — use with animation-delay for stagger */
+.fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Gold divider line */
+.gold-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-500) 30%, var(--gold-400) 70%, transparent);
 }
 
 /* ── Print styles (resume builder) ──────────────────────────── */

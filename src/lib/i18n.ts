@@ -29,14 +29,16 @@ export const translations = {
     status_privacy:     'We only show your own applications. Your data is never shared.',
 
     // Hero
-    hero_badge:         "Myanmar's #1 Job Agency",
-    hero_headline:      'Find Your Dream Job in Myanmar',
-    hero_sub:           'Browse hundreds of vetted positions. Apply in minutes. Our expert team matches you with roles that fit your skills and salary expectations.',
-    hero_search_placeholder: 'Job title, company, or keyword…',
-    hero_search_btn:    'Search',
-    hero_stat_roles:    'open roles',
-    hero_stat_companies:'partner companies',
-    hero_stat_free:     'Free for candidates',
+    hero_badge:            "⚡ AI-Powered · Myanmar's Premier Recruitment Agency",
+    hero_headline:         "Where Myanmar's Best Are Discovered",
+    hero_headline_line1:   "Where Myanmar's Best",
+    hero_headline_line2:   "Are Discovered",
+    hero_sub:              "Lion Jobs connects ambitious professionals with Myanmar's most forward-thinking companies — AI-matched, human-verified, and completely free for every candidate.",
+    hero_search_placeholder: 'Job title, skills, or company…',
+    hero_search_btn:       'Search',
+    hero_stat_roles:       'open roles',
+    hero_stat_companies:   'partner companies',
+    hero_stat_free:        'Free for candidates',
 
     // Job card / listing
     apply_now:          'Apply Now',
@@ -97,10 +99,10 @@ export const translations = {
     alerts_note:        'Free. Unsubscribe anytime.',
 
     // Hero CTA cards
-    hero_drop_cv_title:   'Drop Your CV — No Job Required',
-    hero_drop_cv_sub:     'Join our talent pool. We\'ll match you when the perfect job arrives. Free & no spam.',
-    hero_hire_title:      'Looking to Hire? Tell Us Your Needs',
-    hero_hire_sub:        'Find pre-vetted talent for your company — free employer consultation, fast turnaround.',
+    hero_drop_cv_title:   "Not seeing your role? Drop your CV",
+    hero_drop_cv_sub:     "Join 2,000+ professionals we've placed. We'll reach out the moment the right role opens.",
+    hero_hire_title:      'Hiring? Partner with Lion Jobs Agency',
+    hero_hire_sub:        'AI-screened candidates, fast placement, enterprise-grade talent acquisition.',
 
     // Resume Builder — page header
     rb_badge:           'Free Resume Builder',
@@ -200,14 +202,16 @@ export const translations = {
     status_privacy:     'သင်၏ လျှောက်လွှာများသာ ပြပါမည်။ ဒေတာ မျှဝေမည် မဟုတ်ပါ။',
 
     // Hero
-    hero_badge:         'မြန်မာ့ အကောင်းဆုံး အလုပ်ရှာဖွေရေး',
-    hero_headline:      'မြန်မာနိုင်ငံတွင် သင်၏ အိပ်မက်အလုပ်ကို ရှာဖွေပါ',
-    hero_sub:           'စစ်ဆေးပြီးသော အလုပ်ရာထူးများ ကြည့်ရှုပါ။ မိနစ်ပိုင်းအတွင်း လျှောက်ထားနိုင်သည်။',
-    hero_search_placeholder: 'အလုပ်ခေါင်းစဉ်၊ ကုမ္ပဏီ သို့ မဟုတ် သော့ချက်စကားလုံး…',
-    hero_search_btn:    'ရှာဖွေပါ',
-    hero_stat_roles:    'ဖွင့်လှစ်ထားသော ရာထူးများ',
-    hero_stat_companies:'မိတ်ဖက်ကုမ္ပဏီများ',
-    hero_stat_free:     'လျှောက်ထားသူများအတွက် အခမဲ့',
+    hero_badge:            'AI ပေါ်ပေါင်း · မြန်မာ့ ထိပ်တန်း ခေါ်ယူရေးအေဂျင်စီ',
+    hero_headline:         'မြန်မာ့ ထိပ်တန်းများကို ရှာဖွေတွေ့ရှိနေသည်',
+    hero_headline_line1:   'မြန်မာ့ ထိပ်တန်းများ',
+    hero_headline_line2:   'ရှာဖွေတွေ့ရှိနေသည်',
+    hero_sub:              'Lion Jobs သည် တက်ကြွသော ကျွမ်းကျင်သူများနှင့် မြန်မာ့ ကုမ္ပဏီများကြား AI ဖြင့် ချိတ်ဆက်ပေးနေသည် — လျှောက်ထားသူများအတွက် အခမဲ့ဖြစ်သည်။',
+    hero_search_placeholder: 'အလုပ်ခေါင်းစဉ်၊ ကျွမ်းကျင်မှု သို့ ကုမ္ပဏီ…',
+    hero_search_btn:       'ရှာဖွေပါ',
+    hero_stat_roles:       'ဖွင့်လှစ်ထားသော ရာထူးများ',
+    hero_stat_companies:   'မိတ်ဖက်ကုမ္ပဏီများ',
+    hero_stat_free:        'လျှောက်ထားသူများအတွက် အခမဲ့',
 
     // Job card / listing
     apply_now:          'လျှောက်ထားပါ',

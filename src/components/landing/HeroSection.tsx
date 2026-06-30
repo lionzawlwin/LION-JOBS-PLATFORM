@@ -57,48 +57,46 @@ export function HeroSection({ onSearch }: Props) {
   }
 
   return (
-    <section className="relative overflow-hidden myanmar-pattern-hero bg-background pt-14 pb-16 sm:pt-20 sm:pb-24">
+    <section className="relative overflow-hidden myanmar-pattern-hero bg-background pt-14 pb-16 sm:pt-20 sm:pb-28">
 
       {/* ── 3D canvas — lazy, hidden on mobile to protect battery ── */}
-      <div
-        className="absolute inset-0 hidden md:block"
-        aria-hidden
-        style={{ zIndex: 0 }}
-      >
-        <Suspense fallback={null}>
-          <Hero3D />
-        </Suspense>
+      <div className="absolute inset-0 hidden md:block" aria-hidden style={{ zIndex: 0 }}>
+        <Suspense fallback={null}><Hero3D /></Suspense>
       </div>
 
-      {/* ── Gradient colour orbs (behind text, above canvas) ─────── */}
-      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[700px] w-[900px] rounded-full bg-brand-600/6 blur-3xl" />
-      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute top-0 right-0 h-80 w-80 rounded-full bg-gold-500/8 blur-2xl" />
-      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute bottom-0 left-0 h-60 w-60 rounded-full bg-brand-600/5 blur-2xl" />
+      {/* ── Cinematic gradient depth ───────────────────────────────── */}
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute -top-56 left-1/2 -translate-x-1/2 h-[800px] w-[1100px] rounded-full bg-brand-600/8 blur-3xl" />
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute -top-10 right-0 h-[500px] w-[500px] rounded-full bg-gold-500/10 blur-3xl" />
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-brand-600/7 blur-2xl" />
+      {/* Radial vignette for cinematic depth */}
+      <div aria-hidden style={{ zIndex: 1 }} className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background/60 to-transparent" />
 
       {/* ── Content ───────────────────────────────────────────────── */}
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8" style={{ zIndex: 2 }}>
 
-        {/* Badge */}
-        <motion.div custom={0} initial="hidden" animate="show" variants={fadeUp} className="mb-5 inline-flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-200 bg-gold-50 px-4 py-1.5 text-xs font-semibold text-gold-700 dark:border-gold-700/30 dark:bg-gold-600/10 dark:text-gold-400">
-            🦁 {t('hero_badge')}
+        {/* Badge — gold shimmer pill */}
+        <motion.div custom={0} initial="hidden" animate="show" variants={fadeUp} className="mb-6 inline-flex">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-300/60 bg-gradient-to-r from-gold-50 to-amber-50/80 px-4 py-1.5 text-xs font-semibold text-gold-700 shadow-sm shadow-gold-500/15 dark:border-gold-700/40 dark:from-gold-600/10 dark:to-amber-600/10 dark:text-gold-400">
+            {t('hero_badge')}
           </span>
         </motion.div>
 
-        {/* Headline */}
+        {/* Headline — two-tone cinematic split */}
         <motion.h1
           custom={1} initial="hidden" animate="show" variants={fadeUp}
-          className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+          className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-[3.75rem] lg:leading-[1.1]"
         >
+          <span className="text-foreground">{t('hero_headline_line1')}</span>
+          <br />
           <span className="bg-gradient-to-r from-brand-600 via-gold-500 to-brand-500 bg-clip-text text-transparent">
-            {t('hero_headline')}
+            {t('hero_headline_line2')}
           </span>
         </motion.h1>
 
         {/* Sub */}
         <motion.p
           custom={2} initial="hidden" animate="show" variants={fadeUp}
-          className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg"
+          className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
         >
           {t('hero_sub')}
         </motion.p>
