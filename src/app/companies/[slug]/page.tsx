@@ -5,7 +5,7 @@ import { ArrowLeft, MapPin, Briefcase, Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { JobCard } from '@/components/jobs/JobCard';
-import { getJobs, getCompanyFeedback } from '@/lib/sheets';
+import { getJobs, getCompanyFeedback } from '@/lib/db';
 import { buildJobSlug } from '@/lib/utils';
 
 export const revalidate = 3600;

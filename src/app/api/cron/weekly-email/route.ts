@@ -1,4 +1,4 @@
-import { getCompanies, getJobs, getCandidates } from '@/lib/sheets';
+import { getCompanies, getJobs, getCandidates } from '@/lib/db';
 import { Resend } from 'resend';
 import { buildWeeklyDigestEmail } from '@/lib/emailTemplates';
 import type { NextRequest } from 'next/server';

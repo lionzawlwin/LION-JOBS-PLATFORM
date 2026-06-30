@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendEmailSubscriber } from '@/lib/sheets';
+import { appendEmailSubscriber } from '@/lib/db';
 
 // In-memory sliding-window rate limit: 3 requests per IP per minute
 const ipLog = new Map<string, number[]>();

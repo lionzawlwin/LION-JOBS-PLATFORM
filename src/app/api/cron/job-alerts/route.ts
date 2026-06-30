@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getJobs } from '@/lib/sheets';
+import { getJobs } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

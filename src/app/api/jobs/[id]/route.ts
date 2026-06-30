@@ -1,4 +1,4 @@
-import { deleteJob } from '@/lib/sheets';
+import { deleteJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ── DELETE /api/jobs/[id] ─────────────────────────────────────────

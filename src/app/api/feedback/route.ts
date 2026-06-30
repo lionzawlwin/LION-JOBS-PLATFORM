@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { appendFeedback, getCompanyFeedback } from '@/lib/sheets';
+import { appendFeedback, getCompanyFeedback } from '@/lib/db';
 
 // GET /api/feedback?company=COMPANY_NAME — aggregate rating for company page
 export async function GET(req: Request) {

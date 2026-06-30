@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCandidateJob } from '@/lib/sheets';
+import { updateCandidateJob } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';

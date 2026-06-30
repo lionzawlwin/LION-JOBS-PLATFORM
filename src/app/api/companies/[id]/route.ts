@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCompanyStatus } from '@/lib/sheets';
+import { updateCompanyStatus } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus } from '@/types';
 

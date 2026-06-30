@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { forwardToMake } from '@/lib/makeWebhook';
-import { appendCandidate, updateCandidateCvUrl } from '@/lib/sheets';
+import { appendCandidate, updateCandidateCvUrl } from '@/lib/db';
 import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
@@ -53,10 +52,10 @@ export async function POST(req: NextRequest) {
       {
         status: 429,
         headers: {
-          'Retry-After':      String(rl.resetIn),
-          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'Retry-After':           String(rl.resetIn),
+          'X-RateLimit-Limit':     String(RATE_LIMIT_MAX),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(Math.floor(Date.now() / 1000) + rl.resetIn),
+          'X-RateLimit-Reset':     String(Math.floor(Date.now() / 1000) + rl.resetIn),
         },
       },
     );
@@ -84,18 +83,18 @@ export async function POST(req: NextRequest) {
 
   const candidateNotes = desiredCategory ? `Category: ${desiredCategory}` : undefined;
 
-  // ── 1. Write directly to Google Sheets Pipeline tab ──────────────
-  let candidateId: string | undefined;
+  // ── 1. Write directly to database ────────────────────────────────
+  let applicationId: string | undefined;
   try {
-    candidateId = await appendCandidate({
+    applicationId = await appendCandidate({
       fullName, email, phone, position, jobId, linkedinUrl, cvFileName,
       expectedSalary, notes: candidateNotes,
       noticePeriod, cityLocation, education, experienceYears,
       currentCompany, currentSalary, languages, skills, portfolioUrl,
     });
-    console.log(`[apply] Candidate "${fullName}" appended to Pipeline sheet.`);
+    console.log(`[apply] Candidate "${fullName}" saved to database.`);
   } catch (err) {
-    console.error('[apply] CRITICAL — Google Sheets append failed:', err);
+    console.error('[apply] CRITICAL — database insert failed:', err);
     console.error('[apply] Candidate data that failed to save:', {
       fullName, email, phone, position, jobId,
     });
@@ -106,7 +105,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 2. Upload CV directly to Google Drive ─────────────────────────
-  // Non-critical: if Drive upload fails the application is already saved in Sheets.
+  // Non-critical: if Drive upload fails the application is already saved.
   const parentFolderId = process.env.GOOGLE_DRIVE_PARENT_FOLDER_ID;
   if (parentFolderId && cvBase64 && cvFileName) {
     (async () => {
@@ -114,7 +113,7 @@ export async function POST(req: NextRequest) {
         // a. Create a sub-folder named after the candidate
         const folderId = await createCandidateFolder(fullName, parentFolderId);
 
-        // b+c. Upload the CV file into that folder
+        // b. Upload the CV file into that folder
         const driveUrl = await uploadFileToDrive(
           { name: cvFileName, base64: cvBase64 },
           folderId,
@@ -122,31 +121,16 @@ export async function POST(req: NextRequest) {
 
         console.log(`[apply] CV uploaded to Drive for "${fullName}": ${driveUrl}`);
 
-        // d. Write the Drive URL back into the candidate's row in Sheets
-        if (candidateId) {
-          await updateCandidateCvUrl(candidateId, driveUrl);
-          console.log(`[apply] cv_url updated in Sheets for candidate ${candidateId}`);
+        // c. Write the Drive URL back into the application record
+        if (applicationId) {
+          await updateCandidateCvUrl(applicationId, driveUrl);
+          console.log(`[apply] cv_url updated in database for application ${applicationId}`);
         }
       } catch (err) {
-        // Non-fatal — Sheets row already exists
-        console.error('[apply] Drive upload error (non-critical — Sheets write succeeded):', err);
+        // Non-fatal — database row already exists
+        console.error('[apply] Drive upload error (non-critical — DB write succeeded):', err);
       }
     })();
-  }
-
-  // ── 3. Forward to Make.com (email confirmation only) ──────────────
-  // CV base64 is intentionally NOT sent — Make.com no longer handles Drive storage.
-  try {
-    await forwardToMake({
-      fullName, email, phone, position, jobId, linkedinUrl,
-      expectedSalary, desiredCategory,
-      event:                'application_submitted',
-      applicationStatus:    'Under Review',
-      confirmationEmailTo:  email ?? null,
-      confirmationMessage:  'Your application is being reviewed. Our team will contact you within 48 hours.',
-    } as Parameters<typeof forwardToMake>[0] & Record<string, unknown>);
-  } catch (err) {
-    console.error('[apply] Make.com webhook error (non-critical — sheet write succeeded):', err);
   }
 
   return Response.json({ ok: true, confirmationSent: Boolean(email) });

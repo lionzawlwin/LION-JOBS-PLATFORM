@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { deleteB2bLead } from '@/lib/sheets';
+import { deleteB2bLead } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';

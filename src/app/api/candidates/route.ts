@@ -1,4 +1,4 @@
-import { getCandidates } from '@/lib/sheets';
+import { getCandidates } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 export async function GET(_req: NextRequest) {

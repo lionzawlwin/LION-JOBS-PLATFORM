@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendB2bLead } from '@/lib/sheets';
+import { appendB2bLead } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   let body: Record<string, string>;
@@ -39,31 +39,8 @@ export async function POST(req: NextRequest) {
   try {
     leadId = await appendB2bLead(leadData);
   } catch (err) {
-    console.error('[employers/request] Sheets error:', err);
+    console.error('[employers/request] DB error:', err);
     return NextResponse.json({ error: 'Failed to save lead. Please try again.' }, { status: 502 });
-  }
-
-  // Fire Make.com Telegram alert (non-blocking)
-  const webhookUrl = process.env.MAKE_EMPLOYER_WEBHOOK_URL ?? process.env.MAKE_WEBHOOK_URL;
-  if (webhookUrl) {
-    fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type:        'employer_lead',
-        leadId,
-        companyName: leadData.companyName,
-        contactName: leadData.contactName,
-        workEmail:   leadData.workEmail,
-        phone:       leadData.phone,
-        jobTitle:    leadData.jobTitle,
-        headcount:   leadData.headcount,
-        urgency:     leadData.urgency,
-        location:    leadData.location,
-        industry:    leadData.industry,
-      }),
-      signal: AbortSignal.timeout(8_000),
-    }).catch((e) => console.warn('[employers/request] webhook error:', e));
   }
 
   return NextResponse.json({ ok: true, leadId });

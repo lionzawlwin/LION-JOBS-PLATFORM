@@ -3,7 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AdminBar } from '@/components/layout/AdminBar';
 import { HomeClient } from '@/components/HomeClient';
-import { getJobs } from '@/lib/sheets';
+import { getJobs } from '@/lib/db';
 
 // ISR: Vercel regenerates this page at most once per hour.
 // Between revalidations, users get cached HTML — Googlebot included.

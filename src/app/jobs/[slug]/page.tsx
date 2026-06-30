@@ -11,7 +11,7 @@ import { ShareButton } from '@/components/jobs/ShareButton';
 import { SimilarJobs } from '@/components/jobs/SimilarJobs';
 import { TrackJobView } from '@/components/jobs/TrackJobView';
 import { JoinCommunity } from '@/components/JoinCommunity';
-import { getJobs } from '@/lib/sheets';
+import { getJobs } from '@/lib/db';
 import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
 
 // Pre-render all known job slugs at build time; new jobs fall back to SSR

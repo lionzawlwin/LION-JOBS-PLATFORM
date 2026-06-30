@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCandidatesByEmailOrPhone } from '@/lib/sheets';
+import { getCandidatesByEmailOrPhone } from '@/lib/db';
 
 // In-memory rate limiter: 5 requests per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();

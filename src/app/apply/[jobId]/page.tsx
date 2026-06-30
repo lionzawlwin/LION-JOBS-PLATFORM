@@ -1,7 +1,7 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
-import { getJobs } from '@/lib/sheets';
+import { getJobs } from '@/lib/db';
 import { formatSalary, timeAgo } from '@/lib/utils';
 import { MapPin, Clock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';

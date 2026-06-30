@@ -1,13 +1,8 @@
-import { getJobs, appendJob } from '@/lib/sheets';
+import { getJobs, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
-// Accepts optional filter query params so the client avoids downloading
-// the full dataset on every filter change once the job count grows.
-//
-// All params are optional — omitting them returns the full dataset
-// (backward-compatible with existing SWR hooks / SSR pre-fetch).
 export async function GET(req: NextRequest) {
   try {
     const sp       = req.nextUrl.searchParams;
@@ -57,7 +52,6 @@ export async function POST(req: NextRequest) {
       { status: 503 },
     );
   }
-  // Timing-safe comparison — prevents secret extraction via response-time analysis
   if (!secureCompare(req.headers.get('x-admin-key') ?? '', ADMIN_KEY)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -75,7 +69,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Field length caps — prevent oversized content reaching Google Sheets
   if (
     String(title).length       > 200  ||
     String(company).length     > 200  ||
@@ -106,21 +99,14 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[POST /api/jobs] Sheets append failed:', msg);
+    console.error('[POST /api/jobs] DB write failed:', msg);
     return NextResponse.json(
-      { error: `Failed to write to Google Sheets: ${msg}` },
+      { error: `Failed to save job: ${msg}` },
       { status: 502 },
     );
   }
 
-  // Expose the target spreadsheet URL in the response so the admin can
-  // immediately verify the write went to the correct sheet.
-  const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
-
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
-  // NEXT_PUBLIC_ vars are inlined by Turbopack at build time and become ""
-  // (empty string) when unset — "" ?? fallback never fires because "" is not
-  // null/undefined.  Use the non-public SITE_URL instead (runtime lookup).
   const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
   if (PUBLISH_SECRET) {
@@ -143,7 +129,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { ok: true, jobId, socialPostingQueued: !!PUBLISH_SECRET, sheetUrl },
+    { ok: true, jobId, socialPostingQueued: !!PUBLISH_SECRET },
     { status: 201 },
   );
 }

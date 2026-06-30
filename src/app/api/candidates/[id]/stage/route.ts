@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { updateCandidateStage } from '@/lib/sheets';
+import { updateCandidateStage } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { ApplicationStatus } from '@/types';
 

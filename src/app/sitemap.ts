@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getJobs } from '@/lib/sheets';
+import { getJobs } from '@/lib/db';
 import { buildJobSlug } from '@/lib/utils';
 
 const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
