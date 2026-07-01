@@ -468,6 +468,25 @@ export const translations = {
     mj_toast_deleted_desc: 'Row removed from Google Sheets.',
     mj_toast_network_error:      'Network error',
     mj_toast_network_error_desc: 'Could not reach the server. Please try again.',
+
+    // B2B Companies tab
+    cv_total_companies: 'Total Companies',
+    cv_active_clients:  'Active Clients',
+    cv_search_placeholder: 'Search companies…',
+    cv_welcome_email:   'Welcome Email',
+    cv_outreach_email:  'Outreach Email',
+    cv_add_company_btn: 'Add Company',
+    cv_add_new_company_title: 'Add New Company',
+    cv_saving:          'Saving…',
+    cv_no_match:        'No companies match your filter.',
+    cv_no_companies:    'No companies yet. Add your first B2B client.',
+    cv_delete_company_title: 'Delete company',
+    cv_sending:         'Sending…',
+    cv_send_prefix:     'Send ',
+    cv_email_suffix:    ' Email',
+    cv_alert_email_sent_prefix: '✅ ',
+    cv_alert_email_sent_suffix: ' email sent to ',
+    cv_alert_email_failed: '❌ Failed to send email. Check RESEND_API_KEY.',
   },
 
   my: {
@@ -937,6 +956,25 @@ export const translations = {
     mj_toast_deleted_desc: 'Google Sheets မှ အတန်းကို ဖယ်ရှားပြီးပါပြီ။',
     mj_toast_network_error:      'ကွန်ရက် အမှား',
     mj_toast_network_error_desc: 'ဆာဗာသို့ ချိတ်ဆက်၍ မရပါ။ ထပ်မံကြိုးစားပါ။',
+
+    // B2B Companies tab
+    cv_total_companies: 'ကုမ္ပဏီ စုစုပေါင်း',
+    cv_active_clients:  'အသက်ဝင်နေသော ဖောက်သည်များ',
+    cv_search_placeholder: 'ကုမ္ပဏီများ ရှာပါ…',
+    cv_welcome_email:   'ကြိုဆိုစာ အီးမေးလ်',
+    cv_outreach_email:  'ဆက်သွယ်ရေး အီးမေးလ်',
+    cv_add_company_btn: 'ကုမ္ပဏီ ထည့်ရန်',
+    cv_add_new_company_title: 'ကုမ္ပဏီအသစ် ထည့်ရန်',
+    cv_saving:          'သိမ်းဆည်းနေသည်…',
+    cv_no_match:        'သင်၏ စစ်ထုတ်မှုနှင့် ကိုက်ညီသော ကုမ္ပဏီ မရှိပါ။',
+    cv_no_companies:    'ကုမ္ပဏီ မရှိသေးပါ။ သင်၏ ပထမဆုံး B2B ဖောက်သည်ကို ထည့်ပါ။',
+    cv_delete_company_title: 'ကုမ္ပဏီ ဖျက်ရန်',
+    cv_sending:         'ပို့နေသည်…',
+    cv_send_prefix:     'ပို့ရန် ',
+    cv_email_suffix:    ' အီးမေးလ်',
+    cv_alert_email_sent_prefix: '✅ ',
+    cv_alert_email_sent_suffix: ' အီးမေးလ်ကို ဤသို့ ပို့ပြီးပါပြီ - ',
+    cv_alert_email_failed: '❌ အီးမေးလ် ပို့၍ မရပါ။ RESEND_API_KEY ကို စစ်ဆေးပါ။',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
