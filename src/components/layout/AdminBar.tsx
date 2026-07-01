@@ -21,7 +21,6 @@ export function AdminBar() {
           </div>
           <div>
             <p className="text-sm font-bold text-brand-700 dark:text-brand-300">Admin Control Panel</p>
-            <p className="text-xs text-muted-foreground">{session.user?.email}</p>
           </div>
         </div>
         <Link
