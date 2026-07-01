@@ -48,3 +48,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Brainstorming companion (local mockups, not for commit)
+.superpowers/
