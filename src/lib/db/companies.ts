@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Company, CompanyStatus } from '@/types';
+import type { Company, CompanyStatus, CompanyTier } from '@/types';
 
 function mapToCompany(row: Record<string, unknown>): Company {
   return {
@@ -11,6 +11,7 @@ function mapToCompany(row: Record<string, unknown>): Company {
     industry:      (row.industry as string) ?? '',
     city:          (row.city as string) ?? '',
     status:        ((row.status as string) ?? 'Lead') as CompanyStatus,
+    tier:          ((row.tier as string) ?? 'smb') as CompanyTier,
     notes:         (row.notes as string) ?? '',
     lastContacted: (row.last_contacted as string) ?? '',
     createdAt:     row.created_at as string,
@@ -39,6 +40,7 @@ export async function appendCompany(data: {
   industry?:      string;
   city?:          string;
   status?:        string;
+  tier?:          string;
   notes?:         string;
   lastContacted?: string;
 }): Promise<string> {
@@ -53,6 +55,7 @@ export async function appendCompany(data: {
     industry:       data.industry ?? null,
     city:           data.city ?? null,
     status:         data.status ?? 'Lead',
+    tier:           data.tier ?? 'smb',
     notes:          data.notes ?? null,
     last_contacted: data.lastContacted ?? null,
   });
@@ -74,6 +77,14 @@ export async function updateCompanyStatus(
     .update(update)
     .eq('id', id);
   if (error) throw new Error(`Failed to update company status: ${error.message}`);
+}
+
+export async function updateCompanyTier(id: string, tier: string): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ tier })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update company tier: ${error.message}`);
 }
 
 export async function deleteCompany(id: string): Promise<void> {
