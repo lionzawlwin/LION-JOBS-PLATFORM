@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Building2, Loader2, Users2 } from 'lucide-react';
 import { useEnterpriseAccounts } from '@/hooks/useEnterpriseAccounts';
 import { useEnterpriseStats } from '@/hooks/useEnterpriseStats';
@@ -19,13 +19,16 @@ export function EnterpriseView() {
   const { cseReps } = useCseReps();
   const { contracts: allContracts } = useAllContracts();
 
-  const assignedCseByCompany = new Map<string, string>();
-  for (const c of allContracts) {
-    if (c.status !== 'Active' || !c.cseId) continue;
-    if (!assignedCseByCompany.has(c.companyId)) {
-      assignedCseByCompany.set(c.companyId, c.cseId);
+  const assignedCseByCompany = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of allContracts) {
+      if (c.status !== 'Active' || !c.cseId) continue;
+      if (!map.has(c.companyId)) {
+        map.set(c.companyId, c.cseId);
+      }
     }
-  }
+    return map;
+  }, [allContracts]);
 
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
   const [cseFilter, setCseFilter] = useState('');
@@ -157,7 +160,7 @@ export function EnterpriseView() {
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Building2 size={36} className="text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
-            {statusFilter ? 'No accounts match this filter.' : 'No enterprise accounts yet. Add your first one.'}
+            {(statusFilter || cseFilter) ? 'No accounts match this filter.' : 'No enterprise accounts yet. Add your first one.'}
           </p>
         </div>
       ) : (
