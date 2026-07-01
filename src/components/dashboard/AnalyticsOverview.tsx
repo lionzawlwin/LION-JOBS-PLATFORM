@@ -110,7 +110,7 @@ export function AnalyticsOverview() {
     const convRate    = total > 0 ? (((shortlisted + interview + hired) / total) * 100).toFixed(0) : '0';
 
     const leads    = companies.filter(c => c.status === 'Lead').length;
-    const clients  = companies.filter(c => c.status === 'Client').length;
+    const clients  = companies.filter(c => c.status === 'Active' || c.status === 'In-Contract').length;
     const inactive = companies.filter(c => c.status === 'Inactive').length;
 
     const urgentJobs   = jobs.filter(j => j.isUrgent).length;

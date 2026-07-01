@@ -221,7 +221,7 @@ export function EmailCampaigns() {
                     </div>
                     <span className={cn(
                       'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                      co.status === 'Client'
+                      co.status === 'Active' || co.status === 'In-Contract'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700/30 dark:bg-emerald-900/20 dark:text-emerald-300'
                         : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700/30 dark:bg-blue-900/20 dark:text-blue-300',
                     )}>
