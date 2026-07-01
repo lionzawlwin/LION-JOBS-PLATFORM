@@ -2,6 +2,7 @@
 
 import useSWR, { mutate as globalMutate } from 'swr';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Contract } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -12,6 +13,7 @@ export function useContracts(companyId: string) {
     fetcher,
     { revalidateOnFocus: false },
   );
+  const { t } = useLanguage();
 
   async function addContract(input: {
     companyId:     string;
@@ -30,11 +32,11 @@ export function useContracts(companyId: string) {
       body: JSON.stringify(input),
     });
     if (!res.ok) {
-      toast.error('Failed to add contract');
+      toast.error(t('ent_toast_contract_add_failed'));
       return false;
     }
     await mutate();
-    toast.success('Contract added');
+    toast.success(t('ent_toast_contract_added'));
     globalMutate('/api/enterprise/stats');
     return true;
   }
@@ -51,12 +53,12 @@ export function useContracts(companyId: string) {
         body: JSON.stringify(update),
       });
       if (!res.ok) throw new Error('Failed to update contract');
-      toast.success('Contract updated');
+      toast.success(t('ent_toast_contract_updated'));
       globalMutate('/api/enterprise/stats');
       return true;
     } catch {
       mutate(prev, false);
-      toast.error('Failed to update contract', { description: 'Please try again.' });
+      toast.error(t('ent_toast_contract_update_failed'), { description: t('ent_toast_try_again') });
       return false;
     }
   }

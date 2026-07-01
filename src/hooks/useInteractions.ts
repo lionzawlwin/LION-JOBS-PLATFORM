@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Interaction } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -12,6 +13,7 @@ export function useInteractions(companyId: string) {
     fetcher,
     { revalidateOnFocus: false },
   );
+  const { t } = useLanguage();
 
   async function logInteraction(input: {
     companyId:      string;
@@ -25,11 +27,11 @@ export function useInteractions(companyId: string) {
       body: JSON.stringify(input),
     });
     if (!res.ok) {
-      toast.error('Failed to log interaction');
+      toast.error(t('ent_toast_interaction_failed'));
       return false;
     }
     await mutate();
-    toast.success('Interaction logged');
+    toast.success(t('ent_toast_interaction_logged'));
     return true;
   }
 

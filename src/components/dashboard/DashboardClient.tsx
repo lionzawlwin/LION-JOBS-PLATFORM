@@ -13,21 +13,10 @@ import { EmailCampaigns } from './EmailCampaigns';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns';
-
-const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
-  { value: 'overview',   label: 'Overview',          icon: <BarChart2     size={14} /> },
-  { value: 'candidates', label: 'Candidates',         icon: <Users         size={14} /> },
-  { value: 'post-job',   label: 'Post a New Job',     icon: <PlusSquare    size={14} /> },
-  { value: 'manage-jobs',label: 'Manage Jobs',        icon: <Briefcase     size={14} /> },
-  { value: 'companies',  label: 'B2B Companies',      icon: <Building2     size={14} /> },
-  { value: 'enterprise', label: 'Enterprise',         icon: <Landmark      size={14} /> },
-  { value: 'b2b-leads',  label: 'B2B Hiring Requests',icon: <ClipboardList size={14} /> },
-  { value: 'content',    label: 'Content Studio',     icon: <PenSquare     size={14} /> },
-  { value: 'campaigns',  label: 'Email Campaigns',    icon: <Mail          size={14} /> },
-];
 
 interface Props {
   isAdmin?: boolean;
@@ -36,6 +25,19 @@ interface Props {
 export function DashboardClient({ isAdmin = false }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('overview');
   const [candView,    setCandView]    = useState<'table' | 'board'>('table');
+  const { t } = useLanguage();
+
+  const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
+    { value: 'overview',   label: t('admin_tab_overview'),   icon: <BarChart2     size={14} /> },
+    { value: 'candidates', label: t('admin_tab_candidates'), icon: <Users         size={14} /> },
+    { value: 'post-job',   label: t('admin_tab_post_job'),   icon: <PlusSquare    size={14} /> },
+    { value: 'manage-jobs',label: t('admin_tab_manage_jobs'),icon: <Briefcase     size={14} /> },
+    { value: 'companies',  label: t('admin_tab_companies'),  icon: <Building2     size={14} /> },
+    { value: 'enterprise', label: t('admin_tab_enterprise'), icon: <Landmark      size={14} /> },
+    { value: 'b2b-leads',  label: t('admin_tab_b2b_leads'),  icon: <ClipboardList size={14} /> },
+    { value: 'content',    label: t('admin_tab_content'),    icon: <PenSquare     size={14} /> },
+    { value: 'campaigns',  label: t('admin_tab_campaigns'),  icon: <Mail          size={14} /> },
+  ];
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only
@@ -73,16 +75,16 @@ export function DashboardClient({ isAdmin = false }: Props) {
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
         <span>
-          Admin dashboard — Lion Jobs Agency internal use only.
-          {activeTab === 'overview'    && ' Real-time analytics across candidates, jobs, and companies.'}
-          {activeTab === 'candidates'  && ' Manage candidate applications and pipeline stages.'}
-          {activeTab === 'post-job'    && ' Create and publish new job listings to the platform.'}
-          {activeTab === 'manage-jobs' && ' Edit, pause, or close existing job postings.'}
-          {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
-          {activeTab === 'enterprise'  && ' Enterprise CRM — track corporate accounts, contract value, and CSE performance.'}
-          {activeTab === 'b2b-leads'   && ' Incoming hiring requests from employers. Update status to track progress.'}
-          {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
-          {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
+          {t('admin_banner_prefix')}
+          {activeTab === 'overview'    && t('admin_banner_overview')}
+          {activeTab === 'candidates'  && t('admin_banner_candidates')}
+          {activeTab === 'post-job'    && t('admin_banner_post_job')}
+          {activeTab === 'manage-jobs' && t('admin_banner_manage_jobs')}
+          {activeTab === 'companies'   && t('admin_banner_companies')}
+          {activeTab === 'enterprise'  && t('admin_banner_enterprise')}
+          {activeTab === 'b2b-leads'   && t('admin_banner_b2b_leads')}
+          {activeTab === 'content'     && t('admin_banner_content')}
+          {activeTab === 'campaigns'   && t('admin_banner_campaigns')}
         </span>
       </div>
 

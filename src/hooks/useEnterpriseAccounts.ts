@@ -2,6 +2,7 @@
 
 import useSWR, { mutate as globalMutate } from 'swr';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Company, CompanyStatus, CompanyTier } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -12,6 +13,7 @@ export function useEnterpriseAccounts() {
     fetcher,
     { revalidateOnFocus: false },
   );
+  const { t } = useLanguage();
 
   const accounts = (data ?? []).filter((c) => c.tier === 'enterprise');
 
@@ -27,11 +29,11 @@ export function useEnterpriseAccounts() {
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error('Failed to update status');
-      toast.success('Account status updated');
+      toast.success(t('ent_toast_status_updated'));
       globalMutate('/api/enterprise/stats');
     } catch {
       mutate(prev, false);
-      toast.error('Failed to update status', { description: 'Please try again.' });
+      toast.error(t('ent_toast_status_failed'), { description: t('ent_toast_try_again') });
     }
   }
 
@@ -54,11 +56,11 @@ export function useEnterpriseAccounts() {
       }),
     });
     if (!res.ok) {
-      toast.error('Failed to add account');
+      toast.error(t('ent_toast_account_add_failed'));
       return false;
     }
     await mutate();
-    toast.success(`${input.name} added`);
+    toast.success(`${input.name} ${t('ent_toast_account_added')}`);
     globalMutate('/api/enterprise/stats');
     return true;
   }
@@ -72,11 +74,11 @@ export function useEnterpriseAccounts() {
       const res = await fetch(`/api/companies/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete account');
       globalMutate('/api/enterprise/stats');
-      toast.success('Account deleted');
+      toast.success(t('ent_toast_account_deleted'));
       return true;
     } catch {
       mutate(prev, false);
-      toast.error('Failed to delete account', { description: 'Please try again.' });
+      toast.error(t('ent_toast_account_delete_failed'), { description: t('ent_toast_try_again') });
       return false;
     }
   }

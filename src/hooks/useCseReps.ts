@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { CseRep } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -12,6 +13,7 @@ export function useCseReps() {
     fetcher,
     { revalidateOnFocus: false },
   );
+  const { t } = useLanguage();
 
   async function addCse(input: { name: string; phone?: string; email?: string }) {
     const res = await fetch('/api/cse', {
@@ -20,11 +22,11 @@ export function useCseReps() {
       body: JSON.stringify(input),
     });
     if (!res.ok) {
-      toast.error('Failed to add CSE');
+      toast.error(t('ent_toast_cse_add_failed'));
       return false;
     }
     await mutate();
-    toast.success(`${input.name} added`);
+    toast.success(`${input.name} ${t('ent_toast_cse_added')}`);
     return true;
   }
 
@@ -35,7 +37,7 @@ export function useCseReps() {
       body: JSON.stringify(update),
     });
     if (!res.ok) {
-      toast.error('Failed to update CSE');
+      toast.error(t('ent_toast_cse_update_failed'));
       return false;
     }
     await mutate();
@@ -45,11 +47,11 @@ export function useCseReps() {
   async function deleteCse(id: string) {
     const res = await fetch(`/api/cse/${id}`, { method: 'DELETE' });
     if (!res.ok) {
-      toast.error('Failed to delete CSE');
+      toast.error(t('ent_toast_cse_delete_failed'));
       return false;
     }
     await mutate();
-    toast.success('CSE removed');
+    toast.success(t('ent_toast_cse_removed'));
     return true;
   }
 
