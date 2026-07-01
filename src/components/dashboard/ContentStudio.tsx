@@ -6,6 +6,8 @@ import {
   Globe, MessageCircle, Briefcase, Hash, Clock, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import {
   generateContent,
   POST_TYPES,
@@ -16,6 +18,20 @@ import {
   type PostTone,
   type TemplateVars,
 } from '@/lib/contentTemplates';
+
+const POST_TYPE_KEYS: Record<PostType, TranslationKey> = {
+  job_announcement: 'cs_posttype_job_announcement',
+  urgent_hiring: 'cs_posttype_urgent_hiring',
+  talent_pool_promo: 'cs_posttype_talent_pool_promo',
+  company_spotlight: 'cs_posttype_company_spotlight',
+  career_tip: 'cs_posttype_career_tip',
+  employer_outreach: 'cs_posttype_employer_outreach',
+};
+const TONE_KEYS: Record<PostTone, TranslationKey> = {
+  professional: 'cs_tone_professional',
+  casual: 'cs_tone_casual',
+  urgent: 'cs_tone_urgent',
+};
 
 // ── Platform char limits ──────────────────────────────────────────
 const CHAR_LIMITS: Record<PostPlatform, number> = {
@@ -49,6 +65,7 @@ export function ContentStudio() {
   const [sending,  setSending]    = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [history,  setHistory]    = useState<HistoryEntry[]>([]);
+  const { t } = useLanguage();
 
   const [vars, setVars] = useState<TemplateVars>({
     title: '', company: '', location: 'Yangon, Myanmar', salary: '',
@@ -97,11 +114,11 @@ export function ContentStudio() {
       const json = await res.json();
 
       if (!res.ok) {
-        setSendResult({ ok: false, msg: json.error ?? 'Failed to send.' });
+        setSendResult({ ok: false, msg: json.error ?? t('cs_msg_send_failed') });
       } else if (json.dev) {
-        setSendResult({ ok: true, msg: 'Dev mode: MAKE_PUBLISH_WEBHOOK_URL not set in Vercel — post not sent.' });
+        setSendResult({ ok: true, msg: t('cs_msg_dev_mode') });
       } else {
-        setSendResult({ ok: true, msg: 'Sent to Make.com! It will distribute to your channels.' });
+        setSendResult({ ok: true, msg: t('cs_msg_sent') });
         // Save to history
         setHistory(h => [
           { text: content, platform, postType, ts: new Date().toLocaleTimeString() },
@@ -109,7 +126,7 @@ export function ContentStudio() {
         ]);
       }
     } catch {
-      setSendResult({ ok: false, msg: 'Network error — could not reach server.' });
+      setSendResult({ ok: false, msg: t('cs_msg_network_error') });
     } finally {
       setSending(false);
     }
@@ -122,7 +139,7 @@ export function ContentStudio() {
 
       {/* ── Top row: Post Type ────────────────────────────────────── */}
       <div>
-        <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Post Type</label>
+        <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('cs_post_type_label')}</label>
         <div className="flex flex-wrap gap-2">
           {POST_TYPES.map((pt) => (
             <button
@@ -135,7 +152,7 @@ export function ContentStudio() {
                   : 'border-border text-muted-foreground hover:border-brand-400 hover:text-foreground',
               )}
             >
-              {pt.emoji} {pt.label}
+              {pt.emoji} {t(POST_TYPE_KEYS[pt.value])}
             </button>
           ))}
         </div>
@@ -150,7 +167,7 @@ export function ContentStudio() {
           {/* Platform + Tone */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform</label>
+              <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('cs_platform_label')}</label>
               <div className="flex flex-col gap-1.5">
                 {PLATFORMS.map((pl) => (
                   <button
@@ -166,27 +183,27 @@ export function ContentStudio() {
                     {PLATFORM_ICONS[pl.value as PostPlatform]}
                     {pl.label}
                     {platform === pl.value && (
-                      <span className="ml-auto text-[10px] text-muted-foreground">{CHAR_LIMITS[pl.value as PostPlatform].toLocaleString()} chars</span>
+                      <span className="ml-auto text-[10px] text-muted-foreground">{CHAR_LIMITS[pl.value as PostPlatform].toLocaleString()}{t('cs_chars_suffix')}</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tone</label>
+              <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('cs_tone_label')}</label>
               <div className="flex flex-col gap-1.5">
-                {TONES.map((t) => (
+                {TONES.map((tn) => (
                   <button
-                    key={t.value}
-                    onClick={() => { setTone(t.value); setContent(''); }}
+                    key={tn.value}
+                    onClick={() => { setTone(tn.value); setContent(''); }}
                     className={cn(
                       'rounded-xl border px-3 py-2 text-xs font-semibold text-left transition-all',
-                      tone === t.value
+                      tone === tn.value
                         ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-600/10 dark:text-brand-300'
                         : 'border-border text-muted-foreground hover:border-foreground/20',
                     )}
                   >
-                    {t.label}
+                    {t(TONE_KEYS[tn.value])}
                   </button>
                 ))}
               </div>
@@ -196,36 +213,36 @@ export function ContentStudio() {
           {/* Variable fields */}
           <div className="space-y-2 rounded-2xl border border-border bg-muted/30 p-4">
             <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {activePostType?.emoji} Post Details
+              {activePostType?.emoji} {t('cs_post_details_label')}
             </label>
 
             {needsJob && (
               <>
-                <input placeholder="Job Title *"        value={vars.title        ?? ''} onChange={e => setVar('title',        e.target.value)} className={inputCls} />
-                <input placeholder="Company Name"       value={vars.company      ?? ''} onChange={e => setVar('company',      e.target.value)} className={inputCls} />
-                <input placeholder="Salary (e.g. 500K–800K MMK)" value={vars.salary ?? ''} onChange={e => setVar('salary',   e.target.value)} className={inputCls} />
-                <input placeholder="Location"           value={vars.location     ?? ''} onChange={e => setVar('location',     e.target.value)} className={inputCls} />
-                <input placeholder="Key Requirement 1"  value={vars.requirement1 ?? ''} onChange={e => setVar('requirement1', e.target.value)} className={inputCls} />
-                <input placeholder="Key Requirement 2"  value={vars.requirement2 ?? ''} onChange={e => setVar('requirement2', e.target.value)} className={inputCls} />
-                <input placeholder="Category (hashtag e.g. Engineering)" value={vars.category ?? ''} onChange={e => setVar('category', e.target.value)} className={inputCls} />
-                <input placeholder="Apply URL (optional)" value={vars.applyUrl  ?? ''} onChange={e => setVar('applyUrl',     e.target.value)} className={inputCls} />
-                <input placeholder="Phone / WhatsApp"   value={vars.phone       ?? ''} onChange={e => setVar('phone',        e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_job_title')}        value={vars.title        ?? ''} onChange={e => setVar('title',        e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_company_name')}       value={vars.company      ?? ''} onChange={e => setVar('company',      e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_salary')} value={vars.salary ?? ''} onChange={e => setVar('salary',   e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_location')}           value={vars.location     ?? ''} onChange={e => setVar('location',     e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_requirement1')}  value={vars.requirement1 ?? ''} onChange={e => setVar('requirement1', e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_requirement2')}  value={vars.requirement2 ?? ''} onChange={e => setVar('requirement2', e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_category')} value={vars.category ?? ''} onChange={e => setVar('category', e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_apply_url')} value={vars.applyUrl  ?? ''} onChange={e => setVar('applyUrl',     e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_phone')}   value={vars.phone       ?? ''} onChange={e => setVar('phone',        e.target.value)} className={inputCls} />
               </>
             )}
             {needsTip && (
               <>
-                <input placeholder="Tip Title *"  value={vars.tipTitle ?? ''} onChange={e => setVar('tipTitle', e.target.value)} className={inputCls} />
-                <textarea placeholder="Tip body…" value={vars.tipBody  ?? ''} onChange={e => setVar('tipBody',  e.target.value)} rows={3} className={cn(inputCls, 'resize-none')} />
+                <input placeholder={t('cs_ph_tip_title')}  value={vars.tipTitle ?? ''} onChange={e => setVar('tipTitle', e.target.value)} className={inputCls} />
+                <textarea placeholder={t('cs_ph_tip_body')} value={vars.tipBody  ?? ''} onChange={e => setVar('tipBody',  e.target.value)} rows={3} className={cn(inputCls, 'resize-none')} />
               </>
             )}
             {needsB2B && (
               <>
-                <input placeholder="Company Name *"  value={vars.companyName ?? ''} onChange={e => setVar('companyName',  e.target.value)} className={inputCls} />
-                <input placeholder="Contact Person"  value={vars.contactName ?? ''} onChange={e => setVar('contactName',  e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_company_name_required')}  value={vars.companyName ?? ''} onChange={e => setVar('companyName',  e.target.value)} className={inputCls} />
+                <input placeholder={t('cs_ph_contact_person')}  value={vars.contactName ?? ''} onChange={e => setVar('contactName',  e.target.value)} className={inputCls} />
               </>
             )}
             {!needsJob && !needsTip && !needsB2B && (
-              <p className="text-xs text-muted-foreground py-2">No extra fields needed for this post type — just click Generate!</p>
+              <p className="text-xs text-muted-foreground py-2">{t('cs_no_extra_fields')}</p>
             )}
           </div>
 
@@ -234,7 +251,7 @@ export function ContentStudio() {
             onClick={generate}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25"
           >
-            <Sparkles size={16} /> Generate {activePostType?.emoji} {activePostType?.label}
+            <Sparkles size={16} /> {t('cs_generate_btn')}{activePostType?.emoji} {activePostType && t(POST_TYPE_KEYS[activePostType.value])}
           </button>
 
         </div>
@@ -263,7 +280,7 @@ export function ContentStudio() {
                     <Trash2 size={13} />
                   </button>
                   <button onClick={generate} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-                    <RefreshCw size={12} /> Regenerate
+                    <RefreshCw size={12} /> {t('cs_regenerate')}
                   </button>
                 </div>
               </div>
@@ -299,7 +316,7 @@ export function ContentStudio() {
                       : 'border-border text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  {copied ? <><CheckCheck size={15} /> Copied!</> : <><Copy size={15} /> Copy</>}
+                  {copied ? <><CheckCheck size={15} /> {t('cs_copied')}</> : <><Copy size={15} /> {t('cs_copy')}</>}
                 </button>
                 <button
                   onClick={sendToMake}
@@ -311,7 +328,7 @@ export function ContentStudio() {
                   )}
                 >
                   {sending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
-                  {sending ? 'Sending…' : 'Send to Make.com'}
+                  {sending ? t('cs_sending') : t('cs_send_to_make')}
                 </button>
               </div>
 
@@ -333,8 +350,8 @@ export function ContentStudio() {
                 <Sparkles size={24} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">Generated post will appear here</p>
-                <p className="mt-1 text-xs text-muted-foreground">Fill in the details and click Generate</p>
+                <p className="text-sm font-semibold text-foreground">{t('cs_empty_title')}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t('cs_empty_sub')}</p>
               </div>
             </div>
           )}
@@ -346,7 +363,7 @@ export function ContentStudio() {
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="border-b border-border px-5 py-3 flex items-center gap-2">
             <Clock size={14} className="text-muted-foreground" />
-            <span className="text-xs font-bold text-foreground uppercase tracking-wide">Recent Posts — This Session</span>
+            <span className="text-xs font-bold text-foreground uppercase tracking-wide">{t('cs_history_title')}</span>
           </div>
           <div className="divide-y divide-border">
             {history.map((h, i) => (
@@ -356,13 +373,13 @@ export function ContentStudio() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs text-foreground font-medium">{h.text.split('\n')[0]}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{h.postType} · {h.platform} · {h.ts}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{t(POST_TYPE_KEYS[h.postType])} · {h.platform} · {h.ts}</p>
                 </div>
                 <button
                   onClick={() => setContent(h.text)}
                   className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                 >
-                  Load
+                  {t('cs_load_btn')}
                 </button>
               </div>
             ))}
@@ -371,7 +388,7 @@ export function ContentStudio() {
       )}
 
       <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-        <p><Hash size={11} className="inline mr-1" />Content goes to <strong>Make.com</strong> which distributes it to Facebook, Telegram, WhatsApp, and LinkedIn. Requires <code className="font-mono bg-muted px-1 rounded">MAKE_PUBLISH_WEBHOOK_URL</code> in Vercel env vars.</p>
+        <p><Hash size={11} className="inline mr-1" />{t('cs_footer_prefix')}<strong>Make.com</strong>{t('cs_footer_suffix')}<code className="font-mono bg-muted px-1 rounded">MAKE_PUBLISH_WEBHOOK_URL</code>{t('cs_footer_suffix2')}</p>
       </div>
     </div>
   );
