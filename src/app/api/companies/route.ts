@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       industry:      String(body.industry ?? 'Other'),
       city:          String(body.city ?? 'Yangon'),
       status:        body.status ?? 'Lead',
+      tier:          body.tier ?? 'smb',
       notes:         String(body.notes ?? ''),
     });
     return Response.json({ ok: true, id }, { status: 201 });

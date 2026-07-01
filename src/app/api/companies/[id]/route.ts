@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCompanyStatus, deleteCompany } from '@/lib/db';
+import { updateCompanyStatus, updateCompanyTier, deleteCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
-import type { CompanyStatus } from '@/types';
+import type { CompanyStatus, CompanyTier } from '@/types';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 
@@ -15,12 +15,17 @@ export async function PATCH(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
-  const body = await req.json().catch(() => ({})) as { status?: CompanyStatus; notes?: string };
-  if (!body.status) {
-    return Response.json({ error: 'status is required.' }, { status: 422 });
+  const body = await req.json().catch(() => ({})) as {
+    status?: CompanyStatus;
+    notes?:  string;
+    tier?:   CompanyTier;
+  };
+  if (!body.status && !body.tier) {
+    return Response.json({ error: 'status or tier is required.' }, { status: 422 });
   }
   try {
-    await updateCompanyStatus(id, body.status, body.notes);
+    if (body.status) await updateCompanyStatus(id, body.status, body.notes);
+    if (body.tier)   await updateCompanyTier(id, body.tier);
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
