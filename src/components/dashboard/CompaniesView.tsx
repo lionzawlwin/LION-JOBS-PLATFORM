@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils';
 import type { Company, CompanyStatus } from '@/types';
 
 const STATUS_STYLES: Record<CompanyStatus, string> = {
-  Lead:     'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
-  Client:   'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
-  Inactive: 'bg-muted text-muted-foreground border-border',
+  Lead:          'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
+  Active:        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
+  'In-Contract': 'bg-gold-50 text-gold-700 border-gold-200 dark:bg-gold-600/20 dark:text-gold-400 dark:border-gold-600/40',
+  Inactive:      'bg-muted text-muted-foreground border-border',
 };
 
-const STATUSES: CompanyStatus[] = ['Lead', 'Client', 'Inactive'];
+const STATUSES: CompanyStatus[] = ['Lead', 'Active', 'In-Contract', 'Inactive'];
 const INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail', 'Education', 'Hospitality', 'Construction', 'Media', 'NGO', 'Other'];
 
 export function CompaniesView() {
@@ -111,7 +112,7 @@ export function CompaniesView() {
     return matchSearch && matchStatus;
   });
 
-  const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Client').length };
+  const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Active' || c.status === 'In-Contract').length };
 
   return (
     <div className="space-y-6">
