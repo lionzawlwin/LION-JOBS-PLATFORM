@@ -2,8 +2,11 @@ import { supabase } from '@/lib/supabase';
 import type { EnterpriseStats } from '@/types';
 
 export async function getEnterpriseStats(): Promise<EnterpriseStats> {
+  // Intentionally bypasses getContracts()/getCompanies()/getCseReps() — this needs
+  // narrow column projections and count-only/aggregate queries those functions
+  // don't provide. If contracts/companies schema changes, check this file too.
   const [contractsRes, companiesRes, cseRes] = await Promise.all([
-    supabase.from('contracts').select('value, cse_id').eq('status', 'Active'),
+    supabase.from('contracts').select('value, cse_id').eq('status', 'Active').order('cse_id'),
     supabase.from('companies').select('id', { count: 'exact', head: true }).eq('tier', 'enterprise'),
     supabase.from('cse_reps').select('id, name'),
   ]);
