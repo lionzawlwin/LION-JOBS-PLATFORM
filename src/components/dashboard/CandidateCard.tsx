@@ -1,5 +1,6 @@
 import { Phone, Star, Clock, FileText } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Candidate } from '@/types';
 
 function LinkedInIcon({ size = 13 }: { size?: number }) {
@@ -29,6 +30,7 @@ function MatchBadge({ score }: { score: number }) {
 }
 
 export function CandidateCard({ candidate }: { candidate: Candidate }) {
+  const { t } = useLanguage();
   return (
     <div className="rounded-xl border border-border bg-card p-3.5 shadow-sm space-y-2.5 select-none transition-colors hover:border-brand-200 dark:hover:border-brand-700/40">
 
@@ -66,7 +68,7 @@ export function CandidateCard({ candidate }: { candidate: Candidate }) {
             className="flex items-center gap-1 rounded-md bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 transition-colors dark:bg-brand-600/10 dark:text-brand-300 dark:hover:bg-brand-600/20"
           >
             <FileText size={11} />
-            View CV
+            {t('kb_view_cv')}
           </a>
         )}
         {candidate.linkedinUrl && (
@@ -79,7 +81,7 @@ export function CandidateCard({ candidate }: { candidate: Candidate }) {
             aria-label="LinkedIn profile"
           >
             <LinkedInIcon size={13} />
-            LinkedIn
+            {t('kb_linkedin')}
           </a>
         )}
       </div>
@@ -87,7 +89,7 @@ export function CandidateCard({ candidate }: { candidate: Candidate }) {
       {/* Applied date */}
       <p className="flex items-center gap-1 text-xs text-muted-foreground/70">
         <Clock size={10} />
-        Applied {timeAgo(candidate.appliedAt)}
+        {t('kb_applied_prefix')}{timeAgo(candidate.appliedAt)}
       </p>
     </div>
   );

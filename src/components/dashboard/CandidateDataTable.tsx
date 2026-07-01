@@ -8,7 +8,14 @@ import {
 import { cn, timeAgo } from '@/lib/utils';
 import { useCandidates } from '@/hooks/useCandidates';
 import { CandidateDrawer } from './CandidateDrawer';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Candidate, ApplicationStatus } from '@/types';
+
+const STAGE_KEYS: Record<ApplicationStatus, TranslationKey> = {
+  Applied: 'ov_stage_applied', Shortlisted: 'ov_stage_shortlisted',
+  Interview: 'ov_stage_interview', Hired: 'ov_stage_hired',
+};
 
 const PAGE_SIZE = 15;
 
@@ -34,6 +41,7 @@ export function CandidateDataTable() {
   const [stage,    setStage]    = useState<ApplicationStatus | ''>('');
   const [page,     setPage]     = useState(1);
   const [selected, setSelected] = useState<Candidate | null>(null);
+  const { t } = useLanguage();
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -99,7 +107,7 @@ export function CandidateDataTable() {
                   : 'border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground',
               )}
             >
-              {s || 'All Candidates'}
+              {s ? t(STAGE_KEYS[s]) : t('cd_all_candidates')}
               {s && (
                 <span className={cn(
                   'rounded-full px-1.5 py-0.5 text-[10px] font-bold',
@@ -126,7 +134,7 @@ export function CandidateDataTable() {
           <input
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search by name, position, phone, or email…"
+            placeholder={t('cd_search_placeholder')}
             className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
           />
         </div>
@@ -136,11 +144,11 @@ export function CandidateDataTable() {
           {/* Header */}
           <div className="hidden sm:grid grid-cols-[32px_1fr_160px_110px_120px_90px_48px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <span>#</span>
-            <span>Candidate</span>
-            <span>Position</span>
-            <span>Stage</span>
-            <span>Phone</span>
-            <span>Applied</span>
+            <span>{t('cd_col_candidate')}</span>
+            <span>{t('cd_col_position')}</span>
+            <span>{t('cd_col_stage')}</span>
+            <span>{t('cd_col_phone')}</span>
+            <span>{t('cd_col_applied')}</span>
             <span></span>
           </div>
 
@@ -148,7 +156,7 @@ export function CandidateDataTable() {
             <div className="flex h-40 items-center justify-center">
               <div className="text-center">
                 <Filter size={24} className="mx-auto mb-2 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">No candidates match your filters.</p>
+                <p className="text-sm text-muted-foreground">{t('cd_no_match')}</p>
               </div>
             </div>
           ) : (
@@ -179,7 +187,7 @@ export function CandidateDataTable() {
                         {/* Mobile-only extra info */}
                         <div className="sm:hidden flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', STAGE_STYLE[c.stage])}>
-                            {c.stage}
+                            {t(STAGE_KEYS[c.stage])}
                           </span>
                           <span className="text-[10px] text-muted-foreground">{timeAgo(c.appliedAt)}</span>
                         </div>
@@ -193,7 +201,7 @@ export function CandidateDataTable() {
                     <div className="hidden sm:flex items-center gap-1.5">
                       <div className={cn('h-1.5 w-1.5 rounded-full', STAGE_DOT[c.stage])} />
                       <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-semibold', STAGE_STYLE[c.stage])}>
-                        {c.stage}
+                        {t(STAGE_KEYS[c.stage])}
                       </span>
                     </div>
 
@@ -229,7 +237,7 @@ export function CandidateDataTable() {
         {/* ── Pagination ────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of <strong>{filtered.length}</strong> candidates
+            {t('cd_showing')} {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} {t('cd_of')} <strong>{filtered.length}</strong> {t('cd_candidates_word')}
           </p>
 
           <div className="flex items-center gap-2">

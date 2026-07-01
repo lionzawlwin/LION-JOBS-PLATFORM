@@ -94,7 +94,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
         <>
           {/* View toggle */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">Candidate Pipeline</h3>
+            <h3 className="text-sm font-bold text-foreground">{t('cand_pipeline_title')}</h3>
             <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1">
               <button
                 onClick={() => setCandView('table')}
@@ -103,7 +103,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
                   candView === 'table' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Table2 size={12} /> Table
+                <Table2 size={12} /> {t('cand_view_table')}
               </button>
               <button
                 onClick={() => setCandView('board')}
@@ -112,7 +112,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
                   candView === 'board' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <LayoutGrid size={12} /> Kanban
+                <LayoutGrid size={12} /> {t('cand_view_kanban')}
               </button>
             </div>
           </div>

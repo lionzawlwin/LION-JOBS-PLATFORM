@@ -332,6 +332,32 @@ export const translations = {
     ov_recent_apps_sub:   'Latest candidate activity — last 10',
     ov_no_candidates:     'No candidates yet.',
     ov_general_application: 'General Application',
+
+    // Candidates tab — shared
+    cand_pipeline_title: 'Candidate Pipeline',
+    cand_view_table:     'Table',
+    cand_view_kanban:    'Kanban',
+
+    // Candidates tab — data table
+    cd_all_candidates:   'All Candidates',
+    cd_search_placeholder: 'Search by name, position, phone, or email…',
+    cd_col_candidate:    'Candidate',
+    cd_col_position:     'Position',
+    cd_col_stage:        'Stage',
+    cd_col_phone:        'Phone',
+    cd_col_applied:      'Applied',
+    cd_no_match:         'No candidates match your filters.',
+    cd_showing:          'Showing',
+    cd_of:               'of',
+    cd_candidates_word:  'candidates',
+
+    // Candidates tab — kanban
+    kb_drop_here:        'Drop candidates here',
+    kb_view_cv:           'View CV',
+    kb_linkedin:          'LinkedIn',
+    kb_applied_prefix:    'Applied ',
+    ds_total_candidates:  'Total Candidates',
+    ds_in_progress:       'In Progress',
   },
 
   my: {
@@ -665,6 +691,32 @@ export const translations = {
     ov_recent_apps_sub:   'နောက်ဆုံး လျှောက်ထားသူများ၏ လှုပ်ရှားမှု — နောက်ဆုံး ၁၀ ခု',
     ov_no_candidates:     'လျှောက်ထားသူ မရှိသေးပါ။',
     ov_general_application: 'အထွေထွေ လျှောက်လွှာ',
+
+    // Candidates tab — shared
+    cand_pipeline_title: 'လျှောက်ထားသူများ စီးဆင်းမှု',
+    cand_view_table:     'ဇယား',
+    cand_view_kanban:    'Kanban',
+
+    // Candidates tab — data table
+    cd_all_candidates:   'လျှောက်ထားသူ အားလုံး',
+    cd_search_placeholder: 'အမည်၊ ရာထူး၊ ဖုန်း သို့ အီးမေးလ်ဖြင့် ရှာပါ…',
+    cd_col_candidate:    'လျှောက်ထားသူ',
+    cd_col_position:     'ရာထူး',
+    cd_col_stage:        'အဆင့်',
+    cd_col_phone:        'ဖုန်းနံပါတ်',
+    cd_col_applied:      'လျှောက်ထားသည့်ရက်',
+    cd_no_match:         'သင်၏ စစ်ထုတ်မှုနှင့် ကိုက်ညီသော လျှောက်ထားသူ မရှိပါ။',
+    cd_showing:          'ပြသနေသည်',
+    cd_of:               '၏',
+    cd_candidates_word:  'လျှောက်ထားသူများ',
+
+    // Candidates tab — kanban
+    kb_drop_here:        'လျှောက်ထားသူများကို ဤနေရာတွင် ချပါ',
+    kb_view_cv:           'CV ကြည့်ရန်',
+    kb_linkedin:          'LinkedIn',
+    kb_applied_prefix:    'လျှောက်ထားခဲ့သည် ',
+    ds_total_candidates:  'စုစုပေါင်း လျှောက်ထားသူများ',
+    ds_in_progress:       'လုပ်ဆောင်ဆဲ',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
