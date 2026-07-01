@@ -63,12 +63,31 @@ export function useContracts(companyId: string) {
     }
   }
 
+  async function deleteContract(id: string) {
+    const prev = data ?? [];
+    const next = prev.filter((c) => c.id !== id);
+    mutate(next, false);
+
+    try {
+      const res = await fetch(`/api/contracts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete contract');
+      toast.success(t('ent_toast_contract_deleted'));
+      globalMutate('/api/enterprise/stats');
+      return true;
+    } catch {
+      mutate(prev, false);
+      toast.error(t('ent_toast_contract_delete_failed'), { description: t('ent_toast_try_again') });
+      return false;
+    }
+  }
+
   return {
     contracts: data ?? [],
     loading: isLoading,
     error: error ? 'Failed to load contracts.' : null,
     addContract,
     updateContract,
+    deleteContract,
     mutate,
   };
 }

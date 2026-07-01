@@ -48,3 +48,8 @@ export async function appendInteraction(data: {
   if (error) throw new Error(`Failed to insert interaction: ${error.message}`);
   return id;
 }
+
+export async function deleteInteraction(id: string): Promise<void> {
+  const { error } = await supabase.from('interactions').delete().eq('id', id);
+  if (error) throw new Error(`Failed to delete interaction: ${error.message}`);
+}

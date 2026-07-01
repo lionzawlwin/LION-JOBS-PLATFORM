@@ -51,8 +51,8 @@ interface Props {
 
 export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const { contracts, addContract, updateContract } = useContracts(company.id);
-  const { interactions, logInteraction } = useInteractions(company.id);
+  const { contracts, addContract, updateContract, deleteContract } = useContracts(company.id);
+  const { interactions, logInteraction, deleteInteraction } = useInteractions(company.id);
   const { t } = useLanguage();
 
   const [contractForm, setContractForm] = useState({
@@ -65,6 +65,10 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
   const [savingInteraction, setSavingInteraction] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteContractId, setConfirmDeleteContractId] = useState<string | null>(null);
+  const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [confirmDeleteInteractionId, setConfirmDeleteInteractionId] = useState<string | null>(null);
+  const [deletingInteractionId, setDeletingInteractionId] = useState<string | null>(null);
 
   const activeContracts = contracts.filter((c) => c.status === 'Active');
   const activeValue = activeContracts.reduce((sum, c) => sum + c.value, 0);
@@ -114,6 +118,26 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
     } finally {
       setDeleting(false);
       setConfirmDelete(false);
+    }
+  }
+
+  async function handleDeleteContract(id: string) {
+    setDeletingContractId(id);
+    try {
+      await deleteContract(id);
+    } finally {
+      setDeletingContractId(null);
+      setConfirmDeleteContractId(null);
+    }
+  }
+
+  async function handleDeleteInteraction(id: string) {
+    setDeletingInteractionId(id);
+    try {
+      await deleteInteraction(id);
+    } finally {
+      setDeletingInteractionId(null);
+      setConfirmDeleteInteractionId(null);
     }
   }
 
@@ -208,15 +232,42 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
                   <span className="font-medium">
                     {t(CONTRACT_TYPE_KEYS[c.contractType])} · {c.value.toLocaleString()} {c.currency}
                   </span>
-                  <select
-                    value={c.status}
-                    onChange={(e) => updateContract(c.id, { status: e.target.value as ContractStatus })}
-                    className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
-                  >
-                    {CONTRACT_STATUSES.map((s) => (
-                      <option key={s} value={s}>{t(CONTRACT_STATUS_KEYS[s])}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={c.status}
+                      onChange={(e) => updateContract(c.id, { status: e.target.value as ContractStatus })}
+                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      {CONTRACT_STATUSES.map((s) => (
+                        <option key={s} value={s}>{t(CONTRACT_STATUS_KEYS[s])}</option>
+                      ))}
+                    </select>
+                    {confirmDeleteContractId === c.id ? (
+                      <div className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-1.5 py-0.5">
+                        <button
+                          onClick={() => handleDeleteContract(c.id)}
+                          disabled={deletingContractId === c.id}
+                          className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                        >
+                          {deletingContractId === c.id ? <Loader2 size={9} className="animate-spin" /> : t('ent_row_confirm_yes')}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteContractId(null)}
+                          className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                        >
+                          {t('ent_row_confirm_no')}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteContractId(c.id)}
+                        title={t('ent_row_delete_contract_title')}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -267,11 +318,38 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
               )}
               {interactions.map((i) => (
                 <div key={i.id} className="rounded-xl border border-border bg-background px-3 py-2 text-xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold">{t(INTERACTION_TYPE_KEYS[i.type])}</span>
-                    <span className="text-muted-foreground">
-                      {new Date(i.occurredAt).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-muted-foreground">
+                        {new Date(i.occurredAt).toLocaleDateString()}
+                      </span>
+                      {confirmDeleteInteractionId === i.id ? (
+                        <div className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-1.5 py-0.5">
+                          <button
+                            onClick={() => handleDeleteInteraction(i.id)}
+                            disabled={deletingInteractionId === i.id}
+                            className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                          >
+                            {deletingInteractionId === i.id ? <Loader2 size={9} className="animate-spin" /> : t('ent_row_confirm_yes')}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteInteractionId(null)}
+                            className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                          >
+                            {t('ent_row_confirm_no')}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteInteractionId(i.id)}
+                          title={t('ent_row_delete_interaction_title')}
+                          className="flex h-6 w-6 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="mt-0.5 text-muted-foreground">{i.note}</p>
                 </div>

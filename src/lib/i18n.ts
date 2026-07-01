@@ -290,6 +290,13 @@ export const translations = {
     ent_toast_cse_update_failed:   'Failed to update CSE',
     ent_toast_cse_removed:         'CSE removed',
     ent_toast_cse_delete_failed:   'Failed to delete CSE',
+    // Enterprise — granular sub-item delete
+    ent_row_delete_contract_title:    'Delete contract',
+    ent_row_delete_interaction_title: 'Delete interaction',
+    ent_toast_contract_deleted:        'Contract deleted',
+    ent_toast_contract_delete_failed:  'Failed to delete contract',
+    ent_toast_interaction_deleted:       'Interaction deleted',
+    ent_toast_interaction_delete_failed: 'Failed to delete interaction',
   },
 
   my: {
@@ -581,6 +588,13 @@ export const translations = {
     ent_toast_cse_update_failed:   'CSE အပ်ဒိတ်လုပ်၍ မရပါ',
     ent_toast_cse_removed:         'CSE ကို ဖယ်ရှားပြီးပါပြီ',
     ent_toast_cse_delete_failed:   'CSE ဖျက်၍ မရပါ',
+    // Enterprise — granular sub-item delete
+    ent_row_delete_contract_title:    'စာချုပ် ဖျက်ရန်',
+    ent_row_delete_interaction_title: 'ဆက်သွယ်မှု မှတ်တမ်း ဖျက်ရန်',
+    ent_toast_contract_deleted:        'စာချုပ် ဖျက်ပြီးပါပြီ',
+    ent_toast_contract_delete_failed:  'စာချုပ် ဖျက်၍ မရပါ',
+    ent_toast_interaction_deleted:       'ဆက်သွယ်မှု မှတ်တမ်း ဖျက်ပြီးပါပြီ',
+    ent_toast_interaction_delete_failed: 'ဆက်သွယ်မှု မှတ်တမ်း ဖျက်၍ မရပါ',
   },
 } satisfies Record<Lang, Record<string, string>>;
 

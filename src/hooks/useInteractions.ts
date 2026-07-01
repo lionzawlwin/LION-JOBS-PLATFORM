@@ -35,11 +35,29 @@ export function useInteractions(companyId: string) {
     return true;
   }
 
+  async function deleteInteraction(id: string) {
+    const prev = data ?? [];
+    const next = prev.filter((i) => i.id !== id);
+    mutate(next, false);
+
+    try {
+      const res = await fetch(`/api/interactions/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete interaction');
+      toast.success(t('ent_toast_interaction_deleted'));
+      return true;
+    } catch {
+      mutate(prev, false);
+      toast.error(t('ent_toast_interaction_delete_failed'), { description: t('ent_toast_try_again') });
+      return false;
+    }
+  }
+
   return {
     interactions: data ?? [],
     loading: isLoading,
     error: error ? 'Failed to load interactions.' : null,
     logInteraction,
+    deleteInteraction,
     mutate,
   };
 }
