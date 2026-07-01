@@ -12,13 +12,17 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { t, toggleLang } = useLanguage();
 
   useEffect(() => {
+    setMounted(true);
     const handler = () => setScrolled(window.scrollY > 24);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
+
+  const isDark = mounted && theme === 'dark';
 
   return (
     <header className={cn(
@@ -73,7 +77,7 @@ export function Navbar() {
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           <Link
@@ -110,7 +114,7 @@ export function Navbar() {
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground"
           >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <button
             aria-label="Toggle menu"
