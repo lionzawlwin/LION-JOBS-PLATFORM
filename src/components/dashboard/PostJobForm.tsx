@@ -9,6 +9,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── Constants ────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -76,6 +77,7 @@ export function PostJobForm() {
   const [newJobId,           setNewJobId]           = useState('');
   const [sheetUrl,           setSheetUrl]           = useState('');
   const [socialPostingQueued, setSocialPostingQueued] = useState(false);
+  const { t } = useLanguage();
 
   const {
     register,
@@ -146,12 +148,12 @@ export function PostJobForm() {
       setSocialPostingQueued(Boolean(json.socialPostingQueued));
       setMessage(
         json.socialPostingQueued
-          ? 'Job saved! GitHub Actions is generating the job card and will post it to Telegram & Facebook within ~60 seconds.'
-          : 'Job saved to Google Sheets. Set PUBLISH_WEBHOOK_SECRET in Vercel to enable automatic social posting.',
+          ? t('pj_msg_social_queued')
+          : t('pj_msg_saved_no_webhook'),
       );
     } catch {
       setStatus('error');
-      setMessage('Network error — check your connection and try again.');
+      setMessage(t('pj_msg_network_error'));
     }
   }
 
@@ -180,8 +182,8 @@ export function PostJobForm() {
             <PlusCircle size={15} />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Post a New Job</p>
-            <p className="text-xs text-muted-foreground">Add a vacancy to Google Sheets and distribute to social channels</p>
+            <p className="text-sm font-bold text-foreground">{t('pj_header_title')}</p>
+            <p className="text-xs text-muted-foreground">{t('pj_header_sub')}</p>
           </div>
         </div>
         {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
@@ -199,7 +201,7 @@ export function PostJobForm() {
                 <div>
                   <p className="text-sm font-semibold text-green-700 dark:text-green-400">{message}</p>
                   {newJobId && (
-                    <p className="mt-1 font-mono text-xs text-green-600 dark:text-green-500">Job ID: {newJobId}</p>
+                    <p className="mt-1 font-mono text-xs text-green-600 dark:text-green-500">{t('pj_success_job_id')}{newJobId}</p>
                   )}
                 </div>
               </div>
@@ -211,14 +213,14 @@ export function PostJobForm() {
                   rel="noopener noreferrer"
                   className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 hover:underline"
                 >
-                  <span>📊</span> Verify in Google Sheets →
+                  <span>📊</span>{t('pj_success_verify_sheet')}
                 </a>
               )}
               {socialPostingQueued && (
                 <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2 dark:bg-green-800/30">
                   <span className="text-base">📲</span>
                   <p className="text-xs text-green-700 dark:text-green-400">
-                    Posting to <strong>Telegram</strong> and <strong>Facebook</strong> via GitHub Actions
+                    {t('pj_success_social_posting')} <strong>Telegram</strong> {t('pj_success_social_posting_and')} <strong>Facebook</strong> {t('pj_success_social_posting_suffix')}
                   </p>
                 </div>
               )}
@@ -227,7 +229,7 @@ export function PostJobForm() {
                 onClick={handlePostAnother}
                 className="mt-3 rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition-colors"
               >
-                Post Another Job
+                {t('pj_success_post_another')}
               </button>
             </div>
           )}
@@ -245,32 +247,32 @@ export function PostJobForm() {
 
               {/* Admin key */}
               <div className="rounded-xl border border-gold-200 bg-gold-50 p-4 dark:border-gold-700/20 dark:bg-gold-600/5">
-                <Label required>Admin Key</Label>
+                <Label required>{t('pj_admin_key_label')}</Label>
                 <div className="relative">
                   <KeyRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="password"
-                    placeholder="Enter your ADMIN_KEY from Vercel env vars"
+                    placeholder={t('pj_admin_key_placeholder')}
                     {...register('adminKey')}
                     className={cn(inputCls, 'pl-9')}
                   />
                 </div>
                 <FieldError msg={errors.adminKey?.message} />
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Saved for this browser session. Set <code className="font-mono">ADMIN_KEY</code> in Vercel environment variables.
+                  {t('pj_admin_key_hint_prefix')} <code className="font-mono">ADMIN_KEY</code> {t('pj_admin_key_hint_suffix')}
                 </p>
               </div>
 
               {/* Row 1: Title / Company */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label required>Job Title</Label>
-                  <input placeholder="e.g. Senior Software Engineer" {...register('title')} className={inputCls} />
+                  <Label required>{t('pj_job_title_label')}</Label>
+                  <input placeholder={t('pj_job_title_placeholder')} {...register('title')} className={inputCls} />
                   <FieldError msg={errors.title?.message} />
                 </div>
                 <div>
-                  <Label required>Company</Label>
-                  <input placeholder="e.g. Yoma Bank" {...register('company')} className={inputCls} />
+                  <Label required>{t('pj_company_label')}</Label>
+                  <input placeholder={t('pj_company_placeholder')} {...register('company')} className={inputCls} />
                   <FieldError msg={errors.company?.message} />
                 </div>
               </div>
@@ -278,12 +280,12 @@ export function PostJobForm() {
               {/* Row 2: Location / Category / Type */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <Label required>Location</Label>
-                  <input placeholder="e.g. Yangon, Myanmar" {...register('location')} className={inputCls} />
+                  <Label required>{t('pj_location_label')}</Label>
+                  <input placeholder={t('pj_location_placeholder')} {...register('location')} className={inputCls} />
                   <FieldError msg={errors.location?.message} />
                 </div>
                 <div>
-                  <Label required>Category</Label>
+                  <Label required>{t('pj_category_label')}</Label>
                   <select {...register('category')} className={inputCls}>
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -292,10 +294,10 @@ export function PostJobForm() {
                   <FieldError msg={errors.category?.message} />
                 </div>
                 <div>
-                  <Label required>Job Type</Label>
+                  <Label required>{t('pj_job_type_label')}</Label>
                   <select {...register('type')} className={inputCls}>
-                    {TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                    {TYPES.map((ty) => (
+                      <option key={ty} value={ty}>{ty}</option>
                     ))}
                   </select>
                   <FieldError msg={errors.type?.message} />
@@ -305,15 +307,15 @@ export function PostJobForm() {
               {/* Row 3: Salary min / max / currency */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <Label>Salary Min</Label>
+                  <Label>{t('pj_salary_min_label')}</Label>
                   <input type="number" placeholder="0" min={0} {...register('salaryMin', { valueAsNumber: true })} className={inputCls} />
                 </div>
                 <div>
-                  <Label>Salary Max</Label>
+                  <Label>{t('pj_salary_max_label')}</Label>
                   <input type="number" placeholder="0" min={0} {...register('salaryMax', { valueAsNumber: true })} className={inputCls} />
                 </div>
                 <div>
-                  <Label>Currency</Label>
+                  <Label>{t('pj_currency_label')}</Label>
                   <select {...register('currency')} className={inputCls}>
                     {CURRENCIES.map(({ value, label }) => (
                       <option key={value} value={value}>{label}</option>
@@ -324,10 +326,10 @@ export function PostJobForm() {
 
               {/* Description */}
               <div>
-                <Label required>Job Description</Label>
+                <Label required>{t('pj_description_label')}</Label>
                 <textarea
                   rows={5}
-                  placeholder="Describe the role, responsibilities, and ideal candidate…"
+                  placeholder={t('pj_description_placeholder')}
                   {...register('description')}
                   className={cn(inputCls, 'resize-y')}
                 />
@@ -336,37 +338,37 @@ export function PostJobForm() {
 
               {/* Requirements */}
               <div>
-                <Label>Requirements</Label>
+                <Label>{t('pj_requirements_label')}</Label>
                 <textarea
                   rows={4}
-                  placeholder={`One requirement per line:\n3+ years React experience\nBachelor's degree in CS or related\nFluent in English and Burmese`}
+                  placeholder={t('pj_requirements_placeholder')}
                   {...register('requirements')}
                   className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">One requirement per line. Leave blank if not applicable.</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t('pj_requirements_hint')}</p>
               </div>
 
               {/* Benefits */}
               <div>
-                <Label>Benefits & Perks</Label>
+                <Label>{t('pj_benefits_label')}</Label>
                 <textarea
                   rows={3}
-                  placeholder={`One benefit per line:\nHealth Insurance\nAnnual Bonus\nTransport Allowance\nRemote Work Options`}
+                  placeholder={t('pj_benefits_placeholder')}
                   {...register('benefits')}
                   className={cn(inputCls, 'resize-y font-mono text-xs leading-relaxed')}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">One benefit per line. Used by AI to write better Facebook posts.</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t('pj_benefits_hint')}</p>
               </div>
 
               {/* Flags */}
               <div className="flex items-center gap-6">
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
                   <input type="checkbox" {...register('isUrgent')} className="h-4 w-4 rounded border-border accent-ruby-600" />
-                  🔥 Mark as Urgent
+                  🔥{t('pj_mark_urgent')}
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
                   <input type="checkbox" {...register('isFeatured')} className="h-4 w-4 rounded border-border accent-gold-600" />
-                  ⭐ Mark as Featured
+                  ⭐{t('pj_mark_featured')}
                 </label>
               </div>
 
@@ -382,13 +384,13 @@ export function PostJobForm() {
                   )}
                 >
                   {status === 'loading' ? (
-                    <><Loader2 size={15} className="animate-spin" /> Posting…</>
+                    <><Loader2 size={15} className="animate-spin" /> {t('pj_posting')}</>
                   ) : (
-                    <><Send size={15} /> Post Job & Distribute</>
+                    <><Send size={15} /> {t('pj_submit_btn')}</>
                   )}
                 </button>
                 <p className="text-xs text-muted-foreground">
-                  Saves to Google Sheets and fires your Make.com social webhook
+                  {t('pj_submit_hint')}
                 </p>
               </div>
 
