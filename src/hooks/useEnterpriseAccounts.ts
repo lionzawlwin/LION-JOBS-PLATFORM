@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { toast } from 'sonner';
 import type { Company, CompanyStatus, CompanyTier } from '@/types';
 
@@ -28,6 +28,7 @@ export function useEnterpriseAccounts() {
       });
       if (!res.ok) throw new Error('Failed to update status');
       toast.success('Account status updated');
+      globalMutate('/api/enterprise/stats');
     } catch {
       mutate(prev, false);
       toast.error('Failed to update status', { description: 'Please try again.' });
@@ -58,6 +59,7 @@ export function useEnterpriseAccounts() {
     }
     await mutate();
     toast.success(`${input.name} added`);
+    globalMutate('/api/enterprise/stats');
     return true;
   }
 

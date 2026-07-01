@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { toast } from 'sonner';
 import type { Contract } from '@/types';
 
@@ -35,6 +35,7 @@ export function useContracts(companyId: string) {
     }
     await mutate();
     toast.success('Contract added');
+    globalMutate('/api/enterprise/stats');
     return true;
   }
 
@@ -51,6 +52,7 @@ export function useContracts(companyId: string) {
       });
       if (!res.ok) throw new Error('Failed to update contract');
       toast.success('Contract updated');
+      globalMutate('/api/enterprise/stats');
       return true;
     } catch {
       mutate(prev, false);
