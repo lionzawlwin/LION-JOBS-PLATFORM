@@ -14,7 +14,7 @@ const STATUSES: CompanyStatus[] = ['Lead', 'Active', 'In-Contract', 'Inactive'];
 const INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail', 'Education', 'Hospitality', 'Construction', 'Media', 'NGO', 'Other'];
 
 export function EnterpriseView() {
-  const { accounts, loading, updateStatus, addAccount } = useEnterpriseAccounts();
+  const { accounts, loading, updateStatus, addAccount, deleteAccount } = useEnterpriseAccounts();
   const { stats } = useEnterpriseStats();
   const { cseReps } = useCseReps();
   const { contracts: allContracts } = useAllContracts();
@@ -171,6 +171,7 @@ export function EnterpriseView() {
               company={account}
               cseReps={cseReps}
               onStatusChange={updateStatus}
+              onDelete={deleteAccount}
             />
           ))}
         </div>

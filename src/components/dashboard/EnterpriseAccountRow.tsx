@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useContracts } from '@/hooks/useContracts';
 import { useInteractions } from '@/hooks/useInteractions';
@@ -29,9 +29,10 @@ interface Props {
   company: Company;
   cseReps: CseRep[];
   onStatusChange: (id: string, status: CompanyStatus) => void;
+  onDelete: (id: string) => Promise<boolean>;
 }
 
-export function EnterpriseAccountRow({ company, cseReps, onStatusChange }: Props) {
+export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false);
   const { contracts, addContract, updateContract } = useContracts(company.id);
   const { interactions, logInteraction } = useInteractions(company.id);
@@ -44,6 +45,8 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange }: Props
     type: 'Call' as InteractionType, note: '',
   });
   const [savingInteraction, setSavingInteraction] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const activeContracts = contracts.filter((c) => c.status === 'Active');
   const activeValue = activeContracts.reduce((sum, c) => sum + c.value, 0);
@@ -86,6 +89,16 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange }: Props
     }
   }
 
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await onDelete(company.id);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
       <button
@@ -118,20 +131,48 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange }: Props
       {expanded && (
         <div className="border-t border-border px-5 py-4 space-y-5 bg-muted/20">
           {/* Status change */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Status:</span>
-            {STATUSES.map((s) => (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground">Status:</span>
+              {STATUSES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onStatusChange(company.id, s)}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 font-semibold transition-colors',
+                    s === company.status ? STATUS_STYLES[s] : 'border-border text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            {confirmDelete ? (
+              <div className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1">
+                <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {deleting ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
               <button
-                key={s}
-                onClick={() => onStatusChange(company.id, s)}
-                className={cn(
-                  'rounded-full border px-2.5 py-1 font-semibold transition-colors',
-                  s === company.status ? STATUS_STYLES[s] : 'border-border text-muted-foreground hover:bg-accent',
-                )}
+                onClick={() => setConfirmDelete(true)}
+                title="Delete account"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
               >
-                {s}
+                <Trash2 size={12} />
               </button>
-            ))}
+            )}
           </div>
 
           {/* Contracts */}

@@ -63,12 +63,31 @@ export function useEnterpriseAccounts() {
     return true;
   }
 
+  async function deleteAccount(id: string) {
+    const prev = data ?? [];
+    const next = prev.filter((c) => c.id !== id);
+    mutate(next, false);
+
+    try {
+      const res = await fetch(`/api/companies/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete account');
+      globalMutate('/api/enterprise/stats');
+      toast.success('Account deleted');
+      return true;
+    } catch {
+      mutate(prev, false);
+      toast.error('Failed to delete account', { description: 'Please try again.' });
+      return false;
+    }
+  }
+
   return {
     accounts,
     loading: isLoading,
     error: error ? 'Failed to load enterprise accounts.' : null,
     updateStatus,
     addAccount,
+    deleteAccount,
     mutate,
   };
 }
