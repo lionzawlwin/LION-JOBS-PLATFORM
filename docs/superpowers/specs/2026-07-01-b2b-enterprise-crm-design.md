@@ -87,7 +87,11 @@ All admin-gated via the existing `requireAdmin()` pattern (single hardcoded admi
 - **`/api/contracts`** — GET (`?company_id=`), POST. **`/api/contracts/{id}`** — PATCH, DELETE.
 - **`/api/interactions`** — GET (`?company_id=`), POST only (append-only).
 - **`/api/cse`** — GET, POST. **`/api/cse/{id}`** — PATCH, DELETE.
-- **`/api/enterprise/stats`** — GET only. Server-side aggregation (chosen over client-side aggregation or a Postgres view, to keep the KPI strip fast without adding SQL-migration overhead the current scale doesn't need): total active contract value, active contract count, enterprise account count, per-CSE totals for the leaderboard.
+- **`/api/enterprise/stats`** — GET only. Server-side aggregation (chosen over client-side aggregation or a Postgres view, to keep the KPI strip fast without adding SQL-migration overhead the current scale doesn't need). Exact computation per number:
+  - Total Active Contract Value = `SUM(contracts.value) WHERE contracts.status = 'Active'`
+  - Active Contracts = `COUNT(contracts) WHERE contracts.status = 'Active'`
+  - Enterprise Accounts = `COUNT(companies) WHERE companies.tier = 'enterprise'` (all statuses, including Inactive — a full account-book count)
+  - Top CSE = the `cse_id` with the highest `SUM(contracts.value) WHERE contracts.status = 'Active'`, grouped by CSE (a live ranking, not a time-bounded period — there is no historical/periodic data per the out-of-scope note above)
 
 ## Hooks (`src/hooks/`, SWR, mirroring `useCandidates.ts`)
 
@@ -101,9 +105,9 @@ New **"Enterprise"** tab in `DashboardClient.tsx`'s existing tab list, new `Ente
 1. Total Active Contract Value (gold-accented, the headline number)
 2. Active Contracts (count)
 3. Enterprise Accounts (count)
-4. Top CSE this period (name + attributed value)
+4. Top CSE (name + their live active-contract value — a current ranking, not a time-bounded period)
 
-**Account table** — columns: Account · Status (`Badge`, color-coded: Lead=gray, Active=brand blue, In-Contract=gold, Inactive=muted) · Contract Value · Assigned CSE · Last Contact · expand chevron.
+**Account table** — columns: Account · Status (`Badge`, color-coded: Lead=gray, Active=brand blue, In-Contract=gold, Inactive=muted) · Contract Value · Assigned CSE · Last Contact (most recent `interactions.occurred_at` for that account) · expand chevron.
 
 **Expandable row**, per account:
 - Contract history (all `contracts` rows, inline add/edit: value, type, dates, status)
