@@ -70,3 +70,17 @@ export function useContracts(companyId: string) {
     mutate,
   };
 }
+
+export function useAllContracts() {
+  const { data, error, isLoading } = useSWR<Contract[]>(
+    '/api/contracts',
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+
+  return {
+    contracts: data ?? [],
+    loading: isLoading,
+    error: error ? 'Failed to load contracts.' : null,
+  };
+}

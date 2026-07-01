@@ -5,6 +5,7 @@ import { Plus, Building2, Loader2, Users2 } from 'lucide-react';
 import { useEnterpriseAccounts } from '@/hooks/useEnterpriseAccounts';
 import { useEnterpriseStats } from '@/hooks/useEnterpriseStats';
 import { useCseReps } from '@/hooks/useCseReps';
+import { useAllContracts } from '@/hooks/useContracts';
 import { EnterpriseAccountRow } from './EnterpriseAccountRow';
 import { ManageCseModal } from './ManageCseModal';
 import type { CompanyStatus } from '@/types';
@@ -16,8 +17,18 @@ export function EnterpriseView() {
   const { accounts, loading, updateStatus, addAccount } = useEnterpriseAccounts();
   const { stats } = useEnterpriseStats();
   const { cseReps } = useCseReps();
+  const { contracts: allContracts } = useAllContracts();
+
+  const assignedCseByCompany = new Map<string, string>();
+  for (const c of allContracts) {
+    if (c.status !== 'Active' || !c.cseId) continue;
+    if (!assignedCseByCompany.has(c.companyId)) {
+      assignedCseByCompany.set(c.companyId, c.cseId);
+    }
+  }
 
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
+  const [cseFilter, setCseFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showCseModal, setShowCseModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -26,7 +37,11 @@ export function EnterpriseView() {
     industry: 'Technology', city: 'Yangon', notes: '',
   });
 
-  const filtered = accounts.filter((a) => !statusFilter || a.status === statusFilter);
+  const filtered = accounts.filter((a) => {
+    const matchStatus = !statusFilter || a.status === statusFilter;
+    const matchCse = !cseFilter || assignedCseByCompany.get(a.id) === cseFilter;
+    return matchStatus && matchCse;
+  });
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -70,16 +85,28 @@ export function EnterpriseView() {
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as CompanyStatus | '')}
-          className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
-        >
-          <option value="">All Status</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as CompanyStatus | '')}
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+          >
+            <option value="">All Status</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={cseFilter}
+            onChange={(e) => setCseFilter(e.target.value)}
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+          >
+            <option value="">All CSEs</option>
+            {cseReps.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCseModal(true)}
