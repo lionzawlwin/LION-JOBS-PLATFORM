@@ -39,17 +39,24 @@ export function useContracts(companyId: string) {
   }
 
   async function updateContract(id: string, update: Partial<Contract>) {
-    const res = await fetch(`/api/contracts/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(update),
-    });
-    if (!res.ok) {
-      toast.error('Failed to update contract');
+    const prev = data ?? [];
+    const next = prev.map((c) => (c.id === id ? { ...c, ...update } : c));
+    mutate(next, false);
+
+    try {
+      const res = await fetch(`/api/contracts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(update),
+      });
+      if (!res.ok) throw new Error('Failed to update contract');
+      toast.success('Contract updated');
+      return true;
+    } catch {
+      mutate(prev, false);
+      toast.error('Failed to update contract', { description: 'Please try again.' });
       return false;
     }
-    await mutate();
-    return true;
   }
 
   return {
