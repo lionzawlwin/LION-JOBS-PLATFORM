@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList } from 'lucide-react';
+import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
 import { CompaniesView } from './CompaniesView';
+import { EnterpriseView } from './EnterpriseView';
 import { B2bLeadsTable } from './B2bLeadsTable';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
@@ -14,7 +15,7 @@ import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'b2b-leads' | 'content' | 'campaigns';
+type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns';
 
 const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
   { value: 'overview',   label: 'Overview',          icon: <BarChart2     size={14} /> },
@@ -22,6 +23,7 @@ const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
   { value: 'post-job',   label: 'Post a New Job',     icon: <PlusSquare    size={14} /> },
   { value: 'manage-jobs',label: 'Manage Jobs',        icon: <Briefcase     size={14} /> },
   { value: 'companies',  label: 'B2B Companies',      icon: <Building2     size={14} /> },
+  { value: 'enterprise', label: 'Enterprise',         icon: <Landmark      size={14} /> },
   { value: 'b2b-leads',  label: 'B2B Hiring Requests',icon: <ClipboardList size={14} /> },
   { value: 'content',    label: 'Content Studio',     icon: <PenSquare     size={14} /> },
   { value: 'campaigns',  label: 'Email Campaigns',    icon: <Mail          size={14} /> },
@@ -77,6 +79,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
           {activeTab === 'post-job'    && ' Create and publish new job listings to the platform.'}
           {activeTab === 'manage-jobs' && ' Edit, pause, or close existing job postings.'}
           {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
+          {activeTab === 'enterprise'  && ' Enterprise CRM — track corporate accounts, contract value, and CSE performance.'}
           {activeTab === 'b2b-leads'   && ' Incoming hiring requests from employers. Update status to track progress.'}
           {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
           {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
@@ -119,6 +122,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
       {activeTab === 'post-job'    && <PostJobForm />}
       {activeTab === 'manage-jobs' && <JobsPanel />}
       {activeTab === 'companies'   && <CompaniesView />}
+      {activeTab === 'enterprise'  && <EnterpriseView />}
       {activeTab === 'b2b-leads'   && <B2bLeadsTable />}
       {activeTab === 'content'     && <ContentStudio />}
       {activeTab === 'campaigns'   && <EmailCampaigns />}
