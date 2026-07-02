@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Printer, FileText } from 'lucide-react';
+import { Loader2, Printer, FileText, AlertTriangle } from 'lucide-react';
 import type { Invoice, InvoiceStatus } from '@/types';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
@@ -20,15 +20,23 @@ function fmtDate(iso: string) {
 export function BillingView() {
   const [invoices, setInvoices]   = useState<Invoice[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(false);
   const [statusFilter, setStatusFilter]   = useState<InvoiceStatus | ''>('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [savingId, setSavingId]   = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch('/api/invoices');
-      if (res.ok) setInvoices(await res.json());
+      if (!res.ok) {
+        setError(true);
+        return;
+      }
+      setInvoices(await res.json());
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -88,7 +96,18 @@ export function BillingView() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {error ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <AlertTriangle size={36} className="text-red-500/60" />
+          <p className="text-sm text-muted-foreground">Couldn&apos;t load invoices. Please try again.</p>
+          <button
+            onClick={() => load()}
+            className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            Retry
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <FileText size={36} className="text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">No invoices yet. Generate one from a Hired candidate&apos;s drawer.</p>
