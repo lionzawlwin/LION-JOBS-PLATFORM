@@ -231,7 +231,14 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   }
 
   async function handleGenerateInvoice() {
-    if (!candidate || !candidate.finalAgreedSalary || !invoiceCompanyId) return;
+    // candidate.finalAgreedSalary can still be stale here if the drawer hasn't
+    // been reopened since handleSaveFinalSalary last succeeded (globalMutate
+    // revalidates the parent's candidate list, but doesn't replace this
+    // component's `candidate` prop in place) — fall back to the local input
+    // value, mirroring the effectiveCvUrl/effectiveInterviewLocation pattern
+    // used elsewhere in this file for the same staleness gap.
+    const effectiveSalary = candidate?.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined);
+    if (!candidate || !effectiveSalary || !invoiceCompanyId) return;
     const candidateId = candidate.id; // pin before the async gap — candidate can change while this POST is in flight
     setGeneratingInvoice(true);
     try {
@@ -243,7 +250,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
           candidateName: candidate.name,
           position:      candidate.position,
           companyId:     invoiceCompanyId,
-          agreedSalary:  candidate.finalAgreedSalary,
+          agreedSalary:  effectiveSalary,
         }),
       });
       if (res.ok) {
@@ -267,6 +274,12 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   const effectiveCvUrl = cvUrlEdit ? undefined : (candidate.cvUrl || cvUrlValue || undefined);
   const effectiveInterviewLocation  = interviewEditMode ? undefined : (candidate.interviewLocation  || interviewLocationVal  || undefined);
   const effectiveInterviewerContact = interviewEditMode ? undefined : (candidate.interviewerContact || interviewerContactVal || undefined);
+  // Same staleness gap as effectiveCvUrl above: globalMutate('/api/candidates')
+  // revalidates the parent's list but doesn't replace this drawer's `candidate`
+  // prop in place, so immediately after a first-time save the invoice section
+  // below would otherwise stay stuck on the disabled placeholder until the
+  // drawer is closed and reopened. Fall back to the local input value.
+  const effectiveFinalAgreedSalary = candidate.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined);
 
   return (
     <>
@@ -615,13 +628,13 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
                     onClick={() => setFinalSalaryEditMode(true)}
                     className="text-left text-xs text-muted-foreground hover:text-foreground"
                   >
-                    {candidate.finalAgreedSalary
-                      ? <>{t('cdw_final_salary_label')}: {candidate.finalAgreedSalary.toLocaleString()} ({t('cdw_edit_suffix')})</>
+                    {effectiveFinalAgreedSalary
+                      ? <>{t('cdw_final_salary_label')}: {effectiveFinalAgreedSalary.toLocaleString()} ({t('cdw_edit_suffix')})</>
                       : t('cdw_final_salary_label')}
                   </button>
                 )}
 
-                {candidate.finalAgreedSalary ? (
+                {effectiveFinalAgreedSalary ? (
                   invoiceData?.invoice ? (
                     <a
                       href={`/dashboard/billing/invoice/${invoiceData.invoice.id}/print`}
