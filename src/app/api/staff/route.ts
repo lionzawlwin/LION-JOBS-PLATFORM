@@ -1,19 +1,12 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireRole } from '@/lib/auth';
 import { listStaff, createStaff } from '@/lib/db';
 import type { StaffRole } from '@/types';
 import type { NextRequest } from 'next/server';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 const VALID_ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  return !!session && session.user?.email === ADMIN_EMAIL;
-}
-
 export async function GET() {
-  if (!(await requireAdmin())) {
+  if (!(await requireRole(['owner', 'admin']))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const staff = await listStaff();
@@ -21,7 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireAdmin())) {
+  if (!(await requireRole(['owner', 'admin']))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);

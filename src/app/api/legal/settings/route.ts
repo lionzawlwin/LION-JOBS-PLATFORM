@@ -1,10 +1,7 @@
 import { z } from 'zod';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { getAgencySettings, updateAgencySettings } from '@/lib/db';
 import type { NextRequest } from 'next/server';
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 
 // Business/legal terms — keep loose but sane so a fat-fingered admin edit
 // can't silently persist a nonsensical commission rate or penalty amount.
@@ -23,8 +20,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

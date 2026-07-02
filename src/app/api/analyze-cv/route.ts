@@ -1,22 +1,18 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { getCandidates, saveAiScore } from '@/lib/db';
 import { getJobs } from '@/lib/db';
 import { scoreCandidateAgainstJob } from '@/lib/ai/cvAnalyzer';
 import type { NextRequest } from 'next/server';
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'lionzawlwin@gmail.com';
 
 /**
  * POST /api/analyze-cv
  * Body: { applicationId: string } — re-run AI scoring for one application
  *       { all: true }             — batch-process all unscored applications
  *
- * Auth: admin only
+ * Auth: any authenticated staff member
  */
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

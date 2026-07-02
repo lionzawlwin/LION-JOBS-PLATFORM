@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
-
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
@@ -28,7 +26,10 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const isAdmin = session.user?.email === ADMIN_EMAIL;
+  // Any active staff member gets the admin UI, not just ADMIN_EMAIL — role
+  // is attached to every session that passed authOptions.ts's signIn gate.
+  const role = session.user?.role;
+  const isAdmin = !!role;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -45,13 +46,13 @@ export default async function DashboardPage() {
                 <h1 className="text-xl font-bold text-foreground sm:text-3xl">Dashboard</h1>
                 {isAdmin && (
                   <span className="flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
-                    <Shield size={10} /> Admin
+                    <Shield size={10} /> {role.charAt(0).toUpperCase() + role.slice(1)}
                   </span>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {isAdmin
-                  ? `Signed in as ${session.user?.email} · Full admin access`
+                  ? `Signed in as ${session.user?.email} · ${role} access`
                   : 'Track your job applications.'}
               </p>
             </div>

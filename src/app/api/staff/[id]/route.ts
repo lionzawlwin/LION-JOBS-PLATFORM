@@ -1,18 +1,15 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireRole } from '@/lib/auth';
 import { updateStaff } from '@/lib/db';
 import type { StaffRole } from '@/types';
 import type { NextRequest } from 'next/server';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 const VALID_ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireRole(['owner', 'admin']))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;

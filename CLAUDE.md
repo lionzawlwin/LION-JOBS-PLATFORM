@@ -58,11 +58,13 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 | `/apply/[jobId]` | Candidate application form |
 | `/dashboard` | Internal admin console — 12 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access |
 
-### Access control — single admin gate, staff table not yet wired in
+### Access control — staff table, single access tier
 
-`/dashboard` is still gated entirely by `authOptions.ts` checking `session.user.email === ADMIN_EMAIL` (one hardcoded address), and so is every mutating API route — `grep -rl ADMIN_EMAIL src/` turns up 33 files, each with its own inline `=== ADMIN_EMAIL` check, not a shared helper.
+`authOptions.ts`'s `signIn` callback accepts anyone with an active row in the `staff` table (`id`, `email`, `name`, `role`: `owner`/`admin`/`cse`/`viewer`, `active`), managed via the Team & Access dashboard tab. `ADMIN_EMAIL` is kept as a **permanent** fallback in `authOptions.ts` only — always works regardless of the staff table's state, so a missing/misconfigured row can never lock out the account this auth system originally belonged to. Every other file uses `requireStaff()` / `requireRole()` from `src/lib/auth.ts`, not `ADMIN_EMAIL` directly — `grep -rl ADMIN_EMAIL src/` should only ever match `authOptions.ts`, `auth.ts`, and explanatory comments in `proxy.ts`/`dashboard/page.tsx`.
 
-A `staff` table exists (`id`, `email`, `name`, `role`: `owner`/`admin`/`cse`/`viewer`, `active`) with a Team & Access tab to manage it, but **it does not yet control who can log in or do anything** — it's a roster in preparation. Widening `signIn` in `authOptions.ts` to check `staff` instead of `ADMIN_EMAIL` before those 33 routes are migrated to the same check would let a newly added staff member log into a dashboard where almost every tab immediately 401s. See `supabase/MIGRATIONS.md` for the migration itself; the login-gate + route-migration follow-up is intentionally not done yet.
+Role is attached to the session/JWT at sign-in (`authOptions.ts`'s `jwt` callback) and does **not** update until that staff member's next login — changing someone's role in the Team & Access tab takes effect on their next sign-in, not immediately.
+
+**Current enforcement is single-tier**: `requireStaff()` just checks "is there a session" — any active staff member (any role) has the same dashboard access as every other. The only place role is actually checked is `/api/staff/*` (`requireRole(['owner', 'admin'])`) — managing the roster itself is restricted, nothing else is yet. Per-tab/per-action granular RBAC (e.g. `cse` role seeing only their own Enterprise accounts) is a real, separate, not-yet-scoped follow-up — don't assume `role` gates anything beyond staff management without checking the specific route first.
 
 ### State management
 

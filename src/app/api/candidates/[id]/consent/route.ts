@@ -1,18 +1,14 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
-
-// Admin-only: read consent status for the Candidate Drawer badge.
+// Staff-only: read consent status for the Candidate Drawer badge.
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

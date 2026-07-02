@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { Resend } from 'resend';
 import {
   buildWelcomeEmail,
@@ -8,8 +7,6 @@ import {
   buildOutreachEmail,
 } from '@/lib/emailTemplates';
 import type { NextRequest } from 'next/server';
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 
 function getResend() {
   const key = process.env.RESEND_API_KEY;
@@ -22,8 +19,7 @@ function getResend() {
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <onboarding@resend.dev>';
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

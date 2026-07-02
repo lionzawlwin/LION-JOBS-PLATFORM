@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getCompanyById, getAgencySettings } from '@/lib/db';
 import { ContractDocument } from '@/components/legal/ContractDocument';
@@ -7,15 +6,12 @@ import { AutoPrint } from '@/components/legal/AutoPrint';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
-
 export default async function ContractPrintPage({
   params,
 }: {
   params: Promise<{ companyId: string }>;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     redirect('/login');
   }
 

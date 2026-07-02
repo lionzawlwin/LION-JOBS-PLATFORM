@@ -1,18 +1,9 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { requireStaff } from '@/lib/auth';
 import { getCompanies, appendCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) return false;
-  return true;
-}
-
 export async function GET() {
-  if (!(await requireAdmin())) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const companies = await getCompanies();
@@ -22,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireAdmin())) {
+  if (!(await requireStaff())) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
