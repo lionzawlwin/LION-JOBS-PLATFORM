@@ -191,6 +191,8 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
     .split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
 
   const effectiveCvUrl = cvUrlEdit ? undefined : (candidate.cvUrl || cvUrlValue || undefined);
+  const effectiveInterviewLocation  = interviewEditMode ? undefined : (candidate.interviewLocation  || interviewLocationVal  || undefined);
+  const effectiveInterviewerContact = interviewEditMode ? undefined : (candidate.interviewerContact || interviewerContactVal || undefined);
 
   return (
     <>
@@ -454,13 +456,13 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
             {candidate.stage === 'Interview' && (
               <div className="space-y-2 px-4 py-3 border-t border-border/50">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">Interview Details</p>
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t('cdw_interview_details')}</p>
                   {consentData?.consent ? (
                     <span className="text-[10px] font-semibold text-emerald-600">
-                      Anti-bypass consent: Agreed {new Date(consentData.consent.agreedAt).toLocaleDateString()}
+                      {t('cdw_consent_agreed_prefix')}{new Date(consentData.consent.agreedAt).toLocaleDateString()}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-amber-600">Anti-bypass consent: Not yet agreed</span>
+                    <span className="text-[10px] font-semibold text-amber-600">{t('cdw_consent_pending')}</span>
                   )}
                 </div>
                 {interviewEditMode ? (
@@ -468,13 +470,13 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
                     <input
                       value={interviewLocationVal}
                       onChange={(e) => setInterviewLocationVal(e.target.value)}
-                      placeholder="Interview location"
+                      placeholder={t('cdw_interview_location_placeholder')}
                       className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
                     />
                     <input
                       value={interviewerContactVal}
                       onChange={(e) => setInterviewerContactVal(e.target.value)}
-                      placeholder="Interviewer contact"
+                      placeholder={t('cdw_interviewer_contact_placeholder')}
                       className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
                     />
                     <div className="flex gap-2">
@@ -483,24 +485,24 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
                         disabled={savingInterview}
                         className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
                       >
-                        {savingInterview ? 'Saving…' : 'Save'}
+                        {savingInterview ? t('cdw_saving') : t('cdw_save')}
                       </button>
                       <button
                         onClick={() => setInterviewEditMode(false)}
                         className="rounded-lg border border-border px-3 py-1 text-xs text-muted-foreground"
                       >
-                        Cancel
+                        {t('cdw_cancel')}
                       </button>
                     </div>
                   </>
                 ) : (
                   <button
                     onClick={() => setInterviewEditMode(true)}
-                    className="text-left text-xs text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-1 text-left text-xs text-muted-foreground hover:text-foreground"
                   >
-                    {candidate.interviewLocation
-                      ? <>📍 {candidate.interviewLocation}{candidate.interviewerContact ? ` · ${candidate.interviewerContact}` : ''} (edit)</>
-                      : 'Set interview location + interviewer contact'}
+                    {effectiveInterviewLocation
+                      ? <><MapPin size={11} className="shrink-0" /> {effectiveInterviewLocation}{effectiveInterviewerContact ? ` · ${effectiveInterviewerContact}` : ''} ({t('cdw_edit_suffix')})</>
+                      : t('cdw_set_interview_details')}
                   </button>
                 )}
               </div>
