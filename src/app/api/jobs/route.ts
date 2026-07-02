@@ -1,6 +1,7 @@
 import { getJobs, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
+import { requireTabAccess } from '@/lib/auth';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -45,6 +46,10 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/jobs ────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  if (!(await requireTabAccess('post-job', 'manage'))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const ADMIN_KEY = process.env.ADMIN_KEY;
   if (!ADMIN_KEY) {
     return NextResponse.json(

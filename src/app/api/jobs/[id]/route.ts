@@ -1,5 +1,6 @@
 import { deleteJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireTabAccess } from '@/lib/auth';
 
 // ── DELETE /api/jobs/[id] ─────────────────────────────────────────
 // Removes the job row from the database.
@@ -8,6 +9,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await requireTabAccess('manage-jobs', 'manage'))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const ADMIN_KEY = process.env.ADMIN_KEY;
   if (!ADMIN_KEY) {
     return NextResponse.json({ error: 'ADMIN_KEY is not configured on the server.' }, { status: 503 });
