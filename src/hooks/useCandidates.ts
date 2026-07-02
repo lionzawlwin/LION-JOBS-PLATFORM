@@ -4,7 +4,10 @@ import useSWR from 'swr';
 import { toast } from 'sonner';
 import type { Candidate, ApplicationStatus } from '@/types';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error('Failed to load candidates.');
+  return r.json();
+});
 
 const STAGE_LABELS: Record<ApplicationStatus, string> = {
   Applied:     'Applied',
