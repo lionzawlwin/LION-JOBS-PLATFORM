@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale } from 'lucide-react';
+import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale, Receipt } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
@@ -11,13 +11,14 @@ import { B2bLeadsTable } from './B2bLeadsTable';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
 import { LegalView } from './LegalView';
+import { BillingView } from './BillingView';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal';
+type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal' | 'billing';
 
 interface Props {
   isAdmin?: boolean;
@@ -39,6 +40,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
     { value: 'content',    label: t('admin_tab_content'),    icon: <PenSquare     size={14} /> },
     { value: 'campaigns',  label: t('admin_tab_campaigns'),  icon: <Mail          size={14} /> },
     { value: 'legal',      label: t('admin_tab_legal'),      icon: <Scale         size={14} /> },
+    { value: 'billing',    label: t('admin_tab_billing'),    icon: <Receipt       size={14} /> },
   ];
 
   if (!isAdmin) {
@@ -88,6 +90,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
           {activeTab === 'content'     && t('admin_banner_content')}
           {activeTab === 'campaigns'   && t('admin_banner_campaigns')}
           {activeTab === 'legal'       && t('admin_banner_legal')}
+          {activeTab === 'billing'     && t('admin_banner_billing')}
         </span>
       </div>
 
@@ -132,6 +135,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
       {activeTab === 'content'     && <ContentStudio />}
       {activeTab === 'campaigns'   && <EmailCampaigns />}
       {activeTab === 'legal'       && <LegalView />}
+      {activeTab === 'billing'     && <BillingView />}
     </>
   );
 }
