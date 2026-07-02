@@ -41,9 +41,14 @@ export function MyApplicationsClient() {
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [consentTarget, setConsentTarget] = useState<string | null>(null);
+  // The query that actually produced the currently-displayed `results` —
+  // frozen at fetch time so the consent modal always verifies identity
+  // against the query that surfaced this row, not whatever the user may
+  // have since typed into the still-editable search box.
+  const [resultsQuery, setResultsQuery] = useState('');
 
-  async function handleCheck() {
-    const q = query.trim();
+  async function handleCheck(overrideQuery?: string) {
+    const q = (overrideQuery ?? query).trim();
     if (q.length < 5) return;
     setLoading(true);
     setError('');
@@ -55,6 +60,7 @@ export function MyApplicationsClient() {
         setError(data.error ?? 'Something went wrong.');
       } else {
         setResults(data.results ?? []);
+        setResultsQuery(q);
       }
     } catch {
       setError('Network error. Please try again.');
@@ -84,7 +90,7 @@ export function MyApplicationsClient() {
           />
         </div>
         <button
-          onClick={handleCheck}
+          onClick={() => handleCheck()}
           disabled={loading || query.trim().length < 5}
           className={cn(
             'shrink-0 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50',
@@ -149,9 +155,9 @@ export function MyApplicationsClient() {
       {consentTarget && (
         <AntiBypassConsentModal
           applicationId={consentTarget}
-          query={query}
+          query={resultsQuery}
           onClose={() => setConsentTarget(null)}
-          onAgreed={() => { setConsentTarget(null); handleCheck(); }}
+          onAgreed={() => { setConsentTarget(null); handleCheck(resultsQuery); }}
         />
       )}
     </div>
