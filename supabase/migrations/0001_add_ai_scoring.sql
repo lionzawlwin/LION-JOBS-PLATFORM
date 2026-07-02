@@ -1,5 +1,5 @@
 -- AI CV Scoring columns on applications table
--- Run this in Supabase SQL Editor once.
+-- Apply via the process in supabase/MIGRATIONS.md, then verify.
 
 ALTER TABLE applications
   ADD COLUMN IF NOT EXISTS ai_score        SMALLINT,

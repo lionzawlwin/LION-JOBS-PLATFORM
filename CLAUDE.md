@@ -30,6 +30,8 @@ All persistent data lives in Supabase Postgres (project "Lion Jobs Agency"), wit
 
 The private key (`GOOGLE_PRIVATE_KEY`) is sanitised through `parsePrivateKey()` in `drive.ts`, which strips accidental surrounding quotes, converts `\n` escape sequences, and trims whitespace — handle it there, not in callers.
 
+Schema changes live in `supabase/migrations/*.sql`, numbered in application order. **Read `supabase/MIGRATIONS.md` before writing or applying one** — there is no CLI-linked project yet (no `supabase/config.toml`), so `supabase db push` does not work; migrations are applied by hand and must be verified against the live project afterward, not assumed to have succeeded.
+
 > Historical note: this app originally ran on Google Sheets + a Make.com webhook (see `docs/superpowers/plans/2026-06-30-supabase-migration.md` for the migration). That data layer (`src/lib/sheets.ts`, `src/lib/makeWebhook.ts`) has been fully removed as of the migration — do not reintroduce it or assume it still exists. Content Studio's "Send to Make.com" button is a **separate, unrelated, and currently unfinished** feature (`/api/content/distribute` is a stub returning 501) — it is not a remnant of the old data layer.
 
 ### Request flow

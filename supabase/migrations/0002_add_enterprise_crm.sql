@@ -1,5 +1,5 @@
 -- B2B Enterprise CRM: companies extension + contracts/interactions/cse_reps
--- Run this in Supabase SQL Editor once.
+-- Apply via the process in supabase/MIGRATIONS.md, then verify.
 
 ALTER TABLE companies
   ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'smb';
