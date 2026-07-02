@@ -20,8 +20,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check
-        run: npx tsc --noEmit
-
+      # `next build` generates .next/types/ (Next.js 16 typed-routes helpers,
+      # e.g. PageProps<'/route'>) — tsc --noEmit must run after, not before,
+      # or it fails on a clean checkout with no prior local `next dev`/`build`.
       - name: Build
         run: npx next build
+
+      - name: Type-check
+        run: npx tsc --noEmit
