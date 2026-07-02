@@ -184,6 +184,7 @@ export const translations = {
     admin_tab_content:     'Content Studio',
     admin_tab_campaigns:   'Email Campaigns',
     admin_tab_legal:       'Legal',
+    admin_tab_billing:     'Billing',
     // Admin dashboard — context banner
     admin_banner_prefix:      'Admin dashboard — Lion Jobs Agency internal use only.',
     admin_banner_overview:    ' Real-time analytics across candidates, jobs, and companies.',
@@ -196,6 +197,7 @@ export const translations = {
     admin_banner_content:     ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.',
     admin_banner_campaigns:   ' Send marketing emails to employers. Powered by Resend (3K/month free).',
     admin_banner_legal:       ' B2B service contracts and candidate anti-bypass consent tracking.',
+    admin_banner_billing:     ' Generate and track invoices for placed candidates.',
 
     // Enterprise — status/type enum display labels (data values stay English; these are display-only)
     status_lead:            'Lead',
@@ -395,6 +397,13 @@ export const translations = {
     cdw_saving:             'Saving…',
     cdw_set_interview_details: 'Set interview location + interviewer contact',
     cdw_edit_suffix:        'edit',
+    cdw_billing_section:              'Billing',
+    cdw_final_salary_label:           'Final Agreed Salary (MMK)',
+    cdw_final_salary_placeholder:     'e.g. 1500000',
+    cdw_select_company:               'Select company…',
+    cdw_generate_invoice:             'Generate Invoice',
+    cdw_view_invoice:                 'View Invoice',
+    cdw_generating:                   'Generating…',
     cdw_source:             'Source',
     cdw_applied:             'Applied',
     cdw_ai_match_analysis:  'AI Match Analysis',
@@ -804,6 +813,7 @@ export const translations = {
     admin_tab_content:     'အကြောင်းအရာ စတူဒီယို',
     admin_tab_campaigns:   'အီးမေးလ် ကမ်ပိန်းများ',
     admin_tab_legal:       'ဥပဒေရေးရာ',
+    admin_tab_billing:     'ငွေတောင်းခံလွှာ',
     // Admin dashboard — context banner
     admin_banner_prefix:      'အက်ဒမင် ဒက်ရှ်ဘုတ် — Lion Jobs Agency ၏ အတွင်းပိုင်းအသုံးပြုမှုအတွက်သာ။',
     admin_banner_overview:    ' လျှောက်ထားသူများ၊ အလုပ်များနှင့် ကုမ္ပဏီများအတွက် အချိန်နှင့်တပြေးညီ ခွဲခြမ်းစိတ်ဖြာမှု။',
@@ -816,6 +826,7 @@ export const translations = {
     admin_banner_content:     ' Facebook၊ Telegram၊ WhatsApp နှင့် LinkedIn အတွက် ဆိုရှယ်မီဒီယာ ပို့စ်များ ဖန်တီးပါ။',
     admin_banner_campaigns:   ' အလုပ်ရှင်များထံ စျေးကွက်ရှာဖွေရေး အီးမေးလ်များ ပို့ပါ။ Resend မှ ပံ့ပိုးသည် (လစဉ် ၃,၀၀၀ အခမဲ့)။',
     admin_banner_legal:       ' B2B စာချုပ်များနှင့် ကိုယ်စားလှယ်လောင်း သဘောတူညီချက် ခြေရာခံမှု။',
+    admin_banner_billing:     ' ခန့်အပ်ပြီးသော ကိုယ်စားလှယ်လောင်းများအတွက် ငွေတောင်းခံလွှာများ ထုတ်ပေးပြီး ခြေရာခံပါ။',
 
     // Enterprise — status/type enum display labels
     status_lead:            'အလားအလာ',
@@ -1015,6 +1026,13 @@ export const translations = {
     cdw_saving:             'သိမ်းနေသည်…',
     cdw_set_interview_details: 'အင်တာဗျူးနေရာနှင့် ဆက်သွယ်ရန်အချက်အလက် သတ်မှတ်ရန်',
     cdw_edit_suffix:        'ပြင်ဆင်ရန်',
+    cdw_billing_section:              'ငွေတောင်းခံလွှာ',
+    cdw_final_salary_label:           'အတည်ပြုလစာ (MMK)',
+    cdw_final_salary_placeholder:     'ဥပမာ 1500000',
+    cdw_select_company:               'ကုမ္ပဏီ ရွေးချယ်ပါ…',
+    cdw_generate_invoice:             'ငွေတောင်းခံလွှာ ထုတ်ရန်',
+    cdw_view_invoice:                 'ငွေတောင်းခံလွှာ ကြည့်ရန်',
+    cdw_generating:                   'ထုတ်နေသည်…',
     cdw_source:             'ရင်းမြစ်',
     cdw_applied:             'လျှောက်ထားသည့်ရက်',
     cdw_ai_match_analysis:  'AI ကိုက်ညီမှု ခွဲခြမ်းစိတ်ဖြာချက်',
