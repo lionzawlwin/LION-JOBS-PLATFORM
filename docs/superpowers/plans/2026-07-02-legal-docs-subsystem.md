@@ -600,7 +600,7 @@ export async function PATCH(
 ```typescript
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent } from '@/lib/db';
+import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
 
@@ -634,6 +634,27 @@ export async function POST(
 
   const { id } = await context.params;
 
+  let body: { query?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const query = body.query?.trim();
+  if (!query || query.length < 5) {
+    return Response.json({ error: 'A valid email or phone number is required to confirm your identity.' }, { status: 400 });
+  }
+
+  // candidate_consents is a legal-evidentiary record — an application id alone
+  // (timestamp + a few random chars, not a cryptographic token) must not be
+  // enough to fabricate someone else's consent. Require the same email/phone
+  // proof that /api/apply/status already uses to surface this application.
+  const matches = await getCandidatesByEmailOrPhone(query);
+  if (!matches.some((c) => c.id === id)) {
+    return Response.json({ error: 'Could not verify this application.' }, { status: 403 });
+  }
+
   const location = await getApplicationInterviewLocation(id);
   if (!location) {
     return Response.json({ error: 'No interview details available yet for this application.' }, { status: 400 });
@@ -655,6 +676,8 @@ export async function POST(
   }
 }
 ```
+
+> **Amended after Task 7's code quality review:** the original draft let `POST` record consent from an application id alone, with no proof the caller was actually that candidate — a reviewer correctly flagged that this lets anyone who obtains/guesses an id fabricate someone else's legal consent record. Added a required `query` (email/phone) field, verified server-side via `getCandidatesByEmailOrPhone` before recording consent, mirroring the identity proof `/api/apply/status` already requires. Task 14's `AntiBypassConsentModal` must pass the same `query` the candidate used on `/my-applications`.
 
 - [ ] **Step 3: Write the batch consent-status POST route (for the Legal tab's Candidate Consents list)**
 
@@ -696,10 +719,10 @@ Expected: no errors.
 With `npm run dev` running:
 
 ```bash
-curl -X POST http://localhost:3000/api/candidates/does-not-exist/consent
+curl -X POST http://localhost:3000/api/candidates/does-not-exist/consent -H "Content-Type: application/json" -d "{\"query\":\"nobody@example.com\"}"
 ```
 
-Expected: `{"error":"No interview details available yet for this application."}` with status 400 (no `interview_location` set for a non-existent id) — confirms the route is reachable without a session.
+Expected: `{"error":"Could not verify this application."}` with status 403 (no candidate matches that email, so ownership verification fails before ever reaching the interview-location check) — confirms the route is reachable without a session, and confirms the identity check runs.
 
 - [ ] **Step 6: Commit**
 
@@ -1514,11 +1537,12 @@ import type { AgencySettings } from '@/types';
 
 interface Props {
   applicationId: string;
+  query: string;
   onClose: () => void;
   onAgreed: () => void;
 }
 
-export function AntiBypassConsentModal({ applicationId, onClose, onAgreed }: Props) {
+export function AntiBypassConsentModal({ applicationId, query, onClose, onAgreed }: Props) {
   const [settings, setSettings] = useState<AgencySettings | null>(null);
   const [agreed, setAgreed]     = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -1534,7 +1558,9 @@ export function AntiBypassConsentModal({ applicationId, onClose, onAgreed }: Pro
     setError('');
     try {
       const res = await fetch(`/api/candidates/${applicationId}/consent`, {
-        method: 'POST',
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ query }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1682,11 +1708,14 @@ Add the modal render at the end of the component's returned JSX, just before the
       {consentTarget && (
         <AntiBypassConsentModal
           applicationId={consentTarget}
+          query={query}
           onClose={() => setConsentTarget(null)}
           onAgreed={() => { setConsentTarget(null); handleCheck(); }}
         />
       )}
 ```
+
+`query` here is the component's existing search-box state (the email/phone the candidate already typed to look up their applications) — passing it through lets the consent route verify the candidate actually owns this application before recording legal consent (see Task 7's amendment note above).
 
 - [ ] **Step 3: Type-check**
 

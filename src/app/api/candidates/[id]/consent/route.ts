@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent } from '@/lib/db';
+import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
 
@@ -33,6 +33,27 @@ export async function POST(
   }
 
   const { id } = await context.params;
+
+  let body: { query?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const query = body.query?.trim();
+  if (!query || query.length < 5) {
+    return Response.json({ error: 'A valid email or phone number is required to confirm your identity.' }, { status: 400 });
+  }
+
+  // candidate_consents is a legal-evidentiary record — an application id alone
+  // (timestamp + a few random chars, not a cryptographic token) must not be
+  // enough to fabricate someone else's consent. Require the same email/phone
+  // proof that /api/apply/status already uses to surface this application.
+  const matches = await getCandidatesByEmailOrPhone(query);
+  if (!matches.some((c) => c.id === id)) {
+    return Response.json({ error: 'Could not verify this application.' }, { status: 403 });
+  }
 
   const location = await getApplicationInterviewLocation(id);
   if (!location) {
