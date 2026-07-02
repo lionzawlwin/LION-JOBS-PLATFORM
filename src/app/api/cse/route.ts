@@ -1,9 +1,9 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getCseReps, appendCseRep } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 export async function GET() {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('enterprise', 'view'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const reps = await getCseReps();
@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('enterprise', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);
