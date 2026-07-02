@@ -2,8 +2,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
 import type { NextRequest } from 'next/server';
+import type { InvoiceStatus } from '@/types';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
+const VALID_STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Paid', 'Overdue'];
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -13,8 +15,13 @@ export async function GET(req: NextRequest) {
 
   const companyId = req.nextUrl.searchParams.get('companyId') ?? undefined;
   const status    = req.nextUrl.searchParams.get('status') ?? undefined;
+
+  if (status && !VALID_STATUSES.includes(status as InvoiceStatus)) {
+    return Response.json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` }, { status: 422 });
+  }
+
   const invoices  = await getInvoices({ companyId, status });
-  return Response.json(invoices);
+  return Response.json(invoices, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST(req: NextRequest) {

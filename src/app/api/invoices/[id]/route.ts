@@ -19,7 +19,7 @@ export async function GET(
   const { id } = await context.params;
   const invoice = await getInvoiceById(id);
   if (!invoice) return Response.json({ error: 'Invoice not found.' }, { status: 404 });
-  return Response.json(invoice);
+  return Response.json(invoice, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function PATCH(
