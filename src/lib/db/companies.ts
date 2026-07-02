@@ -13,6 +13,9 @@ function mapToCompany(row: Record<string, unknown>): Company {
     status:        ((row.status as string) ?? 'Lead') as CompanyStatus,
     tier:          ((row.tier as string) ?? 'smb') as CompanyTier,
     notes:         (row.notes as string) ?? '',
+    commissionRatePct: row.commission_rate_pct === null || row.commission_rate_pct === undefined
+      ? null
+      : Number(row.commission_rate_pct),
     lastContacted: (row.last_contacted as string) ?? '',
     createdAt:     row.created_at as string,
   };
@@ -90,4 +93,26 @@ export async function updateCompanyTier(id: string, tier: string): Promise<void>
 export async function deleteCompany(id: string): Promise<void> {
   const { error } = await supabase.from('companies').delete().eq('id', id);
   if (error) throw new Error(`Failed to delete company: ${error.message}`);
+}
+
+export async function getCompanyById(id: string): Promise<Company | null> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapToCompany(data);
+}
+
+export async function updateCompanyCommissionRate(
+  id: string,
+  commissionRatePct: number | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ commission_rate_pct: commissionRatePct })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update commission rate: ${error.message}`);
 }
