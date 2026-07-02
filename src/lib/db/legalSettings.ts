@@ -29,7 +29,7 @@ export async function getAgencySettings(): Promise<AgencySettings> {
     .maybeSingle();
 
   if (error || !data) {
-    console.error('[db/legalSettings] getAgencySettings error:', error?.message);
+    console.error('[db/legalSettings] getAgencySettings error:', error?.message ?? 'no row found');
     return DEFAULTS;
   }
   return mapToSettings(data);
