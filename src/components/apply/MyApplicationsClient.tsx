@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Search, CheckCircle2, Clock, XCircle, Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { AntiBypassConsentModal } from './AntiBypassConsentModal';
 
 interface ApplicationRecord {
   id: string;
@@ -13,6 +14,9 @@ interface ApplicationRecord {
   stage: string;
   appliedAt: string;
   stageUpdatedAt: string;
+  needsConsent?: boolean;
+  interviewLocation?: string;
+  interviewerContact?: string;
 }
 
 type IconComponent = React.ComponentType<{ size?: number }>;
@@ -36,6 +40,7 @@ export function MyApplicationsClient() {
   const [results, setResults] = useState<ApplicationRecord[] | null>(null);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [consentTarget, setConsentTarget] = useState<string | null>(null);
 
   async function handleCheck() {
     const q = query.trim();
@@ -119,10 +124,35 @@ export function MyApplicationsClient() {
                   <span>Applied: {fmtDate(r.appliedAt)}</span>
                   {r.stageUpdatedAt && <span>Updated: {fmtDate(r.stageUpdatedAt)}</span>}
                 </div>
+                {r.stage === 'Interview' && (
+                  <div className="mt-3 border-t border-border/50 pt-3 text-xs">
+                    {r.needsConsent ? (
+                      <button
+                        onClick={() => setConsentTarget(r.id)}
+                        className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                      >
+                        View Interview Details
+                      </button>
+                    ) : r.interviewLocation ? (
+                      <p className="text-muted-foreground">
+                        📍 {r.interviewLocation}{r.interviewerContact ? ` · ${r.interviewerContact}` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
+      )}
+
+      {consentTarget && (
+        <AntiBypassConsentModal
+          applicationId={consentTarget}
+          query={query}
+          onClose={() => setConsentTarget(null)}
+          onAgreed={() => { setConsentTarget(null); handleCheck(); }}
+        />
       )}
     </div>
   );
