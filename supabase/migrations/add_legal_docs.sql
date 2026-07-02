@@ -23,9 +23,13 @@ ALTER TABLE applications
   ADD COLUMN IF NOT EXISTS interview_location TEXT,
   ADD COLUMN IF NOT EXISTS interviewer_contact TEXT;
 
+-- application_id is nullable with ON DELETE SET NULL (not CASCADE): this table
+-- is a legal-evidentiary audit trail (proof a candidate agreed to specific terms
+-- at a specific time). It must outlive the candidate/application record it was
+-- attached to, not vanish the moment an admin deletes that candidate.
 CREATE TABLE IF NOT EXISTS candidate_consents (
   id             TEXT PRIMARY KEY,
-  application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  application_id TEXT REFERENCES applications(id) ON DELETE SET NULL,
   consent_type   TEXT NOT NULL DEFAULT 'anti_bypass',
   terms_version  TEXT NOT NULL,
   agreed_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
