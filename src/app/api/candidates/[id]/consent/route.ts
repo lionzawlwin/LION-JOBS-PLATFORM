@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
 import type { NextRequest } from 'next/server';
@@ -8,7 +8,7 @@ export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('candidates', 'view'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
