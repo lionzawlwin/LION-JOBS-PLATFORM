@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 
 // Converts various Google Drive URL formats to a direct download URL
 function toDriveDownloadUrl(url: string): string {
@@ -17,7 +17,7 @@ function toDriveDownloadUrl(url: string): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('candidates', 'view'))) {
     return new Response('Unauthorized', { status: 401 });
   }
 
