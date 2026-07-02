@@ -61,6 +61,15 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   const [cvUrlEdit,    setCvUrlEdit]    = useState(false);
   const [cvUrlValue,   setCvUrlValue]   = useState('');
   const [savingCvUrl,  setSavingCvUrl]  = useState(false);
+  // Interview details editing
+  const [interviewEditMode,     setInterviewEditMode]     = useState(false);
+  const [interviewLocationVal,  setInterviewLocationVal]  = useState('');
+  const [interviewerContactVal, setInterviewerContactVal] = useState('');
+  const [savingInterview,       setSavingInterview]       = useState(false);
+  const { data: consentData } = useSWR<{ consent: { agreedAt: string; termsVersion: string } | null }>(
+    candidate && candidate.stage === 'Interview' ? `/api/candidates/${candidate.id}/consent` : null,
+    fetcher,
+  );
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -77,6 +86,9 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
       setConfirmDelete(false);
       setCvUrlEdit(false);
       setCvUrlValue(candidate.cvUrl ?? '');
+      setInterviewLocationVal(candidate.interviewLocation ?? '');
+      setInterviewerContactVal(candidate.interviewerContact ?? '');
+      setInterviewEditMode(false);
       if (candidate.jobId) {
         const matched = jobs.find((j) => j.id === candidate.jobId);
         setLinkedJob(matched
@@ -151,6 +163,26 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
       }
     } catch (err) { console.error('[CandidateDrawer] cv-url update error:', err); }
     finally { setSavingCvUrl(false); }
+  }
+
+  async function handleSaveInterviewDetails() {
+    if (!candidate) return;
+    setSavingInterview(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/interview`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          interviewLocation:  interviewLocationVal,
+          interviewerContact: interviewerContactVal,
+        }),
+      });
+      if (res.ok) {
+        globalMutate('/api/candidates');
+        setInterviewEditMode(false);
+      }
+    } catch (err) { console.error('[CandidateDrawer] interview details update error:', err); }
+    finally { setSavingInterview(false); }
   }
 
   if (!candidate) return null;
@@ -417,6 +449,60 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
               <div className="flex items-center gap-3 px-4 py-3">
                 <Calendar size={14} className="text-muted-foreground shrink-0" />
                 <div><p className="text-[10px] text-muted-foreground">{t('cdw_interview_date')}</p><p className="text-sm font-semibold text-foreground">{candidate.interviewDate}</p></div>
+              </div>
+            )}
+            {candidate.stage === 'Interview' && (
+              <div className="space-y-2 px-4 py-3 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">Interview Details</p>
+                  {consentData?.consent ? (
+                    <span className="text-[10px] font-semibold text-emerald-600">
+                      Anti-bypass consent: Agreed {new Date(consentData.consent.agreedAt).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-amber-600">Anti-bypass consent: Not yet agreed</span>
+                  )}
+                </div>
+                {interviewEditMode ? (
+                  <>
+                    <input
+                      value={interviewLocationVal}
+                      onChange={(e) => setInterviewLocationVal(e.target.value)}
+                      placeholder="Interview location"
+                      className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+                    />
+                    <input
+                      value={interviewerContactVal}
+                      onChange={(e) => setInterviewerContactVal(e.target.value)}
+                      placeholder="Interviewer contact"
+                      className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveInterviewDetails}
+                        disabled={savingInterview}
+                        className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {savingInterview ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setInterviewEditMode(false)}
+                        className="rounded-lg border border-border px-3 py-1 text-xs text-muted-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setInterviewEditMode(true)}
+                    className="text-left text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {candidate.interviewLocation
+                      ? <>📍 {candidate.interviewLocation}{candidate.interviewerContact ? ` · ${candidate.interviewerContact}` : ''} (edit)</>
+                      : 'Set interview location + interviewer contact'}
+                  </button>
+                )}
               </div>
             )}
             {candidate.source && (
