@@ -57,26 +57,34 @@ export function LegalView() {
     // by the time Save is clicked, settings.termsVersion is already confirmed.
     setSavingSettings(true);
     try {
-      await fetch('/api/legal/settings', {
+      const res = await fetch('/api/legal/settings', {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(settings),
       });
+      if (!res.ok) {
+        alert('Could not save settings. Please check the values and try again.');
+      }
     } finally {
       setSavingSettings(false);
     }
   }
 
-  async function saveCommissionRate(companyId: string, value: string) {
+  async function saveCommissionRate(companyId: string, value: string, original: number | null) {
     const parsed = value.trim() === '' ? null : Number(value);
     if (parsed !== null && Number.isNaN(parsed)) return;
+    if (parsed === original) return;
     setSavingRateId(companyId);
     try {
-      await fetch(`/api/companies/${companyId}`, {
+      const res = await fetch(`/api/companies/${companyId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ commissionRatePct: parsed }),
       });
+      if (!res.ok) {
+        alert('Could not save commission rate. Please try again.');
+        return;
+      }
       setCompanies((prev) => prev.map((c) => c.id === companyId ? { ...c, commissionRatePct: parsed } : c));
     } finally {
       setSavingRateId(null);
@@ -184,7 +192,7 @@ export function LegalView() {
                       type="number"
                       defaultValue={co.commissionRatePct ?? ''}
                       placeholder={String(settings.defaultCommissionRatePct)}
-                      onBlur={(e) => saveCommissionRate(co.id, e.target.value)}
+                      onBlur={(e) => saveCommissionRate(co.id, e.target.value, co.commissionRatePct ?? null)}
                       disabled={savingRateId === co.id}
                       className="w-24 rounded-lg border border-border bg-background px-2 py-1 text-sm"
                     />
