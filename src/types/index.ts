@@ -64,6 +64,7 @@ export interface Candidate {
   interviewLocation?: string;
   interviewerContact?: string;
   needsConsent?: boolean;
+  finalAgreedSalary?: number;
   source?: string;
   // extended profile fields
   cityLocation?: string;
@@ -201,4 +202,22 @@ export interface ConsentRecord {
   applicationId: string;
   termsVersion: string;
   agreedAt: string;
+}
+
+export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  companyId: string | null;
+  companyName: string;
+  applicationId: string | null;
+  candidateName: string;
+  position: string;
+  agreedSalary: number;
+  commissionRatePct: number;
+  commissionFeeMmk: number;
+  status: InvoiceStatus;
+  issuedAt: string;
+  createdAt: string;
 }
