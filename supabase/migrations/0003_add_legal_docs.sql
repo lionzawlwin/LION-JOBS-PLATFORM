@@ -1,6 +1,6 @@
 -- Legal Docs subsystem: agency settings, per-company commission override,
 -- candidate interview details, and anti-bypass consent records.
--- Run this in Supabase SQL Editor once.
+-- Apply via the process in supabase/MIGRATIONS.md, then verify.
 
 CREATE TABLE IF NOT EXISTS agency_settings (
   id                              TEXT PRIMARY KEY DEFAULT 'default',

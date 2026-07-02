@@ -1,5 +1,5 @@
 -- B2B Billing & Invoicing: final agreed salary on applications, invoices table.
--- Run this in Supabase SQL Editor once.
+-- Apply via the process in supabase/MIGRATIONS.md, then verify.
 
 ALTER TABLE applications
   ADD COLUMN IF NOT EXISTS final_agreed_salary NUMERIC;
