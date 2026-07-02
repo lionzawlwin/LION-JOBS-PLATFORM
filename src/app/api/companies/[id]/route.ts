@@ -24,6 +24,13 @@ export async function PATCH(
   if (!body.status && !body.tier && body.commissionRatePct === undefined) {
     return Response.json({ error: 'status, tier, or commissionRatePct is required.' }, { status: 422 });
   }
+  if (
+    body.commissionRatePct !== undefined && body.commissionRatePct !== null &&
+    (typeof body.commissionRatePct !== 'number' || !Number.isFinite(body.commissionRatePct) ||
+     body.commissionRatePct < 0 || body.commissionRatePct > 100)
+  ) {
+    return Response.json({ error: 'commissionRatePct must be a number between 0 and 100.' }, { status: 422 });
+  }
   try {
     if (body.status) await updateCompanyStatus(id, body.status, body.notes);
     if (body.tier)   await updateCompanyTier(id, body.tier);
