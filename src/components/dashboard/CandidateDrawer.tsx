@@ -80,7 +80,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
     candidate && candidate.stage === 'Hired' ? '/api/companies' : null,
     fetcher,
   );
-  const { data: invoiceData, mutate: mutateInvoice } = useSWR<{ invoice: Invoice | null }>(
+  const { data: invoiceData } = useSWR<{ invoice: Invoice | null }>(
     candidate && candidate.stage === 'Hired' ? `/api/candidates/${candidate.id}/invoice` : null,
     fetcher,
   );
@@ -232,6 +232,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
 
   async function handleGenerateInvoice() {
     if (!candidate || !candidate.finalAgreedSalary || !invoiceCompanyId) return;
+    const candidateId = candidate.id; // pin before the async gap — candidate can change while this POST is in flight
     setGeneratingInvoice(true);
     try {
       const res = await fetch('/api/invoices', {
@@ -246,7 +247,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
         }),
       });
       if (res.ok) {
-        mutateInvoice();
+        globalMutate(`/api/candidates/${candidateId}/invoice`);
       } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error ?? 'Could not generate invoice.');
