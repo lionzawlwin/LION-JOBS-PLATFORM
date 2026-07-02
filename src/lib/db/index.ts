@@ -8,3 +8,5 @@ export * from './contracts';
 export * from './interactions';
 export * from './cse';
 export * from './enterpriseStats';
+export * from './legalSettings';
+export * from './consents';
