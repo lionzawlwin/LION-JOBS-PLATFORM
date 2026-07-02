@@ -1,9 +1,9 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getAgencySettings, getConsentedApplicationIds } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('legal', 'view'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
