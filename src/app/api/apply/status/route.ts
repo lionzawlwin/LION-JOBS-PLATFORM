@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCandidatesByEmailOrPhone } from '@/lib/db';
+import { getCandidatesByEmailOrPhone, getAgencySettings, getConsentedApplicationIds } from '@/lib/db';
 
 // In-memory rate limiter: 5 requests per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -42,6 +42,25 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const results = await getCandidatesByEmailOrPhone(query);
+  const candidates = await getCandidatesByEmailOrPhone(query);
+  const settings = await getAgencySettings();
+  const consented = await getConsentedApplicationIds(candidates.map((c) => c.id), settings.termsVersion);
+
+  const results = candidates.map((c) => {
+    const hasInterviewDetails = Boolean(c.interviewLocation);
+    const isConsented = consented.has(c.id);
+    return {
+      id:                 c.id,
+      name:               c.name,
+      position:           c.position,
+      company:            c.company,
+      stage:              c.stage,
+      appliedAt:          c.appliedAt,
+      needsConsent:       hasInterviewDetails && !isConsented,
+      interviewLocation:  isConsented ? c.interviewLocation  : undefined,
+      interviewerContact: isConsented ? c.interviewerContact : undefined,
+    };
+  });
+
   return NextResponse.json({ results });
 }
