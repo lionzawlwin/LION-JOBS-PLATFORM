@@ -62,19 +62,40 @@ verified way `0004` was applied:
    confirmed to have worked.
 4. Update the table above with the new row.
 
-## Not done in this pass — a real follow-up, not a silent gap
+## CLI linked and history repaired (2026-07-03)
 
-Properly closing this requires:
+The project is now linked and the history table matches reality:
 
 ```bash
-npx supabase login                                   # interactive browser auth
-npx supabase link --project-ref gthewuhgrnnabyxkozvv  # links this repo to the real project
-npx supabase migration repair --status applied \
-  20260630131708 0001 0002 0003 0004                  # marks history-table state to match reality
+npx supabase migration list
+# {"local":"0001","remote":"0001",...} {"local":"0004","remote":"0004",...}
+# {"local":"","remote":"20260630131708",...}   ← predates this file-based
+#                                                 convention, no local file
+#                                                 exists for it, left as-is
 ```
 
-This needs your own interactive login (the CLI opens a browser) — it can't
-be done headlessly in an agent session, which is why it's written down here
-as a next step instead of attempted. Once linked, `supabase db push`
-becomes the real apply command, `supabase migration list` becomes the real
-source of truth, and the manual "paste + verify" process above can retire.
+How it was actually done, for next time: the standard `npx supabase login`
+browser OAuth flow **fails outright** in a non-interactive shell —
+`LegacyLoginMissingTokenError: Cannot use automatic login flow inside
+non-TTY environments`. The fix was a personal access token instead:
+
+```bash
+# 1. Generate a token at https://supabase.com/dashboard/account/tokens
+# 2. Add it to .env.local: SUPABASE_ACCESS_TOKEN=sbp_...
+# 3. Log in non-interactively:
+npx supabase login --token "$SUPABASE_ACCESS_TOKEN"
+# 4. Link (no DB password needed for this — only db pull/diff need it):
+npx supabase link --project-ref gthewuhgrnnabyxkozvv
+# 5. Reconcile history for migrations already live in production:
+npx supabase migration repair --status applied --linked 0001 0002 0003 0004
+```
+
+`supabase link` also drops machine-local cache into `supabase/.temp/`
+(project ref, pooler URL, version info — no secrets, but not portable
+config either) — gitignored, do not commit it.
+
+`supabase db push` is now the real way to apply a new migration; run
+`supabase migration list` first to confirm it agrees with the table above
+before pushing. The manual "paste into SQL Editor + verify with
+list_tables" process from the previous section is no longer the primary
+path, but keep it in mind as a fallback if the CLI is ever unavailable.
