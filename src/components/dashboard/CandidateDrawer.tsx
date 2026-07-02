@@ -12,7 +12,7 @@ import {
 import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
-import type { Candidate, ApplicationStatus, Job } from '@/types';
+import type { Candidate, ApplicationStatus, Job, Company, Invoice } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -70,6 +70,20 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
     candidate && candidate.stage === 'Interview' ? `/api/candidates/${candidate.id}/consent` : null,
     fetcher,
   );
+  // Billing: final salary editing + invoice generation
+  const [finalSalaryEditMode, setFinalSalaryEditMode] = useState(false);
+  const [finalSalaryVal,      setFinalSalaryVal]       = useState('');
+  const [savingFinalSalary,   setSavingFinalSalary]    = useState(false);
+  const [invoiceCompanyId,    setInvoiceCompanyId]     = useState('');
+  const [generatingInvoice,   setGeneratingInvoice]    = useState(false);
+  const { data: companiesForInvoice = [] } = useSWR<Company[]>(
+    candidate && candidate.stage === 'Hired' ? '/api/companies' : null,
+    fetcher,
+  );
+  const { data: invoiceData, mutate: mutateInvoice } = useSWR<{ invoice: Invoice | null }>(
+    candidate && candidate.stage === 'Hired' ? `/api/candidates/${candidate.id}/invoice` : null,
+    fetcher,
+  );
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -89,6 +103,9 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
       setInterviewLocationVal(candidate.interviewLocation ?? '');
       setInterviewerContactVal(candidate.interviewerContact ?? '');
       setInterviewEditMode(false);
+      setFinalSalaryVal(candidate.finalAgreedSalary != null ? String(candidate.finalAgreedSalary) : '');
+      setFinalSalaryEditMode(false);
+      setInvoiceCompanyId('');
       if (candidate.jobId) {
         const matched = jobs.find((j) => j.id === candidate.jobId);
         setLinkedJob(matched
@@ -103,6 +120,15 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
     }
     return () => { document.body.style.overflow = ''; };
   }, [candidate, jobs]);
+
+  useEffect(() => {
+    if (candidate?.company && companiesForInvoice.length > 0 && !invoiceCompanyId) {
+      const match = companiesForInvoice.find(
+        (c) => c.name.toLowerCase() === candidate.company?.toLowerCase(),
+      );
+      if (match) setInvoiceCompanyId(match.id);
+    }
+  }, [candidate, companiesForInvoice, invoiceCompanyId]);
 
   async function handleLinkJob() {
     if (!linkJobId || !candidate) return;
@@ -183,6 +209,53 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
       }
     } catch (err) { console.error('[CandidateDrawer] interview details update error:', err); }
     finally { setSavingInterview(false); }
+  }
+
+  async function handleSaveFinalSalary() {
+    if (!candidate) return;
+    const parsed = Number(finalSalaryVal);
+    if (!finalSalaryVal || Number.isNaN(parsed) || parsed < 0) return;
+    setSavingFinalSalary(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/final-salary`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ finalAgreedSalary: parsed }),
+      });
+      if (res.ok) {
+        globalMutate('/api/candidates');
+        setFinalSalaryEditMode(false);
+      }
+    } catch (err) { console.error('[CandidateDrawer] final salary update error:', err); }
+    finally { setSavingFinalSalary(false); }
+  }
+
+  async function handleGenerateInvoice() {
+    if (!candidate || !candidate.finalAgreedSalary || !invoiceCompanyId) return;
+    setGeneratingInvoice(true);
+    try {
+      const res = await fetch('/api/invoices', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          applicationId: candidate.id,
+          candidateName: candidate.name,
+          position:      candidate.position,
+          companyId:     invoiceCompanyId,
+          agreedSalary:  candidate.finalAgreedSalary,
+        }),
+      });
+      if (res.ok) {
+        mutateInvoice();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? 'Could not generate invoice.');
+      }
+    } catch (err) {
+      console.error('[CandidateDrawer] generate invoice error:', err);
+    } finally {
+      setGeneratingInvoice(false);
+    }
   }
 
   if (!candidate) return null;
@@ -503,6 +576,88 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
                     {effectiveInterviewLocation
                       ? <><MapPin size={11} className="shrink-0" /> {effectiveInterviewLocation}{effectiveInterviewerContact ? ` · ${effectiveInterviewerContact}` : ''} ({t('cdw_edit_suffix')})</>
                       : t('cdw_set_interview_details')}
+                  </button>
+                )}
+              </div>
+            )}
+            {candidate.stage === 'Hired' && (
+              <div className="space-y-2 px-4 py-3 border-t border-border/50">
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t('cdw_billing_section')}</p>
+
+                {finalSalaryEditMode ? (
+                  <>
+                    <input
+                      type="number"
+                      value={finalSalaryVal}
+                      onChange={(e) => setFinalSalaryVal(e.target.value)}
+                      placeholder={t('cdw_final_salary_placeholder')}
+                      className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveFinalSalary}
+                        disabled={savingFinalSalary}
+                        className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {savingFinalSalary ? t('cdw_saving') : t('cdw_save')}
+                      </button>
+                      <button
+                        onClick={() => setFinalSalaryEditMode(false)}
+                        className="rounded-lg border border-border px-3 py-1 text-xs text-muted-foreground"
+                      >
+                        {t('cdw_cancel')}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setFinalSalaryEditMode(true)}
+                    className="text-left text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {candidate.finalAgreedSalary
+                      ? <>{t('cdw_final_salary_label')}: {candidate.finalAgreedSalary.toLocaleString()} ({t('cdw_edit_suffix')})</>
+                      : t('cdw_final_salary_label')}
+                  </button>
+                )}
+
+                {candidate.finalAgreedSalary ? (
+                  invoiceData?.invoice ? (
+                    <a
+                      href={`/dashboard/billing/invoice/${invoiceData.invoice.id}/print`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 flex w-fit items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                    >
+                      {t('cdw_view_invoice')}
+                    </a>
+                  ) : (
+                    <div className="mt-2 space-y-2">
+                      <select
+                        value={invoiceCompanyId}
+                        onChange={(e) => setInvoiceCompanyId(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+                      >
+                        <option value="">{t('cdw_select_company')}</option>
+                        {companiesForInvoice.map((co) => (
+                          <option key={co.id} value={co.id}>{co.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleGenerateInvoice}
+                        disabled={!invoiceCompanyId || generatingInvoice}
+                        className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {generatingInvoice ? t('cdw_generating') : t('cdw_generate_invoice')}
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <button
+                    disabled
+                    title={t('cdw_final_salary_label')}
+                    className="mt-2 rounded-lg bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground opacity-60"
+                  >
+                    {t('cdw_generate_invoice')}
                   </button>
                 )}
               </div>
