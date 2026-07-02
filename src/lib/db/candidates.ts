@@ -34,6 +34,7 @@ interface AppRow {
   interview_date: string | null;
   interview_location: string | null;
   interviewer_contact: string | null;
+  final_agreed_salary: number | null;
   google_drive_cv_url: string | null;
   linkedin_url: string | null;
   ai_score: number | null;
@@ -79,6 +80,7 @@ function mapToCandidate(candidate: CandidateRow, app: AppRow): Candidate {
     interviewDate:   app.interview_date ?? undefined,
     interviewLocation:   app.interview_location ?? undefined,
     interviewerContact:  app.interviewer_contact ?? undefined,
+    finalAgreedSalary: app.final_agreed_salary ?? undefined,
     source:          candidate.source ?? undefined,
     cityLocation:    candidate.city_location ?? undefined,
     education:       candidate.education ?? undefined,
@@ -106,7 +108,7 @@ export async function getCandidates(): Promise<Candidate[]> {
       portfolio_url, source, created_at,
       applications (
         id, job_id, job_title, company, stage, applied_at,
-        notes, salary_expected, interview_date, interview_location, interviewer_contact,
+        notes, salary_expected, interview_date, interview_location, interviewer_contact, final_agreed_salary,
         google_drive_cv_url, linkedin_url,
         ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
@@ -335,7 +337,7 @@ export async function getCandidatesByEmailOrPhone(
       portfolio_url, source, created_at,
       applications (
         id, job_id, job_title, company, stage, applied_at,
-        notes, salary_expected, interview_date, interview_location, interviewer_contact,
+        notes, salary_expected, interview_date, interview_location, interviewer_contact, final_agreed_salary,
         google_drive_cv_url, linkedin_url,
         ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
@@ -378,4 +380,15 @@ export async function getApplicationInterviewLocation(applicationId: string): Pr
 
   if (error || !data) return null;
   return (data.interview_location as string) ?? null;
+}
+
+export async function updateCandidateFinalSalary(
+  applicationId:     string,
+  finalAgreedSalary: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('applications')
+    .update({ final_agreed_salary: finalAgreedSalary })
+    .eq('id', applicationId);
+  if (error) throw new Error(`Failed to update final agreed salary: ${error.message}`);
 }
