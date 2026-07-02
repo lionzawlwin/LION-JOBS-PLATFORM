@@ -17,10 +17,10 @@ export function ContractDocument({ company, settings }: Props) {
       <section className="mb-4">
         <h2 className="font-semibold">1. Parties / စာချုပ်ပါဝင်သူများ</h2>
         <p className="text-sm">
-          This agreement is between Lion Jobs Agency ("the Agency") and {company.name} ("the Client"), contact: {company.contactPerson || '—'}.
+          This agreement is between Lion Jobs Agency (&ldquo;the Agency&rdquo;) and {company.name} (&ldquo;the Client&rdquo;), contact: {company.contactPerson || '—'}.
         </p>
         <p className="text-sm">
-          ဤစာချုပ်ကို Lion Jobs Agency ("အေဂျင်စီ") နှင့် {company.name} ("ဖောက်သည်") တို့အကြား ချုပ်ဆိုသည်။ ဆက်သွယ်ရမည့်သူ - {company.contactPerson || '—'}
+          ဤစာချုပ်ကို Lion Jobs Agency (&ldquo;အေဂျင်စီ&rdquo;) နှင့် {company.name} (&ldquo;ဖောက်သည်&rdquo;) တို့အကြား ချုပ်ဆိုသည်။ ဆက်သွယ်ရမည့်သူ - {company.contactPerson || '—'}
         </p>
       </section>
 
