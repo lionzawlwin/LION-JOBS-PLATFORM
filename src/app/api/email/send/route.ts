@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { Resend } from 'resend';
 import {
   buildWelcomeEmail,
@@ -19,7 +19,7 @@ function getResend() {
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <onboarding@resend.dev>';
 
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('campaigns', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
 
