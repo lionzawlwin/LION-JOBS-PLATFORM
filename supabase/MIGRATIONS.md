@@ -37,8 +37,10 @@ production, not the order they'd ideally have been designed:
 | `0002_add_enterprise_crm.sql` | 2026-07-01 | `companies.tier`, `contracts`, `interactions`, `cse_reps` |
 | `0003_add_legal_docs.sql` | 2026-07-02 | `agency_settings`, `candidate_consents`, interview-detail columns |
 | `0004_add_billing_invoicing.sql` | 2026-07-02 | `applications.final_agreed_salary`, `invoices` |
+| `0005_add_staff.sql` | 2026-07-03 | `staff` table (Team & Access roster, no login-gate wiring yet) |
+| `0006_enable_staff_rls.sql` | 2026-07-03 | Enables RLS on `staff` — see "Lesson learned" below |
 
-The next migration is `0005_<short_description>.sql`. Keep the `IF NOT
+The next migration is `0007_<short_description>.sql`. Keep the `IF NOT
 EXISTS` / `ADD COLUMN IF NOT EXISTS` guards every file here already uses —
 they're why re-running any of these four by accident is harmless.
 
@@ -99,3 +101,35 @@ config either) — gitignored, do not commit it.
 before pushing. The manual "paste into SQL Editor + verify with
 list_tables" process from the previous section is no longer the primary
 path, but keep it in mind as a fallback if the CLI is ever unavailable.
+
+## `db push` proven end-to-end (0005/0006, 2026-07-03)
+
+`db push` initially refused to run at all: `20260630131708` (the original
+baseline) has no local file, and both `db push` and `db pull` treat that as
+a conflict rather than something to silently tolerate. Fixed with (repo
+owner's explicit approval obtained first — this rewrites production
+migration bookkeeping):
+
+```bash
+npx supabase migration repair --status reverted 20260630131708
+```
+
+This only touches the bookkeeping table — no DDL runs, the original tables
+are untouched — it just tells the CLI to stop expecting a local file for
+that one entry, permanently. After that, `supabase db push` ran 0005 for
+real (no DB password prompt needed) and `supabase migration list` now
+shows local/remote agreeing on `0001`–`0006` with no dangling entries.
+
+**Lesson learned, apply to every future migration**: `0005_add_staff.sql`
+created the `staff` table without `ENABLE ROW LEVEL SECURITY` — the
+Supabase advisor caught it immediately after applying (every other table
+in this schema has RLS on; `staff` didn't). Not immediately exploitable
+(this app only ever queries Supabase via the service-role key, server-side
+only — grep `NEXT_PUBLIC_SUPABASE|createClient` under `src/` to confirm
+nothing else touches it), but a real gap: anyone who ever obtained this
+project's anon key could otherwise read/write staff emails and roles
+directly via Supabase's REST API. Fixed forward in `0006` rather than
+editing the already-applied `0005`. **Every `CREATE TABLE` from now on
+must include `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` in the same
+migration** — check `list_tables`'s `rls_enabled` field on the new table
+immediately after applying, every time, not just for staff.

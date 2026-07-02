@@ -56,7 +56,13 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 |-------|---------|
 | `/` | Public job board — hero, search, job grid |
 | `/apply/[jobId]` | Candidate application form |
-| `/dashboard` | Internal admin console — 11 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing |
+| `/dashboard` | Internal admin console — 12 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access |
+
+### Access control — single admin gate, staff table not yet wired in
+
+`/dashboard` is still gated entirely by `authOptions.ts` checking `session.user.email === ADMIN_EMAIL` (one hardcoded address), and so is every mutating API route — `grep -rl ADMIN_EMAIL src/` turns up 33 files, each with its own inline `=== ADMIN_EMAIL` check, not a shared helper.
+
+A `staff` table exists (`id`, `email`, `name`, `role`: `owner`/`admin`/`cse`/`viewer`, `active`) with a Team & Access tab to manage it, but **it does not yet control who can log in or do anything** — it's a roster in preparation. Widening `signIn` in `authOptions.ts` to check `staff` instead of `ADMIN_EMAIL` before those 33 routes are migrated to the same check would let a newly added staff member log into a dashboard where almost every tab immediately 401s. See `supabase/MIGRATIONS.md` for the migration itself; the login-gate + route-migration follow-up is intentionally not done yet.
 
 ### State management
 
