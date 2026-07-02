@@ -185,6 +185,7 @@ export const translations = {
     admin_tab_campaigns:   'Email Campaigns',
     admin_tab_legal:       'Legal',
     admin_tab_billing:     'Billing',
+    admin_tab_team:        'Team & Access',
     // Admin dashboard — context banner
     admin_banner_prefix:      'Admin dashboard — Lion Jobs Agency internal use only.',
     admin_banner_overview:    ' Real-time analytics across candidates, jobs, and companies.',
@@ -198,6 +199,7 @@ export const translations = {
     admin_banner_campaigns:   ' Send marketing emails to employers. Powered by Resend (3K/month free).',
     admin_banner_legal:       ' B2B service contracts and candidate anti-bypass consent tracking.',
     admin_banner_billing:     ' Generate and track invoices for placed candidates.',
+    admin_banner_team:        ' Staff roster and intended roles. Does not yet control dashboard login.',
 
     // Enterprise — status/type enum display labels (data values stay English; these are display-only)
     status_lead:            'Lead',
@@ -813,6 +815,7 @@ export const translations = {
     admin_tab_campaigns:   'အီးမေးလ် ကမ်ပိန်းများ',
     admin_tab_legal:       'ဥပဒေရေးရာ',
     admin_tab_billing:     'ငွေတောင်းခံလွှာ',
+    admin_tab_team:        'အဖွဲ့ နှင့် ဝင်ရောက်ခွင့်',
     // Admin dashboard — context banner
     admin_banner_prefix:      'အက်ဒမင် ဒက်ရှ်ဘုတ် — Lion Jobs Agency ၏ အတွင်းပိုင်းအသုံးပြုမှုအတွက်သာ။',
     admin_banner_overview:    ' လျှောက်ထားသူများ၊ အလုပ်များနှင့် ကုမ္ပဏီများအတွက် အချိန်နှင့်တပြေးညီ ခွဲခြမ်းစိတ်ဖြာမှု။',
@@ -826,6 +829,7 @@ export const translations = {
     admin_banner_campaigns:   ' အလုပ်ရှင်များထံ စျေးကွက်ရှာဖွေရေး အီးမေးလ်များ ပို့ပါ။ Resend မှ ပံ့ပိုးသည် (လစဉ် ၃,၀၀၀ အခမဲ့)။',
     admin_banner_legal:       ' B2B စာချုပ်များနှင့် ကိုယ်စားလှယ်လောင်း သဘောတူညီချက် ခြေရာခံမှု။',
     admin_banner_billing:     ' ခန့်အပ်ပြီးသော ကိုယ်စားလှယ်လောင်းများအတွက် ငွေတောင်းခံလွှာများ ထုတ်ပေးပြီး ခြေရာခံပါ။',
+    admin_banner_team:        ' ဝန်ထမ်းစာရင်းနှင့် ရည်ရွယ်ထားသော အခန်းကဏ္ဍများ။ ဒက်ရှ်ဘုတ် ဝင်ရောက်ခွင့်ကို မထိန်းချုပ်သေးပါ။',
 
     // Enterprise — status/type enum display labels
     status_lead:            'အလားအလာ',

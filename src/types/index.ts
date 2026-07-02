@@ -181,6 +181,17 @@ export interface CseRep {
   createdAt: string;
 }
 
+export type StaffRole = 'owner' | 'admin' | 'cse' | 'viewer';
+
+export interface Staff {
+  id:        string;
+  email:     string;
+  name:      string;
+  role:      StaffRole;
+  active:    boolean;
+  createdAt: string;
+}
+
 export interface EnterpriseStats {
   totalActiveContractValue: number;
   activeContractsCount:     number;

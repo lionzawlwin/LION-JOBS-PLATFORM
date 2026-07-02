@@ -11,3 +11,4 @@ export * from './enterpriseStats';
 export * from './legalSettings';
 export * from './consents';
 export * from './invoices';
+export * from './staff';
