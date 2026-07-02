@@ -4,13 +4,13 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { LayoutDashboard, Shield } from 'lucide-react';
 
-const ADMIN_EMAIL = 'lionzawlwin@gmail.com';
-
 export function AdminBar() {
   const { data: session, status } = useSession();
 
   if (status !== 'authenticated') return null;
-  if (session?.user?.email !== ADMIN_EMAIL) return null;
+  // Any active staff member, not just the literal admin address — role is
+  // attached to every session that passed authOptions.ts's signIn gate.
+  if (!session?.user?.role) return null;
 
   return (
     <div className="border-t-2 border-dashed border-brand-300/50 dark:border-brand-600/30 bg-brand-50 dark:bg-brand-600/5">

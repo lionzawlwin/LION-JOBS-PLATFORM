@@ -1,8 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
+import { requireStaff } from '@/lib/auth';
 
 // Converts various Google Drive URL formats to a direct download URL
 function toDriveDownloadUrl(url: string): string {
@@ -20,8 +17,7 @@ function toDriveDownloadUrl(url: string): string {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  if (!(await requireStaff())) {
     return new Response('Unauthorized', { status: 401 });
   }
 

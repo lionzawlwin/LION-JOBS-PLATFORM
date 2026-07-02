@@ -63,13 +63,14 @@ export function TeamView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-700/30 dark:bg-amber-900/20 dark:text-amber-300">
+      <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-800 dark:border-blue-700/30 dark:bg-blue-900/20 dark:text-blue-300">
         <Info size={14} className="mt-0.5 shrink-0" />
         <span>
-          This roster does not yet control dashboard access on its own — every dashboard action
-          still checks the single ADMIN_EMAIL account directly. Adding someone here records their
-          intended role but does not yet let them log in; that requires a follow-up change to the
-          login gate and every protected API route.
+          Adding an active staff member here lets them sign in to the full dashboard with their
+          Google account. Role currently controls Team &amp; Access management itself (only Owner
+          and Admin can edit this roster) — it does not yet restrict which tabs or actions each
+          role can use beyond that; every signed-in staff member has the same dashboard access
+          today.
         </span>
       </div>
 
