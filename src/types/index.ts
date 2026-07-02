@@ -61,6 +61,9 @@ export interface Candidate {
   notes?: string;
   salaryExpected?: string;
   interviewDate?: string;
+  interviewLocation?: string;
+  interviewerContact?: string;
+  needsConsent?: boolean;
   source?: string;
   // extended profile fields
   cityLocation?: string;
@@ -125,6 +128,7 @@ export interface Company {
   notes:         string;
   lastContacted: string;
   createdAt:     string;
+  commissionRatePct?: number | null;
 }
 
 export interface ApplicationPayload {
@@ -181,4 +185,20 @@ export interface EnterpriseStats {
   activeContractsCount:     number;
   enterpriseAccountsCount:  number;
   topCse: { id: string; name: string; value: number } | null;
+}
+
+export interface AgencySettings {
+  defaultCommissionRatePct: number;
+  defaultGuaranteeDays: number;
+  defaultReplacementCostMmk: number;
+  antiBypassPenaltyMmk: number;
+  antiBypassRestrictionMonths: number;
+  termsVersion: string;
+}
+
+export interface ConsentRecord {
+  id: string;
+  applicationId: string;
+  termsVersion: string;
+  agreedAt: string;
 }
