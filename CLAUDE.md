@@ -19,27 +19,29 @@ No test suite is configured. Use `npx tsc --noEmit` to catch type errors before 
 
 ## Architecture
 
-### Data layer — Google Sheets as the database
+### Data layer — Supabase (Postgres)
 
-There is no SQL database or ORM. All persistent data lives in a Google Spreadsheet:
+All persistent data lives in Supabase Postgres (project "Lion Jobs Agency"), with Row Level Security enabled on every table. There is no ORM — routes call thin per-domain accessor modules directly.
 
-- **`src/lib/sheets.ts`** — all Sheets access. Uses `googleapis` with a service account. The spreadsheet has two tabs whose names default to `Jobs` and `Candidates` but are configurable via `GOOGLE_JOBS_TAB` / `GOOGLE_CANDIDATES_TAB` env vars.
-- **`src/lib/makeWebhook.ts`** — forwards application submissions to a Make.com webhook (`MAKE_WEBHOOK_URL`).
+- **`src/lib/supabase.ts`** — the Supabase client, initialised with `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (server-side only; the service role key bypasses RLS, so it must never reach the client bundle).
+- **`src/lib/db/*.ts`** — one accessor module per domain (`jobs`, `candidates`, `companies`, `leads`, `subscribers`, `feedback`, `contracts`, `interactions`, `cse`, `enterpriseStats`, `legalSettings`, `consents`, `invoices`), re-exported from **`src/lib/db/index.ts`**. API routes import from `@/lib/db`, never from an individual accessor file.
+- **`src/lib/drive.ts`** — a separate, still-active integration: uploads candidate CVs to Google Drive via a Google service account (`GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_PRIVATE_KEY` / `GOOGLE_DRIVE_PARENT_FOLDER_ID`). This is unrelated to the old Sheets-based data layer — Drive only ever stored files, not structured data.
+- **`src/lib/authOptions.ts`** — NextAuth Google OAuth login gate for `/dashboard`, restricted to a single `ADMIN_EMAIL`.
 
-`sheets.ts` exports three functions used by API routes: `getJobs`, `getCandidates`, `updateCandidateStage`. When env vars are missing, `isConfigured()` returns false and the functions return empty data rather than throwing.
+The private key (`GOOGLE_PRIVATE_KEY`) is sanitised through `parsePrivateKey()` in `drive.ts`, which strips accidental surrounding quotes, converts `\n` escape sequences, and trims whitespace — handle it there, not in callers.
 
-The private key (`GOOGLE_PRIVATE_KEY`) is sanitised through `parsePrivateKey()` in `sheets.ts`, which strips accidental surrounding quotes, converts `\n` escape sequences, and trims whitespace — handle it there, not in callers.
+> Historical note: this app originally ran on Google Sheets + a Make.com webhook (see `docs/superpowers/plans/2026-06-30-supabase-migration.md` for the migration). That data layer (`src/lib/sheets.ts`, `src/lib/makeWebhook.ts`) has been fully removed as of the migration — do not reintroduce it or assume it still exists. Content Studio's "Send to Make.com" button is a **separate, unrelated, and currently unfinished** feature (`/api/content/distribute` is a stub returning 501) — it is not a remnant of the old data layer.
 
 ### Request flow
 
 ```
-Google Sheet
-    ↓  (googleapis SDK, service account auth)
-src/lib/sheets.ts
+Supabase Postgres (RLS enabled)
+    ↓  (@supabase/supabase-js, service role key — server-side only)
+src/lib/db/*.ts                                ← one accessor module per domain
     ↓
-src/app/api/{jobs,candidates,apply}/route.ts   ← Next.js Route Handlers
+src/app/api/**/route.ts                        ← Next.js Route Handlers
     ↓  (fetch, cached via Cache-Control headers or SWR)
-src/hooks/{useJobs,useCandidates}.ts           ← SWR hooks, client-side only
+src/hooks/{useJobs,useCandidates,...}.ts       ← SWR hooks, client-side only
     ↓
 React components
 ```
@@ -52,7 +54,7 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 |-------|---------|
 | `/` | Public job board — hero, search, job grid |
 | `/apply/[jobId]` | Candidate application form |
-| `/dashboard` | Internal Kanban board for managing candidate stages |
+| `/dashboard` | Internal admin console — 11 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing |
 
 ### State management
 
@@ -68,12 +70,19 @@ shadcn/ui primitives live in `src/components/ui/`. The project uses `@base-ui/re
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `GOOGLE_SHEET_ID` | Yes | Spreadsheet ID from the URL |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Yes | Service account email |
-| `GOOGLE_PRIVATE_KEY` | Yes | Full PEM key — paste with real newlines in Vercel; use `\n` escapes in `.env.local` |
-| `MAKE_WEBHOOK_URL` | Yes (prod) | Omitting it in dev causes `/api/apply` to return `{ok:true, dev:true}` |
-| `GOOGLE_JOBS_TAB` | No | Sheet tab name, defaults to `Jobs` |
-| `GOOGLE_CANDIDATES_TAB` | No | Sheet tab name, defaults to `Candidates` |
+| `SUPABASE_URL` | Yes | Project URL from Supabase dashboard → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key — bypasses RLS; server-side only, never expose to the client |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_PRIVATE_KEY` | Yes | Service account for Google Drive CV storage (`src/lib/drive.ts`) — unrelated to Supabase |
+| `GOOGLE_DRIVE_PARENT_FOLDER_ID` | Yes | Drive folder under which per-candidate CV sub-folders are created |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth app for `/dashboard` admin login (NextAuth) |
+| `NEXTAUTH_URL` / `NEXTAUTH_SECRET` | Yes | NextAuth config |
+| `ADMIN_EMAIL` | Yes | Only this Google account may sign in to `/dashboard` |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Yes | Transactional email + weekly digest / job-alert crons |
+| `ADMIN_KEY` | Yes | Header-based auth for `POST/DELETE /api/jobs` |
+| `CRON_SECRET` | Yes | Authenticates Vercel cron hits to `/api/cron/*` |
+| `PUBLISH_WEBHOOK_SECRET` / `GITHUB_ACTIONS_TOKEN` / `GITHUB_REPO` / `SITE_URL` | Yes (prod) | Triggers the GitHub Actions workflow that posts new jobs to Telegram/Facebook |
+
+`GOOGLE_SHEET_ID`, `GOOGLE_JOBS_TAB`, `GOOGLE_CANDIDATES_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` are **archived** — leftover from the pre-Supabase data layer, no longer read by any code path. Safe to delete from Vercel env; see `.env.example`'s archive section.
 
 Copy `.env.example` to `.env.local` for local development.
 
@@ -88,7 +97,7 @@ Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
 Two Claude Code skill repos were evaluated (2026-07-02) and intentionally left uninstalled because they don't fit this project's domain:
 
 - **`vercel-labs/skills`** — the `npx skills` installer CLI itself (not a skill in its own right). Used to install skills from other repos.
-- **`google/agents-cli`** — teaches agents Google's Agent Development Kit (ADK): scaffolding, evals, deploying to Vertex AI, publishing to Gemini Enterprise. Irrelevant to this Next.js/Supabase/Google-Sheets job board.
+- **`google/agents-cli`** — teaches agents Google's Agent Development Kit (ADK): scaffolding, evals, deploying to Vertex AI, publishing to Gemini Enterprise. Irrelevant to this Next.js/Supabase job board.
 
 If this project ever pivots toward building agent-based features (e.g. an AI agent product, not just AI-assisted CV scoring), revisit `google/agents-cli` via `npx skills add google/agents-cli`. Until then, do not add it or its dependencies.
 

@@ -75,7 +75,6 @@ export function PostJobForm() {
   const [status,             setStatus]             = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message,            setMessage]            = useState('');
   const [newJobId,           setNewJobId]           = useState('');
-  const [sheetUrl,           setSheetUrl]           = useState('');
   const [socialPostingQueued, setSocialPostingQueued] = useState(false);
   const { t } = useLanguage();
 
@@ -144,7 +143,6 @@ export function PostJobForm() {
 
       setStatus('success');
       setNewJobId(json.jobId ?? '');
-      setSheetUrl(json.sheetUrl ?? '');
       setSocialPostingQueued(Boolean(json.socialPostingQueued));
       setMessage(
         json.socialPostingQueued
@@ -164,7 +162,6 @@ export function PostJobForm() {
     setStatus('idle');
     setMessage('');
     setNewJobId('');
-    setSheetUrl('');
     setSocialPostingQueued(false);
   }
 
@@ -205,17 +202,6 @@ export function PostJobForm() {
                   )}
                 </div>
               </div>
-              {/* Sheet verification link — click to confirm data landed in the right spreadsheet */}
-              {sheetUrl && (
-                <a
-                  href={sheetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 hover:underline"
-                >
-                  <span>📊</span>{t('pj_success_verify_sheet')}
-                </a>
-              )}
               {socialPostingQueued && (
                 <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-100 px-3 py-2 dark:bg-green-800/30">
                   <span className="text-base">📲</span>

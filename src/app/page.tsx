@@ -33,8 +33,6 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   // Fetched server-side at build / revalidation time.
-  // The cached() wrapper in sheets.ts ensures a single Sheets API call
-  // even if other parts of the render tree also call getJobs().
   const initialJobs = await getJobs();
 
   return (

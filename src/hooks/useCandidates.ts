@@ -38,14 +38,14 @@ export function useCandidates() {
       if (!res.ok) throw new Error('Failed to update stage');
 
       toast.success(`${candidate?.name ?? 'Candidate'} moved to ${STAGE_LABELS[stage]}`, {
-        description: 'Google Sheets updated.',
+        description: 'Saved.',
         duration: 3000,
       });
     } catch {
       // Roll back on failure
       mutate(prev, false);
       toast.error('Failed to update stage', {
-        description: 'Could not write to Google Sheets. Please try again.',
+        description: 'Could not save the change. Please try again.',
         duration: 4000,
       });
     }

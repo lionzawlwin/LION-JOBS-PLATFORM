@@ -2,7 +2,7 @@ import { deleteJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ── DELETE /api/jobs/[id] ─────────────────────────────────────────
-// Removes the job row from Google Sheets.
+// Removes the job row from the database.
 // Requires header:  x-admin-key: <ADMIN_KEY env var>
 export async function DELETE(
   req: NextRequest,
@@ -23,6 +23,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/jobs/[id]]', err);
-    return NextResponse.json({ error: 'Failed to delete job from Google Sheets' }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to delete job' }, { status: 502 });
   }
 }
