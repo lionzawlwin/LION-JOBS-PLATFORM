@@ -236,8 +236,12 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
     // revalidates the parent's candidate list, but doesn't replace this
     // component's `candidate` prop in place) — fall back to the local input
     // value, mirroring the effectiveCvUrl/effectiveInterviewLocation pattern
-    // used elsewhere in this file for the same staleness gap.
-    const effectiveSalary = candidate?.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined);
+    // used elsewhere in this file for the same staleness gap. Gate on
+    // finalSalaryEditMode so this only kicks in right after a successful save
+    // (edit mode closed), not while the admin is still typing an unsaved value.
+    const effectiveSalary = finalSalaryEditMode
+      ? (candidate?.finalAgreedSalary ?? undefined)
+      : (candidate?.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined));
     if (!candidate || !effectiveSalary || !invoiceCompanyId) return;
     const candidateId = candidate.id; // pin before the async gap — candidate can change while this POST is in flight
     setGeneratingInvoice(true);
@@ -278,8 +282,13 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   // revalidates the parent's list but doesn't replace this drawer's `candidate`
   // prop in place, so immediately after a first-time save the invoice section
   // below would otherwise stay stuck on the disabled placeholder until the
-  // drawer is closed and reopened. Fall back to the local input value.
-  const effectiveFinalAgreedSalary = candidate.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined);
+  // drawer is closed and reopened. Fall back to the local input value — but
+  // only once editing has closed (finalSalaryEditMode false), so the
+  // Generate Invoice section doesn't react to unsaved keystrokes while the
+  // admin is still typing in the salary field.
+  const effectiveFinalAgreedSalary = finalSalaryEditMode
+    ? (candidate.finalAgreedSalary ?? undefined)
+    : (candidate.finalAgreedSalary ?? (finalSalaryVal ? Number(finalSalaryVal) : undefined));
 
   return (
     <>
