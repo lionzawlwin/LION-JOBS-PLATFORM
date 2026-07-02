@@ -40,28 +40,33 @@ catch a stale-but-passing branch like the incident above — that requires
 the human discipline in the section above, or the branch-protection setting
 below, which catches a narrower but related case.
 
-## Manual step required (repo admin only — not done yet)
+## Branch protection on `main` — enabled 2026-07-03
 
-Branch protection on `main` has **not** been enabled — this needs to be
-done by hand in the GitHub UI (Settings → Branches → Add rule), since it's
-a repo-level setting change outside what should be automated by an agent
-without your direct sign-off:
+Applied via `gh api -X PUT repos/lionzawlwin/LION-JOBS-PLATFORM/branches/main/protection`
+with the authenticated repo owner's explicit go-ahead. Live settings (confirmed
+by the API response at the time of applying):
 
-1. Branch name pattern: `main`
-2. ✅ Require a pull request before merging
-3. ✅ Require status checks to pass before merging → select `verify` (from
-   `CI`, once it has run at least once)
-4. ✅ Require branches to be up to date before merging — this forces a PR
-   to be rebuilt against the latest `main` before it can merge, catching
-   the case where `main` has moved on since the PR was opened. It does
-   **not** catch the specific incident above (a stale PR *branch* content
-   gap has nothing to do with `main`'s state) — that's what the fetch/log
-   check above is for.
-5. ✅ Do not allow bypassing the above settings (applies rules to admins too)
-6. Leave "Allow force pushes" and "Allow deletions" unchecked
+1. ✅ Require a pull request before merging (`required_approving_review_count: 0`
+   — a PR is mandatory, but no second approver is required, since this is a
+   single-admin repo and GitHub doesn't allow self-approval)
+2. ✅ Require status checks to pass before merging → `verify` (from `CI`)
+3. ✅ Require branches to be up to date before merging (`strict: true`) — this
+   forces a PR to be rebuilt against the latest `main` before it can merge,
+   catching the case where `main` has moved on since the PR was opened. It does
+   **not** catch the specific incident above (a stale PR *branch* content gap
+   has nothing to do with `main`'s state) — that's what the fetch/log check
+   above is for.
+4. ✅ `enforce_admins: true` — these rules apply to the repo owner too, no bypass
+5. `allow_force_pushes` / `allow_deletions`: both `false`
 
-Once enabled, direct `git push origin main` will be rejected outright —
-all changes must go through a PR, which must pass CI.
+Direct `git push origin main` is now rejected outright — all changes, including
+this file's own updates, must go through a PR that passes the `verify` check.
+This document was itself updated via that flow (branch
+`docs/branch-protection-enabled` → PR → merge), as the first live proof it
+actually works.
+
+To change these settings later: `gh api repos/lionzawlwin/LION-JOBS-PLATFORM/branches/main/protection`
+(GET to inspect current state, PUT to change).
 
 ## Known gap, deliberately not closed here
 
