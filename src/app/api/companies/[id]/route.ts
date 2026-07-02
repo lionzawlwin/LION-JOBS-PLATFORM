@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, deleteCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus, CompanyTier } from '@/types';
@@ -7,7 +7,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('companies', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
@@ -41,7 +41,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('companies', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
