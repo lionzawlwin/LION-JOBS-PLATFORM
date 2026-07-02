@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Briefcase, ChevronDown, ChevronUp, Trash2, MapPin, Clock, AlertTriangle, Star, Loader2 } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import { cn, timeAgo } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Job } from '@/types';
 
 function TypeBadge({ type }: { type: Job['type'] }) {
@@ -31,6 +32,7 @@ function JobRow({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [loading,    setLoading]    = useState(false);
+  const { t } = useLanguage();
 
   async function handleDelete() {
     if (!confirming) { setConfirming(true); return; }
@@ -52,8 +54,8 @@ function JobRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-semibold text-foreground">{job.title}</p>
-          {job.isUrgent   && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">🔥 Urgent</span>}
-          {job.isFeatured && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">⭐ Featured</span>}
+          {job.isUrgent   && <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">🔥{t('mj_urgent_badge')}</span>}
+          {job.isFeatured && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">⭐{t('mj_featured_badge')}</span>}
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground font-medium">{job.company}</p>
         <div className="mt-1 flex flex-wrap items-center gap-2.5">
@@ -85,7 +87,7 @@ function JobRow({
             onClick={() => setConfirming(false)}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            Cancel
+            {t('mj_cancel')}
           </button>
         )}
         <button
@@ -104,7 +106,7 @@ function JobRow({
           ) : (
             <Trash2 size={12} />
           )}
-          {confirming ? 'Sure?' : 'Delete'}
+          {confirming ? t('mj_sure') : t('mj_delete')}
         </button>
       </div>
 
@@ -115,12 +117,13 @@ function JobRow({
 export function JobsPanel() {
   const [open, setOpen] = useState(false);
   const { jobs, loading, mutate } = useJobs();
+  const { t } = useLanguage();
 
   async function handleDelete(jobId: string) {
     const adminKey = sessionStorage.getItem('lion_admin_key');
     if (!adminKey) {
-      toast.error('Admin key not set', {
-        description: 'Open the "Post a New Job" panel above, enter your admin key, and try again.',
+      toast.error(t('mj_toast_no_admin_key'), {
+        description: t('mj_toast_no_admin_key_desc'),
         duration: 5000,
       });
       return;
@@ -139,21 +142,21 @@ export function JobsPanel() {
 
       if (!res.ok) {
         mutate(prev, false);   // rollback
-        toast.error('Delete failed', {
-          description: json.error ?? 'Could not remove job from Google Sheets.',
+        toast.error(t('mj_toast_delete_failed'), {
+          description: json.error ?? t('mj_toast_delete_failed_desc'),
           duration: 4000,
         });
         return;
       }
 
-      toast.success('Job deleted', {
-        description: 'Row removed from Google Sheets.',
+      toast.success(t('mj_toast_deleted'), {
+        description: t('mj_toast_deleted_desc'),
         duration: 3000,
       });
     } catch {
       mutate(prev, false);     // rollback on network error
-      toast.error('Network error', {
-        description: 'Could not reach the server. Please try again.',
+      toast.error(t('mj_toast_network_error'), {
+        description: t('mj_toast_network_error_desc'),
         duration: 4000,
       });
     }
@@ -173,9 +176,9 @@ export function JobsPanel() {
             <Briefcase size={15} />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Manage Jobs</p>
+            <p className="text-sm font-bold text-foreground">{t('mj_header_title')}</p>
             <p className="text-xs text-muted-foreground">
-              {loading ? 'Loading…' : `${jobs.length} live ${jobs.length === 1 ? 'role' : 'roles'} in Google Sheets`}
+              {loading ? t('mj_loading') : `${jobs.length}${t('mj_live_prefix')}${jobs.length === 1 ? t('mj_role_singular') : t('mj_role_plural')}${t('mj_in_sheets_suffix')}`}
             </p>
           </div>
         </div>
@@ -188,7 +191,7 @@ export function JobsPanel() {
           {/* Warning note */}
           <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700 dark:border-amber-700/30 dark:bg-amber-900/20 dark:text-amber-400">
             <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-            Deleting a job permanently removes the row from Google Sheets. This cannot be undone.
+            {t('mj_warning')}
           </div>
 
           {loading && (
@@ -198,7 +201,7 @@ export function JobsPanel() {
           )}
 
           {!loading && jobs.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">No jobs found in Google Sheets.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('mj_no_jobs')}</p>
           )}
 
           {!loading && jobs.length > 0 && (

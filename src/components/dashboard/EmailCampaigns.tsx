@@ -3,9 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Send, Loader2, Mail, CheckCircle2, Users, Eye, EyeOff, AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Company } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
+import type { Company, CompanyStatus } from '@/types';
 
 type EmailType = 'welcome' | 'outreach' | 'weekly_digest';
+
+const STATUS_KEYS: Record<CompanyStatus, TranslationKey> = {
+  Lead: 'status_lead', Active: 'status_active', 'In-Contract': 'status_in_contract', Inactive: 'status_inactive',
+};
 
 const EMAIL_TYPES: { value: EmailType; label: string; desc: string; emoji: string; subject: string; preview: string }[] = [
   {
@@ -34,6 +40,13 @@ const EMAIL_TYPES: { value: EmailType; label: string; desc: string; emoji: strin
   },
 ];
 
+const EMAIL_TYPE_LABEL_KEYS: Record<EmailType, TranslationKey> = {
+  welcome: 'ec_label_welcome', outreach: 'ec_label_outreach', weekly_digest: 'ec_label_digest',
+};
+const EMAIL_TYPE_DESC_KEYS: Record<EmailType, TranslationKey> = {
+  welcome: 'ec_desc_welcome', outreach: 'ec_desc_outreach', weekly_digest: 'ec_desc_digest',
+};
+
 export function EmailCampaigns() {
   const [companies,    setCompanies]    = useState<Company[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -45,6 +58,7 @@ export function EmailCampaigns() {
   const [customNote,   setCustomNote]   = useState('');
   const [showPreview,  setShowPreview]  = useState(false);
   const [editedBody,   setEditedBody]   = useState(EMAIL_TYPES[0].preview);
+  const { t } = useLanguage();
 
   // Reset editable body whenever template type changes
   useEffect(() => {
@@ -135,9 +149,9 @@ export function EmailCampaigns() {
         <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-700/30 dark:bg-amber-900/20">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="flex-1 text-sm">
-            <p className="font-semibold text-amber-700 dark:text-amber-300">RESEND_API_KEY not configured</p>
+            <p className="font-semibold text-amber-700 dark:text-amber-300">{t('ec_config_warning_title')}</p>
             <p className="mt-0.5 text-xs text-amber-600/80 dark:text-amber-400/70">
-              Emails will fail until you add <code className="font-mono bg-amber-100 dark:bg-amber-900/30 px-1 rounded">RESEND_API_KEY</code> to your Vercel environment variables and redeploy.
+              {t('ec_config_warning_desc_prefix')}<code className="font-mono bg-amber-100 dark:bg-amber-900/30 px-1 rounded">RESEND_API_KEY</code>{t('ec_config_warning_desc_suffix')}
             </p>
           </div>
         </div>
@@ -157,8 +171,8 @@ export function EmailCampaigns() {
             )}
           >
             <p className="text-lg">{et.emoji}</p>
-            <p className={cn('mt-1 text-sm font-semibold', emailType === et.value ? 'text-brand-700 dark:text-brand-300' : 'text-foreground')}>{et.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{et.desc}</p>
+            <p className={cn('mt-1 text-sm font-semibold', emailType === et.value ? 'text-brand-700 dark:text-brand-300' : 'text-foreground')}>{t(EMAIL_TYPE_LABEL_KEYS[et.value])}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{t(EMAIL_TYPE_DESC_KEYS[et.value])}</p>
           </button>
         ))}
       </div>
@@ -172,11 +186,11 @@ export function EmailCampaigns() {
           {/* Custom note for outreach */}
           {emailType === 'outreach' && (
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Custom Opening Note (optional)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('ec_custom_note_label')}</label>
               <textarea
                 value={customNote}
                 onChange={(e) => setCustomNote(e.target.value)}
-                placeholder="e.g. We noticed your job posting for a Software Engineer and believe we can help…"
+                placeholder={t('ec_custom_note_placeholder')}
                 rows={3}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 resize-none transition-colors"
               />
@@ -188,20 +202,20 @@ export function EmailCampaigns() {
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div className="flex items-center gap-2">
                 <Users size={14} className="text-muted-foreground" />
-                <span className="text-sm font-semibold text-foreground">Recipients</span>
+                <span className="text-sm font-semibold text-foreground">{t('ec_recipients_label')}</span>
                 {selected.size > 0 && (
                   <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-bold text-white">{selected.size}</span>
                 )}
               </div>
               <button onClick={toggleAll} className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
-                {selected.size === eligible.length && eligible.length > 0 ? 'Deselect All' : 'Select All'}
+                {selected.size === eligible.length && eligible.length > 0 ? t('ec_deselect_all') : t('ec_select_all')}
               </button>
             </div>
 
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
             ) : eligible.length === 0 ? (
-              <p className="px-4 py-10 text-center text-sm text-muted-foreground">No active companies with email addresses. Add them in B2B Companies.</p>
+              <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('ec_no_eligible')}</p>
             ) : (
               <div className="max-h-64 overflow-y-auto divide-y divide-border">
                 {eligible.map((co) => (
@@ -221,11 +235,11 @@ export function EmailCampaigns() {
                     </div>
                     <span className={cn(
                       'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                      co.status === 'Client'
+                      co.status === 'Active' || co.status === 'In-Contract'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700/30 dark:bg-emerald-900/20 dark:text-emerald-300'
                         : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700/30 dark:bg-blue-900/20 dark:text-blue-300',
                     )}>
-                      {co.status}
+                      {t(STATUS_KEYS[co.status] ?? 'status_lead')}
                     </span>
                   </label>
                 ))}
@@ -240,8 +254,8 @@ export function EmailCampaigns() {
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-lg shadow-brand-600/20"
           >
             {sending
-              ? <><Loader2 size={15} className="animate-spin" /> Sending to {selected.size} recipient{selected.size !== 1 ? 's' : ''}…</>
-              : <><Send size={15} /> Send {activeType.emoji} {activeType.label} to {selected.size || 0} Companies</>
+              ? <><Loader2 size={15} className="animate-spin" /> {t('ec_sending_to')}{selected.size} {selected.size !== 1 ? t('ec_recipient_plural') : t('ec_recipient_singular')}…</>
+              : <><Send size={15} /> {t('ec_send_prefix')}{activeType.emoji} {t(EMAIL_TYPE_LABEL_KEYS[activeType.value])}{t('ec_to_prefix')}{selected.size || 0}{t('ec_companies_suffix')}</>
             }
           </button>
         </div>
@@ -253,24 +267,24 @@ export function EmailCampaigns() {
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div>
-                <p className="text-xs font-bold text-foreground">{activeType.emoji} {activeType.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Subject: {activeType.subject}</p>
+                <p className="text-xs font-bold text-foreground">{activeType.emoji} {t(EMAIL_TYPE_LABEL_KEYS[activeType.value])}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{t('ec_subject_prefix')}{activeType.subject}</p>
               </div>
               <div className="flex items-center gap-2">
                 {showPreview && editedBody !== activeType.preview && (
                   <button
                     onClick={() => setEditedBody(activeType.preview)}
                     className="flex items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                    title="Reset to default template"
+                    title={t('ec_reset_title')}
                   >
-                    <RotateCcw size={11} /> Reset
+                    <RotateCcw size={11} /> {t('ec_reset')}
                   </button>
                 )}
                 <button
                   onClick={() => setShowPreview(v => !v)}
                   className="flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                 >
-                  {showPreview ? <><EyeOff size={12} /> Hide</> : <><Eye size={12} /> Edit</>}
+                  {showPreview ? <><EyeOff size={12} /> {t('ec_hide')}</> : <><Eye size={12} /> {t('ec_edit')}</>}
                 </button>
               </div>
             </div>
@@ -281,15 +295,15 @@ export function EmailCampaigns() {
                   onChange={(e) => setEditedBody(e.target.value)}
                   rows={12}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs leading-relaxed text-foreground font-mono resize-y focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
-                  placeholder="Edit the email body here…"
+                  placeholder={t('ec_edit_placeholder')}
                 />
-                <p className="mt-1.5 text-[10px] text-muted-foreground">Editing this template only affects this send — it does not permanently change the template.</p>
+                <p className="mt-1.5 text-[10px] text-muted-foreground">{t('ec_edit_hint')}</p>
               </div>
             )}
             {!showPreview && (
               <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
                 <Eye size={14} />
-                Click Edit to preview &amp; customise before sending
+                {t('ec_click_edit_hint')}
               </div>
             )}
           </div>
@@ -299,8 +313,8 @@ export function EmailCampaigns() {
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
               <div className="flex items-center gap-2 border-b border-border px-4 py-3">
                 <CheckCircle2 size={15} className="text-emerald-500" />
-                <span className="text-sm font-semibold text-foreground">Campaign Complete</span>
-                <span className="ml-auto text-xs font-medium text-muted-foreground">{successCount}/{results.length} sent</span>
+                <span className="text-sm font-semibold text-foreground">{t('ec_campaign_complete')}</span>
+                <span className="ml-auto text-xs font-medium text-muted-foreground">{successCount}/{results.length}{t('ec_sent_suffix')}</span>
               </div>
 
               <div className="max-h-40 divide-y divide-border overflow-y-auto">
@@ -318,11 +332,11 @@ export function EmailCampaigns() {
               <div className="grid grid-cols-2 gap-3 p-4 pt-0">
                 <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/10 p-3 text-center">
                   <p className="text-2xl font-extrabold text-emerald-600">{successCount}</p>
-                  <p className="text-xs text-muted-foreground">Delivered</p>
+                  <p className="text-xs text-muted-foreground">{t('ec_delivered')}</p>
                 </div>
                 <div className="rounded-xl bg-red-50 dark:bg-red-900/10 p-3 text-center">
                   <p className="text-2xl font-extrabold text-red-500">{results.length - successCount}</p>
-                  <p className="text-xs text-muted-foreground">Failed</p>
+                  <p className="text-xs text-muted-foreground">{t('ec_failed')}</p>
                 </div>
               </div>
             </div>
@@ -331,8 +345,8 @@ export function EmailCampaigns() {
           {/* Refresh + info */}
           <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
             <div>
-              <p><Mail size={11} className="inline mr-1" />Powered by <strong>Resend</strong> (free tier: 3,000/month).</p>
-              <p className="mt-0.5">🕘 Weekly digest auto-sends every <strong>Monday 9 AM</strong> to all active companies.</p>
+              <p><Mail size={11} className="inline mr-1" />{t('ec_powered_by_prefix')}<strong>Resend</strong>{t('ec_powered_by_suffix')}</p>
+              <p className="mt-0.5">🕘{t('ec_digest_info_prefix')}<strong>Monday 9 AM</strong>{t('ec_digest_info_suffix')}</p>
             </div>
             <button onClick={load} className="shrink-0 rounded-lg border border-border p-1.5 hover:bg-accent transition-colors">
               <RefreshCw size={12} />

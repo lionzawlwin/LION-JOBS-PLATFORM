@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import type { B2bLead } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -13,6 +15,12 @@ const URGENCY_STYLE: Record<string, string> = {
   'Within 1 month':              'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700/30',
   'Within 3 months':             'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/30',
   'Planning ahead (3+ months)':  'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600/30',
+};
+const URGENCY_KEYS: Record<string, TranslationKey> = {
+  'ASAP (within 2 weeks)':      'lead_urgency_asap',
+  'Within 1 month':              'lead_urgency_1month',
+  'Within 3 months':             'lead_urgency_3months',
+  'Planning ahead (3+ months)':  'lead_urgency_planning',
 };
 
 const STATUS_OPTIONS = ['New', 'In Review', 'Pending', 'Active', 'Interview', 'Placed', 'On Hold', 'Rejected', 'Closed'] as const;
@@ -29,12 +37,18 @@ const STATUS_STYLE: Record<string, string> = {
   'Rejected':  'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700/30',
   'Closed':    'bg-muted text-muted-foreground border-border',
 };
+const STATUS_KEYS: Record<string, TranslationKey> = {
+  'New': 'lead_status_new', 'In Review': 'lead_status_in_review', 'Pending': 'lead_status_pending',
+  'Active': 'lead_status_active', 'Interview': 'lead_status_interview', 'Placed': 'lead_status_placed',
+  'On Hold': 'lead_status_on_hold', 'Rejected': 'lead_status_rejected', 'Closed': 'lead_status_closed',
+};
 
 function StatusCell({ lead }: { lead: B2bLead }) {
   const [editing,  setEditing]  = useState(false);
   const [selected, setSelected] = useState<string>(lead.status || 'New');
   const [saving,   setSaving]   = useState(false);
   const [saved,    setSaved]    = useState(false);
+  const { t } = useLanguage();
 
   async function save() {
     if (selected === lead.status) { setEditing(false); return; }
@@ -68,7 +82,7 @@ function StatusCell({ lead }: { lead: B2bLead }) {
           className="rounded-lg border border-brand-300 bg-background px-2 py-1 text-[11px] font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40"
         >
           {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{t(STATUS_KEYS[s])}</option>
           ))}
         </select>
         <button
@@ -91,13 +105,13 @@ function StatusCell({ lead }: { lead: B2bLead }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-      title="Click to change status"
+      title={t('bl_click_to_change_status')}
       className={cn(
         'rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-all hover:ring-2 hover:ring-brand-600/30 hover:ring-offset-1 cursor-pointer',
         STATUS_STYLE[selected] ?? 'bg-muted text-muted-foreground border-border',
       )}
     >
-      {saved ? '✓ Saved' : selected}
+      {saved ? t('bl_saved') : t(STATUS_KEYS[selected] ?? 'lead_status_new')}
     </button>
   );
 }
@@ -105,6 +119,7 @@ function StatusCell({ lead }: { lead: B2bLead }) {
 function DeleteLeadButton({ lead }: { lead: B2bLead }) {
   const [confirm,  setConfirm]  = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { t } = useLanguage();
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
@@ -127,19 +142,19 @@ function DeleteLeadButton({ lead }: { lead: B2bLead }) {
         onClick={(e) => e.stopPropagation()}
       >
         <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
-        <span className="text-[10px] text-red-700 dark:text-red-400 font-medium">Delete?</span>
+        <span className="text-[10px] text-red-700 dark:text-red-400 font-medium">{t('cdw_delete_confirm')}</span>
         <button
           onClick={handleDelete}
           disabled={deleting}
           className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50"
         >
-          {deleting ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+          {deleting ? <Loader2 size={10} className="animate-spin" /> : t('ent_row_confirm_yes')}
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); setConfirm(false); }}
           className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent"
         >
-          No
+          {t('ent_row_confirm_no')}
         </button>
       </div>
     );
@@ -148,7 +163,7 @@ function DeleteLeadButton({ lead }: { lead: B2bLead }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
-      title="Delete request"
+      title={t('bl_delete_request_title')}
       className="flex h-7 w-7 items-center justify-center rounded-xl border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
     >
       <Trash2 size={13} />
@@ -160,6 +175,7 @@ export function B2bLeadsTable() {
   const { data, isLoading, error } = useSWR<B2bLead[]>('/api/leads', fetcher);
   const [search,   setSearch]   = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const leads = data ?? [];
 
@@ -185,7 +201,7 @@ export function B2bLeadsTable() {
   if (error) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700 dark:border-red-700/30 dark:bg-red-900/20 dark:text-red-400">
-        Failed to load hiring requests. Check your session or API configuration.
+        {t('bl_load_error')}
       </div>
     );
   }
@@ -196,9 +212,9 @@ export function B2bLeadsTable() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-foreground">B2B Hiring Requests</h3>
+          <h3 className="text-sm font-bold text-foreground">{t('admin_tab_b2b_leads')}</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Requisitions from the employer portal — click a status badge to update it
+            {t('bl_header_sub')}
           </p>
         </div>
         <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white">{leads.length}</span>
@@ -210,7 +226,7 @@ export function B2bLeadsTable() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by company, role, contact, or industry…"
+          placeholder={t('bl_search_placeholder')}
           className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 transition-colors"
         />
       </div>
@@ -221,8 +237,8 @@ export function B2bLeadsTable() {
           <Building2 size={28} className="mx-auto mb-3 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">
             {leads.length === 0
-              ? 'No hiring requests yet. They appear here when employers submit the Hire With Us form.'
-              : 'No results match your search.'}
+              ? t('bl_no_leads')
+              : t('bl_no_search_results')}
           </p>
         </div>
       ) : (
@@ -230,12 +246,12 @@ export function B2bLeadsTable() {
 
           {/* Column headers */}
           <div className="hidden lg:grid grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span>Company & Role</span>
-            <span>Contact</span>
-            <span>Budget</span>
-            <span>Urgency</span>
-            <span>Status</span>
-            <span>Submitted</span>
+            <span>{t('bl_col_company_role')}</span>
+            <span>{t('bl_col_contact')}</span>
+            <span>{t('bl_col_budget')}</span>
+            <span>{t('bl_col_urgency')}</span>
+            <span>{t('bl_col_status')}</span>
+            <span>{t('bl_col_submitted')}</span>
             <span />
             <span />
           </div>
@@ -257,7 +273,7 @@ export function B2bLeadsTable() {
                         <p className="text-sm font-semibold text-foreground truncate">{lead.companyName}</p>
                         <p className="text-[11px] text-muted-foreground truncate">
                           {lead.jobTitle}
-                          {lead.headcount && ` · ${lead.headcount} hire${lead.headcount !== '1' ? 's' : ''}`}
+                          {lead.headcount && ` · ${lead.headcount} ${lead.headcount !== '1' ? t('bl_hire_plural') : t('bl_hire_singular')}`}
                           {lead.workSetup && ` · ${lead.workSetup}`}
                         </p>
                         {/* Mobile: status + time */}
@@ -284,7 +300,7 @@ export function B2bLeadsTable() {
                       'rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap',
                       URGENCY_STYLE[lead.urgency] ?? 'bg-muted text-muted-foreground border-border',
                     )}>
-                      {lead.urgency.split('(')[0].trim()}
+                      {URGENCY_KEYS[lead.urgency] ? t(URGENCY_KEYS[lead.urgency]) : lead.urgency.split('(')[0].trim()}
                     </span>
                   </div>
 
@@ -313,25 +329,25 @@ export function B2bLeadsTable() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       {lead.requirements && (
                         <div>
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Key Requirements</p>
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('bl_key_requirements')}</p>
                           <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{lead.requirements}</p>
                         </div>
                       )}
                       {lead.jobDescription && (
                         <div>
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Job Description</p>
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('bl_job_description')}</p>
                           <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{lead.jobDescription}</p>
                         </div>
                       )}
                       {lead.benefits && (
                         <div>
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Benefits & Perks</p>
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('bl_benefits_perks')}</p>
                           <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{lead.benefits}</p>
                         </div>
                       )}
                       {lead.agencyMessage && (
                         <div>
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Message to Agency</p>
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('bl_message_to_agency')}</p>
                           <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{lead.agencyMessage}</p>
                         </div>
                       )}
@@ -343,7 +359,7 @@ export function B2bLeadsTable() {
                       {lead.contactTitle  && <span>👤 {lead.contactTitle}</span>}
                       {lead.website       && (
                         <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
-                          🌐 Website
+                          🌐 {t('bl_website')}
                         </a>
                       )}
                       {lead.submittedAt   && (

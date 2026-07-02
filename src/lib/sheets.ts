@@ -636,6 +636,7 @@ export async function getCompanies(): Promise<Company[]> {
         industry:      r[5]  ?? '',
         city:          r[6]  ?? '',
         status:        (r[7] as CompanyStatus) || 'Lead',
+        tier:          'smb' as const,
         notes:         r[8]  ?? '',
         lastContacted: r[9]  ?? '',
         createdAt:     r[10] ?? '',

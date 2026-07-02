@@ -10,7 +10,14 @@ import {
 import { cn, timeAgo } from '@/lib/utils';
 import { useCandidates } from '@/hooks/useCandidates';
 import { useJobs } from '@/hooks/useJobs';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Company } from '@/types';
+
+const STAGE_KEYS: Record<string, TranslationKey> = {
+  Applied: 'ov_stage_applied', Shortlisted: 'ov_stage_shortlisted',
+  Interview: 'ov_stage_interview', Hired: 'ov_stage_hired',
+};
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -99,6 +106,7 @@ export function AnalyticsOverview() {
   const { data: companies = [] } = useSWR<Company[]>('/api/companies', fetcher, {
     revalidateOnFocus: false,
   });
+  const { t } = useLanguage();
 
   const s = useMemo(() => {
     const applied     = candidates.filter(c => c.stage === 'Applied').length;
@@ -110,7 +118,7 @@ export function AnalyticsOverview() {
     const convRate    = total > 0 ? (((shortlisted + interview + hired) / total) * 100).toFixed(0) : '0';
 
     const leads    = companies.filter(c => c.status === 'Lead').length;
-    const clients  = companies.filter(c => c.status === 'Client').length;
+    const clients  = companies.filter(c => c.status === 'Active' || c.status === 'In-Contract').length;
     const inactive = companies.filter(c => c.status === 'Inactive').length;
 
     const urgentJobs   = jobs.filter(j => j.isUrgent).length;
@@ -143,12 +151,12 @@ export function AnalyticsOverview() {
 
       {/* ── KPI Row ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        <KpiCard icon={Users}      label="Candidates"  value={s.total}           sub="Total pipeline"        iconBg="bg-brand-600"  />
-        <KpiCard icon={Trophy}     label="Hired"       value={s.hired}           sub={`${s.hireRate}% rate`} iconBg="bg-emerald-600"/>
-        <KpiCard icon={Briefcase}  label="Active Jobs" value={s.activeJobs}      sub={`${s.urgentJobs} urgent`} iconBg="bg-blue-600" />
-        <KpiCard icon={Building2}  label="Companies"   value={s.totalCompanies}  sub="In CRM"                iconBg="bg-violet-600" />
-        <KpiCard icon={Target}     label="Clients"     value={s.clients}         sub="Paying clients"        iconBg="bg-amber-600"  />
-        <KpiCard icon={TrendingUp} label="Leads"       value={s.leads}           sub={`${s.convRate}% engaged`} iconBg="bg-rose-600" />
+        <KpiCard icon={Users}      label={t('ov_kpi_candidates')}  value={s.total}           sub={t('ov_kpi_sub_pipeline')}        iconBg="bg-brand-600"  />
+        <KpiCard icon={Trophy}     label={t('ov_kpi_hired')}       value={s.hired}           sub={`${s.hireRate}${t('ov_suffix_rate')}`} iconBg="bg-emerald-600"/>
+        <KpiCard icon={Briefcase}  label={t('ov_kpi_active_jobs')} value={s.activeJobs}      sub={`${s.urgentJobs}${t('ov_suffix_urgent')}`} iconBg="bg-blue-600" />
+        <KpiCard icon={Building2}  label={t('ov_kpi_companies')}   value={s.totalCompanies}  sub={t('ov_kpi_sub_in_crm')}                iconBg="bg-violet-600" />
+        <KpiCard icon={Target}     label={t('ov_kpi_clients')}     value={s.clients}         sub={t('ov_kpi_sub_paying')}        iconBg="bg-amber-600"  />
+        <KpiCard icon={TrendingUp} label={t('ov_kpi_leads')}       value={s.leads}           sub={`${s.convRate}${t('ov_suffix_engaged')}`} iconBg="bg-rose-600" />
       </div>
 
       {/* ── Charts Row ───────────────────────────────────────────── */}
@@ -158,29 +166,29 @@ export function AnalyticsOverview() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-foreground">Candidate Pipeline Funnel</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.hireRate}% overall placement rate</p>
+              <h3 className="text-sm font-bold text-foreground">{t('ov_funnel_title')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.hireRate}{t('ov_funnel_sub_rate')}</p>
             </div>
             {loading && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
             {!loading && (
               <span className="rounded-xl bg-brand-50 dark:bg-brand-600/10 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-300">
-                {s.total} total
+                {s.total}{t('ov_funnel_total')}
               </span>
             )}
           </div>
           <div className="space-y-4">
-            <FunnelBar label="Applied"     count={s.applied}     total={s.total} emoji="📥" barColor="bg-blue-500"    trackColor="bg-blue-100 dark:bg-blue-900/20" />
-            <FunnelBar label="Shortlisted" count={s.shortlisted} total={s.total} emoji="⚡" barColor="bg-amber-500"   trackColor="bg-amber-100 dark:bg-amber-900/20" />
-            <FunnelBar label="Interview"   count={s.interview}   total={s.total} emoji="🎤" barColor="bg-orange-500"  trackColor="bg-orange-100 dark:bg-orange-900/20" />
-            <FunnelBar label="Hired ✓"    count={s.hired}       total={s.total} emoji="🏆" barColor="bg-emerald-500" trackColor="bg-emerald-100 dark:bg-emerald-900/20" />
+            <FunnelBar label={t('ov_stage_applied')}     count={s.applied}     total={s.total} emoji="📥" barColor="bg-blue-500"    trackColor="bg-blue-100 dark:bg-blue-900/20" />
+            <FunnelBar label={t('ov_stage_shortlisted')} count={s.shortlisted} total={s.total} emoji="⚡" barColor="bg-amber-500"   trackColor="bg-amber-100 dark:bg-amber-900/20" />
+            <FunnelBar label={t('ov_stage_interview')}   count={s.interview}   total={s.total} emoji="🎤" barColor="bg-orange-500"  trackColor="bg-orange-100 dark:bg-orange-900/20" />
+            <FunnelBar label={`${t('ov_stage_hired')} ✓`} count={s.hired}      total={s.total} emoji="🏆" barColor="bg-emerald-500" trackColor="bg-emerald-100 dark:bg-emerald-900/20" />
           </div>
 
           {/* Company Pipeline mini */}
           <div className="mt-6 grid grid-cols-3 gap-2 pt-5 border-t border-border text-center">
             {[
-              { label: 'Leads',    val: s.leads,    cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
-              { label: 'Clients',  val: s.clients,  cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' },
-              { label: 'Inactive', val: s.inactive, cls: 'bg-muted text-muted-foreground' },
+              { label: t('ov_pipeline_leads'),    val: s.leads,    cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
+              { label: t('ov_pipeline_clients'),  val: s.clients,  cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' },
+              { label: t('ov_pipeline_inactive'), val: s.inactive, cls: 'bg-muted text-muted-foreground' },
             ].map(({ label, val, cls }) => (
               <div key={label} className={cn('rounded-xl py-2.5 px-2', cls)}>
                 <p className="text-xl font-extrabold tabular-nums">{val}</p>
@@ -194,14 +202,14 @@ export function AnalyticsOverview() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-foreground">Jobs by Category</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.activeJobs} open roles · {s.featuredJobs} featured</p>
+              <h3 className="text-sm font-bold text-foreground">{t('ov_jobs_by_category')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.activeJobs}{t('ov_jobs_sub')}{s.featuredJobs}{t('ov_jobs_sub_featured')}</p>
             </div>
             {ljobs && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
           </div>
 
           {s.topCats.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">No jobs posted yet. Use &ldquo;Post a Job&rdquo; to get started.</p>
+            <p className="py-4 text-sm text-muted-foreground">{t('ov_no_jobs')}</p>
           ) : (
             <div className="space-y-3.5">
               {s.topCats.map(([cat, cnt]) => (
@@ -215,17 +223,17 @@ export function AnalyticsOverview() {
             <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-border">
               {s.urgentJobs > 0 && (
                 <span className="rounded-full bg-red-100 dark:bg-red-900/20 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-400">
-                  🔥 {s.urgentJobs} Urgent
+                  🔥 {s.urgentJobs}{t('ov_badge_urgent')}
                 </span>
               )}
               {s.featuredJobs > 0 && (
                 <span className="rounded-full bg-amber-100 dark:bg-amber-900/20 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  ⭐ {s.featuredJobs} Featured
+                  ⭐ {s.featuredJobs}{t('ov_badge_featured')}
                 </span>
               )}
               {s.generalPool > 0 && (
                 <span className="rounded-full bg-brand-100 dark:bg-brand-600/20 px-3 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400">
-                  <Inbox size={11} className="inline mr-1" />{s.generalPool} Talent Pool
+                  <Inbox size={11} className="inline mr-1" />{s.generalPool}{t('ov_badge_talent_pool')}
                 </span>
               )}
             </div>
@@ -237,8 +245,8 @@ export function AnalyticsOverview() {
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <h3 className="text-sm font-bold text-foreground">Recent Applications</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Latest candidate activity — last 10</p>
+            <h3 className="text-sm font-bold text-foreground">{t('ov_recent_apps_title')}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('ov_recent_apps_sub')}</p>
           </div>
           <Clock size={15} className="text-muted-foreground" />
         </div>
@@ -248,7 +256,7 @@ export function AnalyticsOverview() {
             <Loader2 size={22} className="animate-spin text-muted-foreground" />
           </div>
         ) : s.recent.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">No candidates yet.</p>
+          <p className="px-6 py-10 text-center text-sm text-muted-foreground">{t('ov_no_candidates')}</p>
         ) : (
           <div className="divide-y divide-border">
             {s.recent.map((c) => (
@@ -258,11 +266,11 @@ export function AnalyticsOverview() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{c.position || 'General Application'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{c.position || t('ov_general_application')}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold', STAGE_STYLE[c.stage] ?? STAGE_STYLE.Applied)}>
-                    {c.stage}
+                    {t(STAGE_KEYS[c.stage] ?? 'ov_stage_applied')}
                   </span>
                   <span className="w-16 text-right text-xs text-muted-foreground">{timeAgo(c.appliedAt)}</span>
                 </div>

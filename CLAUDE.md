@@ -82,3 +82,14 @@ Copy `.env.example` to `.env.local` for local development.
 Production deploys automatically on push to `main` via `.github/workflows/deploy.yml` using `vercel build --prod && vercel deploy --prebuilt --prod`. Pull requests get a preview deployment with the URL posted as a PR comment.
 
 Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+
+## Known but deliberately not installed: agent-tooling skill repos
+
+Two Claude Code skill repos were evaluated (2026-07-02) and intentionally left uninstalled because they don't fit this project's domain:
+
+- **`vercel-labs/skills`** — the `npx skills` installer CLI itself (not a skill in its own right). Used to install skills from other repos.
+- **`google/agents-cli`** — teaches agents Google's Agent Development Kit (ADK): scaffolding, evals, deploying to Vertex AI, publishing to Gemini Enterprise. Irrelevant to this Next.js/Supabase/Google-Sheets job board.
+
+If this project ever pivots toward building agent-based features (e.g. an AI agent product, not just AI-assisted CV scoring), revisit `google/agents-cli` via `npx skills add google/agents-cli`. Until then, do not add it or its dependencies.
+
+**`collaborator-ai/collab-public`** (evaluated 2026-07-02) is a separate case: a native Electron desktop app for visually arranging terminal/agent sessions on an infinite canvas, not a Claude Code skill — it has no CLI/API/MCP surface, so there's nothing installable into this project or invocable by an agent. See `docs/skills/collaborator-multi-agent.md` for the full evaluation and human-operator install/usage instructions, should you want it as a personal terminal-management tool.

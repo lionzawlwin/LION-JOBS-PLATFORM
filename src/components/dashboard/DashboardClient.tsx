@@ -1,31 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList } from 'lucide-react';
+import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
 import { CompaniesView } from './CompaniesView';
+import { EnterpriseView } from './EnterpriseView';
 import { B2bLeadsTable } from './B2bLeadsTable';
 import { ContentStudio } from './ContentStudio';
 import { EmailCampaigns } from './EmailCampaigns';
+import { LegalView } from './LegalView';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'b2b-leads' | 'content' | 'campaigns';
-
-const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
-  { value: 'overview',   label: 'Overview',          icon: <BarChart2     size={14} /> },
-  { value: 'candidates', label: 'Candidates',         icon: <Users         size={14} /> },
-  { value: 'post-job',   label: 'Post a New Job',     icon: <PlusSquare    size={14} /> },
-  { value: 'manage-jobs',label: 'Manage Jobs',        icon: <Briefcase     size={14} /> },
-  { value: 'companies',  label: 'B2B Companies',      icon: <Building2     size={14} /> },
-  { value: 'b2b-leads',  label: 'B2B Hiring Requests',icon: <ClipboardList size={14} /> },
-  { value: 'content',    label: 'Content Studio',     icon: <PenSquare     size={14} /> },
-  { value: 'campaigns',  label: 'Email Campaigns',    icon: <Mail          size={14} /> },
-];
+type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal';
 
 interface Props {
   isAdmin?: boolean;
@@ -34,6 +26,20 @@ interface Props {
 export function DashboardClient({ isAdmin = false }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('overview');
   const [candView,    setCandView]    = useState<'table' | 'board'>('table');
+  const { t } = useLanguage();
+
+  const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
+    { value: 'overview',   label: t('admin_tab_overview'),   icon: <BarChart2     size={14} /> },
+    { value: 'candidates', label: t('admin_tab_candidates'), icon: <Users         size={14} /> },
+    { value: 'post-job',   label: t('admin_tab_post_job'),   icon: <PlusSquare    size={14} /> },
+    { value: 'manage-jobs',label: t('admin_tab_manage_jobs'),icon: <Briefcase     size={14} /> },
+    { value: 'companies',  label: t('admin_tab_companies'),  icon: <Building2     size={14} /> },
+    { value: 'enterprise', label: t('admin_tab_enterprise'), icon: <Landmark      size={14} /> },
+    { value: 'b2b-leads',  label: t('admin_tab_b2b_leads'),  icon: <ClipboardList size={14} /> },
+    { value: 'content',    label: t('admin_tab_content'),    icon: <PenSquare     size={14} /> },
+    { value: 'campaigns',  label: t('admin_tab_campaigns'),  icon: <Mail          size={14} /> },
+    { value: 'legal',      label: t('admin_tab_legal'),      icon: <Scale         size={14} /> },
+  ];
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only
@@ -71,15 +77,17 @@ export function DashboardClient({ isAdmin = false }: Props) {
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
         <span>
-          Admin dashboard — Lion Jobs Agency internal use only.
-          {activeTab === 'overview'    && ' Real-time analytics across candidates, jobs, and companies.'}
-          {activeTab === 'candidates'  && ' Manage candidate applications and pipeline stages.'}
-          {activeTab === 'post-job'    && ' Create and publish new job listings to the platform.'}
-          {activeTab === 'manage-jobs' && ' Edit, pause, or close existing job postings.'}
-          {activeTab === 'companies'   && ' B2B employer CRM — track leads, clients, and send targeted emails.'}
-          {activeTab === 'b2b-leads'   && ' Incoming hiring requests from employers. Update status to track progress.'}
-          {activeTab === 'content'     && ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.'}
-          {activeTab === 'campaigns'   && ' Send marketing emails to employers. Powered by Resend (3K/month free).'}
+          {t('admin_banner_prefix')}
+          {activeTab === 'overview'    && t('admin_banner_overview')}
+          {activeTab === 'candidates'  && t('admin_banner_candidates')}
+          {activeTab === 'post-job'    && t('admin_banner_post_job')}
+          {activeTab === 'manage-jobs' && t('admin_banner_manage_jobs')}
+          {activeTab === 'companies'   && t('admin_banner_companies')}
+          {activeTab === 'enterprise'  && t('admin_banner_enterprise')}
+          {activeTab === 'b2b-leads'   && t('admin_banner_b2b_leads')}
+          {activeTab === 'content'     && t('admin_banner_content')}
+          {activeTab === 'campaigns'   && t('admin_banner_campaigns')}
+          {activeTab === 'legal'       && t('admin_banner_legal')}
         </span>
       </div>
 
@@ -89,7 +97,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
         <>
           {/* View toggle */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">Candidate Pipeline</h3>
+            <h3 className="text-sm font-bold text-foreground">{t('cand_pipeline_title')}</h3>
             <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1">
               <button
                 onClick={() => setCandView('table')}
@@ -98,7 +106,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
                   candView === 'table' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Table2 size={12} /> Table
+                <Table2 size={12} /> {t('cand_view_table')}
               </button>
               <button
                 onClick={() => setCandView('board')}
@@ -107,7 +115,7 @@ export function DashboardClient({ isAdmin = false }: Props) {
                   candView === 'board' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <LayoutGrid size={12} /> Kanban
+                <LayoutGrid size={12} /> {t('cand_view_kanban')}
               </button>
             </div>
           </div>
@@ -119,9 +127,11 @@ export function DashboardClient({ isAdmin = false }: Props) {
       {activeTab === 'post-job'    && <PostJobForm />}
       {activeTab === 'manage-jobs' && <JobsPanel />}
       {activeTab === 'companies'   && <CompaniesView />}
+      {activeTab === 'enterprise'  && <EnterpriseView />}
       {activeTab === 'b2b-leads'   && <B2bLeadsTable />}
       {activeTab === 'content'     && <ContentStudio />}
       {activeTab === 'campaigns'   && <EmailCampaigns />}
+      {activeTab === 'legal'       && <LegalView />}
     </>
   );
 }

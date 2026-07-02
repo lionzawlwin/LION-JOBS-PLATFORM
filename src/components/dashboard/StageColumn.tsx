@@ -1,7 +1,14 @@
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { CandidateCard } from './CandidateCard';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Candidate, ApplicationStatus } from '@/types';
+
+const STAGE_KEYS: Record<ApplicationStatus, TranslationKey> = {
+  Applied: 'ov_stage_applied', Shortlisted: 'ov_stage_shortlisted',
+  Interview: 'ov_stage_interview', Hired: 'ov_stage_hired',
+};
 
 interface StageMeta {
   dot: string;
@@ -34,6 +41,7 @@ interface Props {
 
 export function StageColumn({ stage, candidates }: Props) {
   const meta = STAGE_META[stage];
+  const { t } = useLanguage();
 
   return (
     <div className="flex min-w-[240px] flex-1 flex-col gap-3">
@@ -46,7 +54,7 @@ export function StageColumn({ stage, candidates }: Props) {
       >
         <div className="flex items-center gap-2">
           <span className={cn('h-2 w-2 rounded-full', meta.dot)} />
-          <span className="text-sm font-semibold text-foreground">{stage}</span>
+          <span className="text-sm font-semibold text-foreground">{t(STAGE_KEYS[stage])}</span>
         </div>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {candidates.length}
@@ -91,7 +99,7 @@ export function StageColumn({ stage, candidates }: Props) {
 
             {candidates.length === 0 && !snapshot.isDraggingOver && (
               <p className="py-6 text-center text-xs text-muted-foreground/50">
-                Drop candidates here
+                {t('kb_drop_here')}
               </p>
             )}
           </div>

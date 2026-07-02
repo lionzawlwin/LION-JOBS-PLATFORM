@@ -3,16 +3,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import type { Company, CompanyStatus } from '@/types';
 
 const STATUS_STYLES: Record<CompanyStatus, string> = {
-  Lead:     'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
-  Client:   'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
-  Inactive: 'bg-muted text-muted-foreground border-border',
+  Lead:          'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
+  Active:        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
+  'In-Contract': 'bg-gold-50 text-gold-700 border-gold-200 dark:bg-gold-600/20 dark:text-gold-400 dark:border-gold-600/40',
+  Inactive:      'bg-muted text-muted-foreground border-border',
 };
 
-const STATUSES: CompanyStatus[] = ['Lead', 'Client', 'Inactive'];
+const STATUSES: CompanyStatus[] = ['Lead', 'Active', 'In-Contract', 'Inactive'];
+const STATUS_KEYS: Record<CompanyStatus, TranslationKey> = {
+  Lead: 'status_lead', Active: 'status_active', 'In-Contract': 'status_in_contract', Inactive: 'status_inactive',
+};
 const INDUSTRIES = ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Retail', 'Education', 'Hospitality', 'Construction', 'Media', 'NGO', 'Other'];
+const INDUSTRY_KEYS: Record<string, TranslationKey> = {
+  Technology: 'industry_technology', Finance: 'industry_finance', Healthcare: 'industry_healthcare',
+  Manufacturing: 'industry_manufacturing', Retail: 'industry_retail', Education: 'industry_education',
+  Hospitality: 'industry_hospitality', Construction: 'industry_construction', Media: 'industry_media',
+  NGO: 'industry_ngo', Other: 'industry_other',
+};
 
 export function CompaniesView() {
   const [companies, setCompanies]     = useState<Company[]>([]);
@@ -25,6 +37,7 @@ export function CompaniesView() {
   const [emailType, setEmailType]             = useState<'welcome' | 'outreach'>('welcome');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId]           = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     name: '', contactPerson: '', email: '', phone: '',
@@ -97,9 +110,9 @@ export function CompaniesView() {
           data: { contactPerson: company.contactPerson || company.name, companyName: company.name },
         }),
       });
-      alert(`✅ ${emailType === 'welcome' ? 'Welcome' : 'Outreach'} email sent to ${company.email}`);
+      alert(`${t('cv_alert_email_sent_prefix')}${emailType === 'welcome' ? t('cv_welcome_email') : t('cv_outreach_email')}${t('cv_alert_email_sent_suffix')}${company.email}`);
     } catch {
-      alert('❌ Failed to send email. Check RESEND_API_KEY.');
+      alert(t('cv_alert_email_failed'));
     } finally {
       setEmailSending(null);
     }
@@ -111,7 +124,7 @@ export function CompaniesView() {
     return matchSearch && matchStatus;
   });
 
-  const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Client').length };
+  const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Active' || c.status === 'In-Contract').length };
 
   return (
     <div className="space-y-6">
@@ -119,9 +132,9 @@ export function CompaniesView() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: 'Total Companies', value: stats.total, color: 'text-foreground' },
-          { label: 'Leads',           value: stats.leads,   color: 'text-blue-600' },
-          { label: 'Active Clients',  value: stats.clients, color: 'text-emerald-600' },
+          { label: t('cv_total_companies'), value: stats.total, color: 'text-foreground' },
+          { label: t('ov_pipeline_leads'),  value: stats.leads,   color: 'text-blue-600' },
+          { label: t('cv_active_clients'),  value: stats.clients, color: 'text-emerald-600' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -135,7 +148,7 @@ export function CompaniesView() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search companies…"
+            placeholder={t('cv_search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded-xl border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 w-56"
@@ -145,8 +158,8 @@ export function CompaniesView() {
             onChange={(e) => setStatusFilter(e.target.value as CompanyStatus | '')}
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
           >
-            <option value="">All Status</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="">{t('ent_filter_all_status')}</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_KEYS[s])}</option>)}
           </select>
         </div>
         <div className="flex gap-2 items-center">
@@ -155,14 +168,14 @@ export function CompaniesView() {
             onChange={(e) => setEmailType(e.target.value as 'welcome' | 'outreach')}
             className="rounded-xl border border-border bg-background px-3 py-2 text-xs focus:outline-none"
           >
-            <option value="welcome">Welcome Email</option>
-            <option value="outreach">Outreach Email</option>
+            <option value="welcome">{t('cv_welcome_email')}</option>
+            <option value="outreach">{t('cv_outreach_email')}</option>
           </select>
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
           >
-            <Plus size={15} /> Add Company
+            <Plus size={15} /> {t('cv_add_company_btn')}
           </button>
         </div>
       </div>
@@ -171,26 +184,26 @@ export function CompaniesView() {
       {showForm && (
         <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-700/30 dark:bg-brand-600/5">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Add New Company</h3>
+            <h3 className="font-semibold text-foreground">{t('cv_add_new_company_title')}</h3>
             <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
           </div>
           <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-2">
-            <input required placeholder="Company Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
-            <input placeholder="Contact Person" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
-            <input required type="email" placeholder="Email *" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
-            <input placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input required placeholder={t('ent_form_name')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input placeholder={t('ent_form_contact_person')} value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input required type="email" placeholder={t('ent_form_email')} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input placeholder={t('ent_form_phone')} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
             <select value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
-              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+              {INDUSTRIES.map((i) => <option key={i} value={i}>{t(INDUSTRY_KEYS[i])}</option>)}
             </select>
             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as CompanyStatus })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_KEYS[s])}</option>)}
             </select>
-            <input placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
-            <input placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input placeholder={t('ent_form_city')} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <input placeholder={t('ent_form_notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
             <div className="sm:col-span-2 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent">Cancel</button>
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent">{t('ent_form_cancel')}</button>
               <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : 'Add Company'}
+                {saving ? <><Loader2 size={14} className="animate-spin" /> {t('cv_saving')}</> : t('cv_add_company_btn')}
               </button>
             </div>
           </form>
@@ -203,7 +216,7 @@ export function CompaniesView() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Building2 size={36} className="text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">{search || statusFilter ? 'No companies match your filter.' : 'No companies yet. Add your first B2B client.'}</p>
+          <p className="text-sm text-muted-foreground">{search || statusFilter ? t('cv_no_match') : t('cv_no_companies')}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -223,12 +236,12 @@ export function CompaniesView() {
                   {/* Status dropdown */}
                   <div className="relative group">
                     <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
-                      {co.status} <ChevronDown size={10} />
+                      {t(STATUS_KEYS[co.status])} <ChevronDown size={10} />
                     </button>
                     <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
                       {STATUSES.map((s) => (
                         <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
-                          {s}
+                          {t(STATUS_KEYS[s])}
                         </button>
                       ))}
                     </div>
@@ -242,19 +255,19 @@ export function CompaniesView() {
                         disabled={deletingId === co.id}
                         className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
                       >
-                        {deletingId === co.id ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                        {deletingId === co.id ? <Loader2 size={10} className="animate-spin" /> : t('ent_row_confirm_yes')}
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(null)}
                         className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
                       >
-                        No
+                        {t('ent_row_confirm_no')}
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(co.id)}
-                      title="Delete company"
+                      title={t('cv_delete_company_title')}
                       className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
                     >
                       <Trash2 size={12} />
@@ -277,8 +290,8 @@ export function CompaniesView() {
                   className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {emailSending === co.id
-                    ? <><Loader2 size={12} className="animate-spin" /> Sending…</>
-                    : <><Send size={12} /> Send {emailType === 'welcome' ? 'Welcome' : 'Outreach'} Email</>
+                    ? <><Loader2 size={12} className="animate-spin" /> {t('cv_sending')}</>
+                    : <><Send size={12} /> {t('cv_send_prefix')}{emailType === 'welcome' ? t('cv_welcome_email') : t('cv_outreach_email')}</>
                   }
                 </button>
               )}

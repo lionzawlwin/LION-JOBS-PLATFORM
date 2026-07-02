@@ -38,13 +38,20 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
         ],
       },
-      {
-        // Immutable cache for Webpack/Turbopack hashed chunks
-        source: '/_next/static/(.*)',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
+      // Immutable cache for hashed chunks — production only. Turbopack dev
+      // chunk filenames aren't guaranteed to change across recompiles, so
+      // this header in dev pins the browser's HTTP cache to stale content
+      // for a year regardless of how many times the page is refreshed.
+      ...(process.env.NODE_ENV === 'production'
+        ? [
+            {
+              source: '/_next/static/(.*)',
+              headers: [
+                { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+              ],
+            },
+          ]
+        : []),
       {
         // ISR pages — serve stale while regenerating
         source: '/jobs/(.*)',

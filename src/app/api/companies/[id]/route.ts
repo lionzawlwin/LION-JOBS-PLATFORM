@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { updateCompanyStatus, deleteCompany } from '@/lib/db';
+import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, deleteCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
-import type { CompanyStatus } from '@/types';
+import type { CompanyStatus, CompanyTier } from '@/types';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'lionzawlwin@gmail.com';
 
@@ -15,12 +15,26 @@ export async function PATCH(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
-  const body = await req.json().catch(() => ({})) as { status?: CompanyStatus; notes?: string };
-  if (!body.status) {
-    return Response.json({ error: 'status is required.' }, { status: 422 });
+  const body = await req.json().catch(() => ({})) as {
+    status?:            CompanyStatus;
+    notes?:             string;
+    tier?:              CompanyTier;
+    commissionRatePct?: number | null;
+  };
+  if (!body.status && !body.tier && body.commissionRatePct === undefined) {
+    return Response.json({ error: 'status, tier, or commissionRatePct is required.' }, { status: 422 });
+  }
+  if (
+    body.commissionRatePct !== undefined && body.commissionRatePct !== null &&
+    (typeof body.commissionRatePct !== 'number' || !Number.isFinite(body.commissionRatePct) ||
+     body.commissionRatePct < 0 || body.commissionRatePct > 100)
+  ) {
+    return Response.json({ error: 'commissionRatePct must be a number between 0 and 100.' }, { status: 422 });
   }
   try {
-    await updateCompanyStatus(id, body.status, body.notes);
+    if (body.status) await updateCompanyStatus(id, body.status, body.notes);
+    if (body.tier)   await updateCompanyTier(id, body.tier);
+    if (body.commissionRatePct !== undefined) await updateCompanyCommissionRate(id, body.commissionRatePct);
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

@@ -61,6 +61,9 @@ export interface Candidate {
   notes?: string;
   salaryExpected?: string;
   interviewDate?: string;
+  interviewLocation?: string;
+  interviewerContact?: string;
+  needsConsent?: boolean;
   source?: string;
   // extended profile fields
   cityLocation?: string;
@@ -109,7 +112,8 @@ export interface JobFilters {
   type: JobType | '';
 }
 
-export type CompanyStatus = 'Lead' | 'Client' | 'Inactive';
+export type CompanyStatus = 'Lead' | 'Active' | 'In-Contract' | 'Inactive';
+export type CompanyTier = 'smb' | 'enterprise';
 
 export interface Company {
   id:            string;
@@ -120,9 +124,11 @@ export interface Company {
   industry:      string;
   city:          string;
   status:        CompanyStatus;
+  tier:          CompanyTier;
   notes:         string;
   lastContacted: string;
   createdAt:     string;
+  commissionRatePct?: number | null;
 }
 
 export interface ApplicationPayload {
@@ -134,4 +140,65 @@ export interface ApplicationPayload {
   cvBase64?: string;
   cvFileName?: string;
   linkedinUrl?: string;
+}
+
+export type ContractType = 'Retainer' | 'Contingency' | 'Exclusive' | 'Other';
+export type ContractStatus = 'Draft' | 'Active' | 'Completed' | 'Terminated';
+
+export interface Contract {
+  id:           string;
+  companyId:    string;
+  value:        number;
+  currency:     string;
+  contractType: ContractType;
+  status:       ContractStatus;
+  startDate:    string | null;
+  endDate:      string | null;
+  cseId:        string | null;
+  notes:        string;
+  createdAt:    string;
+}
+
+export type InteractionType = 'Call' | 'Email' | 'Meeting' | 'Demo' | 'Contract Sent' | 'Other';
+
+export interface Interaction {
+  id:            string;
+  companyId:     string;
+  type:          InteractionType;
+  note:          string;
+  loggedByCseId: string | null;
+  occurredAt:    string;
+  createdAt:     string;
+}
+
+export interface CseRep {
+  id:        string;
+  name:      string;
+  phone:     string;
+  email:     string;
+  active:    boolean;
+  createdAt: string;
+}
+
+export interface EnterpriseStats {
+  totalActiveContractValue: number;
+  activeContractsCount:     number;
+  enterpriseAccountsCount:  number;
+  topCse: { id: string; name: string; value: number } | null;
+}
+
+export interface AgencySettings {
+  defaultCommissionRatePct: number;
+  defaultGuaranteeDays: number;
+  defaultReplacementCostMmk: number;
+  antiBypassPenaltyMmk: number;
+  antiBypassRestrictionMonths: number;
+  termsVersion: string;
+}
+
+export interface ConsentRecord {
+  id: string;
+  applicationId: string;
+  termsVersion: string;
+  agreedAt: string;
 }

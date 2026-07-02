@@ -32,6 +32,8 @@ interface AppRow {
   notes: string | null;
   salary_expected: string | null;
   interview_date: string | null;
+  interview_location: string | null;
+  interviewer_contact: string | null;
   google_drive_cv_url: string | null;
   linkedin_url: string | null;
   ai_score: number | null;
@@ -75,6 +77,8 @@ function mapToCandidate(candidate: CandidateRow, app: AppRow): Candidate {
     notes:           app.notes ?? undefined,
     salaryExpected:  app.salary_expected ?? undefined,
     interviewDate:   app.interview_date ?? undefined,
+    interviewLocation:   app.interview_location ?? undefined,
+    interviewerContact:  app.interviewer_contact ?? undefined,
     source:          candidate.source ?? undefined,
     cityLocation:    candidate.city_location ?? undefined,
     education:       candidate.education ?? undefined,
@@ -102,7 +106,7 @@ export async function getCandidates(): Promise<Candidate[]> {
       portfolio_url, source, created_at,
       applications (
         id, job_id, job_title, company, stage, applied_at,
-        notes, salary_expected, interview_date,
+        notes, salary_expected, interview_date, interview_location, interviewer_contact,
         google_drive_cv_url, linkedin_url,
         ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
@@ -331,7 +335,7 @@ export async function getCandidatesByEmailOrPhone(
       portfolio_url, source, created_at,
       applications (
         id, job_id, job_title, company, stage, applied_at,
-        notes, salary_expected, interview_date,
+        notes, salary_expected, interview_date, interview_location, interviewer_contact,
         google_drive_cv_url, linkedin_url,
         ai_score, ai_summary, ai_reasoning, ai_processed_at
       )
@@ -348,4 +352,30 @@ export async function getCandidatesByEmailOrPhone(
     if (apps.length === 0) return [];
     return apps.map((app) => mapToCandidate(candidate, app));
   });
+}
+
+export async function updateCandidateInterviewDetails(
+  applicationId:      string,
+  interviewLocation:  string,
+  interviewerContact: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('applications')
+    .update({
+      interview_location:  interviewLocation || null,
+      interviewer_contact: interviewerContact || null,
+    })
+    .eq('id', applicationId);
+  if (error) throw new Error(`Failed to update interview details: ${error.message}`);
+}
+
+export async function getApplicationInterviewLocation(applicationId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('interview_location')
+    .eq('id', applicationId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return (data.interview_location as string) ?? null;
 }
