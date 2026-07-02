@@ -183,6 +183,7 @@ export const translations = {
     admin_tab_b2b_leads:   'B2B Hiring Requests',
     admin_tab_content:     'Content Studio',
     admin_tab_campaigns:   'Email Campaigns',
+    admin_tab_legal:       'Legal',
     // Admin dashboard — context banner
     admin_banner_prefix:      'Admin dashboard — Lion Jobs Agency internal use only.',
     admin_banner_overview:    ' Real-time analytics across candidates, jobs, and companies.',
@@ -194,6 +195,7 @@ export const translations = {
     admin_banner_b2b_leads:   ' Incoming hiring requests from employers. Update status to track progress.',
     admin_banner_content:     ' Generate social media posts for Facebook, Telegram, WhatsApp, and LinkedIn.',
     admin_banner_campaigns:   ' Send marketing emails to employers. Powered by Resend (3K/month free).',
+    admin_banner_legal:       ' B2B service contracts and candidate anti-bypass consent tracking.',
 
     // Enterprise — status/type enum display labels (data values stay English; these are display-only)
     status_lead:            'Lead',
@@ -793,6 +795,7 @@ export const translations = {
     admin_tab_b2b_leads:   'B2B ခန့်ထားရေး တောင်းဆိုချက်များ',
     admin_tab_content:     'အကြောင်းအရာ စတူဒီယို',
     admin_tab_campaigns:   'အီးမေးလ် ကမ်ပိန်းများ',
+    admin_tab_legal:       'ဥပဒေရေးရာ',
     // Admin dashboard — context banner
     admin_banner_prefix:      'အက်ဒမင် ဒက်ရှ်ဘုတ် — Lion Jobs Agency ၏ အတွင်းပိုင်းအသုံးပြုမှုအတွက်သာ။',
     admin_banner_overview:    ' လျှောက်ထားသူများ၊ အလုပ်များနှင့် ကုမ္ပဏီများအတွက် အချိန်နှင့်တပြေးညီ ခွဲခြမ်းစိတ်ဖြာမှု။',
@@ -804,6 +807,7 @@ export const translations = {
     admin_banner_b2b_leads:   ' အလုပ်ရှင်များထံမှ ဝင်လာသော ခန့်ထားရေးတောင်းဆိုချက်များ။ တိုးတက်မှုကို ခြေရာခံရန် အခြေအနေကို အပ်ဒိတ်လုပ်ပါ။',
     admin_banner_content:     ' Facebook၊ Telegram၊ WhatsApp နှင့် LinkedIn အတွက် ဆိုရှယ်မီဒီယာ ပို့စ်များ ဖန်တီးပါ။',
     admin_banner_campaigns:   ' အလုပ်ရှင်များထံ စျေးကွက်ရှာဖွေရေး အီးမေးလ်များ ပို့ပါ။ Resend မှ ပံ့ပိုးသည် (လစဉ် ၃,၀၀၀ အခမဲ့)။',
+    admin_banner_legal:       ' B2B စာချုပ်များနှင့် ကိုယ်စားလှယ်လောင်း သဘောတူညီချက် ခြေရာခံမှု။',
 
     // Enterprise — status/type enum display labels
     status_lead:            'အလားအလာ',
