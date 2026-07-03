@@ -54,7 +54,7 @@ export default function CompanyPage() {
                 for Your Team
               </h1>
               <p className="mt-4 text-lg text-brand-100 max-w-xl">
-                Myanmar's premier recruitment agency. We source, screen, and deliver pre-qualified candidates —
+                Myanmar&apos;s premier recruitment agency. We source, screen, and deliver pre-qualified candidates —
                 so you only meet people worth interviewing.
               </p>
             </div>
