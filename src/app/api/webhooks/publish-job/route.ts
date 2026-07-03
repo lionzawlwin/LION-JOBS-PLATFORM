@@ -54,9 +54,7 @@ async function triggerGitHubActions(payload: object): Promise<void> {
     signal: AbortSignal.timeout(8_000),
   });
 
-  if (res.ok) {
-    console.log('[publish-job] GitHub Actions dispatch sent successfully');
-  } else {
+  if (!res.ok) {
     await logFailure({
       category: 'webhook',
       route:    '/api/webhooks/publish-job',

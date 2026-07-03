@@ -41,8 +41,17 @@ production, not the order they'd ideally have been designed:
 | `0006_enable_staff_rls.sql` | 2026-07-03 | Enables RLS on `staff` — see "Lesson learned" below |
 | `0007_add_system_events.sql` | 2026-07-03 | `system_events` table (Phase 5 observability) |
 | `0008_add_lead_status_updated_at.sql` | 2026-07-04 | `b2b_leads.status_updated_at` (Phase 7 CRM alerting) |
+| `0009_add_system_events_indexes.sql` | 2026-07-04 | Indexes on `system_events` for category/route/created_at (Phase 8 perf) |
+| `0010_fix_system_events_level_index.sql` | 2026-07-04 | Replace non-matching `system_events` index with one covering `listSystemEvents()`'s actual `level`-filtered query shape (Phase 8 follow-up) |
 
-The next migration is `0009_<short_description>.sql`. Keep the `IF NOT
+> Note (2026-07-03): `0009`'s row previously read `2026-07-03`, one day
+> earlier than `0008`'s `2026-07-04` directly above it, even though `0009`
+> was applied after `0008` — a date-ordering typo introduced earlier in
+> this same session, not inherited from before it. Corrected `0009` to
+> `2026-07-04` (matching `0008`) and dated `0010` the same, so the table
+> reads in non-decreasing date order. No other rows were touched.
+
+The next migration is `0011_<short_description>.sql`. Keep the `IF NOT
 EXISTS` / `ADD COLUMN IF NOT EXISTS` guards every file here already uses —
 they're why re-running any of these four by accident is harmless.
 
