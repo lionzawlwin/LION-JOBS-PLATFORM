@@ -3,9 +3,18 @@ import { getCronStatus, listSystemEvents } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
 import type { FailureCategory } from '@/types';
 
-const CRON_SILENCE_HOURS = 36;
 const FAILURE_SPIKE_THRESHOLD = 15;
 const ROUTE = '/api/cron/job-alerts#health-check';
+
+// Per-route silence thresholds, not a single shared one — job-alerts runs
+// daily (vercel.json: "0 9 * * *"), weekly-email runs weekly ("0 9 * * 1").
+// A uniform 36h threshold would falsely alert on weekly-email roughly 5
+// days out of every 7, since a healthy weekly cron is silent that long by
+// design.
+const CRON_SILENCE_HOURS: Record<string, number> = {
+  '/api/cron/job-alerts':   36,   // daily cron — generous slack over 24h
+  '/api/cron/weekly-email': 192,  // weekly cron (7d) — 1 day of slack
+};
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -17,17 +26,16 @@ const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <noreply@lionjob
 async function checkCronSilence(): Promise<string[]> {
   const statuses = await getCronStatus();
   const problems: string[] = [];
-  const knownRoutes = ['/api/cron/job-alerts', '/api/cron/weekly-email'];
 
-  for (const route of knownRoutes) {
+  for (const [route, thresholdHours] of Object.entries(CRON_SILENCE_HOURS)) {
     const status = statuses.find((s) => s.route === route);
     if (!status) {
       problems.push(`${route}: has never recorded a run`);
       continue;
     }
     const ageHours = (Date.now() - new Date(status.lastRunAt).getTime()) / (1000 * 60 * 60);
-    if (ageHours > CRON_SILENCE_HOURS) {
-      problems.push(`${route}: last ran ${ageHours.toFixed(1)}h ago (threshold ${CRON_SILENCE_HOURS}h)`);
+    if (ageHours > thresholdHours) {
+      problems.push(`${route}: last ran ${ageHours.toFixed(1)}h ago (threshold ${thresholdHours}h)`);
     }
   }
   return problems;
@@ -65,7 +73,18 @@ export async function runHealthCheck(): Promise<void> {
 
     const alertEmail = process.env.ALERT_EMAIL;
     const resend = getResend();
-    if (!alertEmail || !resend) return;
+    if (!alertEmail || !resend) {
+      // Don't just drop this on the floor — a real problem was already
+      // found, only the delivery channel is unconfigured. Preserve it in
+      // Sentry/System Health even though no email will go out.
+      await logFailure({
+        category: 'cron',
+        route:    ROUTE,
+        message:  `Health check found ${problems.length} problem(s) but ALERT_EMAIL/RESEND_API_KEY is not configured`,
+        context:  { problemCount: problems.length },
+      });
+      return;
+    }
 
     await resend.emails.send({
       from:    FROM,
