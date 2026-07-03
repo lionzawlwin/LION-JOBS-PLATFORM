@@ -41,8 +41,9 @@ production, not the order they'd ideally have been designed:
 | `0006_enable_staff_rls.sql` | 2026-07-03 | Enables RLS on `staff` — see "Lesson learned" below |
 | `0007_add_system_events.sql` | 2026-07-03 | `system_events` table (Phase 5 observability) |
 | `0008_add_lead_status_updated_at.sql` | 2026-07-04 | `b2b_leads.status_updated_at` (Phase 7 CRM alerting) |
+| `0009_add_system_events_indexes.sql` | 2026-07-03 | Indexes on `system_events` for category/route/created_at (Phase 8 perf) |
 
-The next migration is `0009_<short_description>.sql`. Keep the `IF NOT
+The next migration is `0010_<short_description>.sql`. Keep the `IF NOT
 EXISTS` / `ADD COLUMN IF NOT EXISTS` guards every file here already uses —
 they're why re-running any of these four by accident is harmless.
 
