@@ -73,16 +73,33 @@ one-line mention that came up during Phase 5's scoping.
   `logFailure`, `system_events` schema) — this phase only reads from
   what already exists.
 
-## Proposed architecture (if the above is approved)
+## Proposed architecture (revised 2026-07-04 for a real constraint found at approval time)
 
-- `src/app/api/cron/health-check/route.ts` (new) — Vercel cron, same
-  `CRON_SECRET` auth pattern as `job-alerts`/`weekly-email`. Runs hourly.
-  Checks: (a) either cron route's `lastRunAt` older than 36h → alert; (b)
-  failure count per category in the last hour > threshold (proposed: 5) →
-  alert. Sends one summary email via Resend if either condition fires;
-  sends nothing if healthy (no "all clear" spam).
-- `vercel.json` — add the new cron schedule entry alongside the existing
-  two.
+**Addendum:** the repo owner confirmed this project is on Vercel's Hobby
+(free) plan, which caps a project at 2 cron jobs and a once-per-day
+minimum interval. This repo already has exactly 2 crons (`job-alerts`,
+`weekly-email`), so a 3rd hourly cron as originally proposed would not
+deploy as designed. Revised architecture below folds the check into the
+existing daily `job-alerts` cron instead of adding a new one, and widens
+the failure-spike window from hourly to 24h accordingly (threshold
+recalibrated: >15 failures/24h/category, replacing the original
+>5/hour/category — same intent, different window).
+
+- `src/lib/healthCheck.ts` (new) — exports `runHealthCheck(): Promise<void>`.
+  Checks: (a) either cron route's `lastRunAt` (via `getCronStatus()`) older
+  than 36h, or never run → alert; (b) failure count per category in the
+  last 24h (via `listSystemEvents({days: 1})`, counted client-side in this
+  function — no new DB query shape needed) > 15 → alert. Sends one summary
+  email via Resend (reusing the same client-construction pattern as
+  `cron/weekly-email`) to a new `ALERT_EMAIL` env var if either condition
+  fires; sends nothing if healthy (no "all clear" spam). Wrapped so its own
+  failure can't break the cron it's piggybacking on, and is itself reported
+  via `logFailure()` if it fails.
+- `src/app/api/cron/job-alerts/route.ts` — calls `runHealthCheck()` once,
+  after its own existing logic, in its own try/catch.
+- No new Vercel cron, no `vercel.json` change — reuses the existing daily
+  `job-alerts` schedule.
+- New env var: `ALERT_EMAIL` (where the alert email is sent).
 - No new database table — reads `system_events` via the existing
   `listSystemEvents`/`getCronStatus` accessors from Phase 5.
 - No new dashboard UI — this is a backend-only phase; System Health
