@@ -96,7 +96,9 @@ recalibrated: >15 failures/24h/category, replacing the original
   failure can't break the cron it's piggybacking on, and is itself reported
   via `logFailure()` if it fails.
 - `src/app/api/cron/job-alerts/route.ts` — calls `runHealthCheck()` once,
-  after its own existing logic, in its own try/catch.
+  as the first statement in its own try block (before its existing logic),
+  so it always runs regardless of which of that cron's several branches
+  fires afterward.
 - No new Vercel cron, no `vercel.json` change — reuses the existing daily
   `job-alerts` schedule.
 - New env var: `ALERT_EMAIL` (where the alert email is sent).

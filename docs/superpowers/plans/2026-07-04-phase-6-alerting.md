@@ -6,7 +6,7 @@
 
 **Goal:** Alert the repo owner by email when either cron job goes silent (>36h since last run) or when one failure category spikes (>15 in the last 24h) — the two failure modes Sentry's own alerting can't see, per `docs/superpowers/specs/2026-07-04-phase-6-alerting-design.md`.
 
-**Architecture:** A new `runHealthCheck()` in `src/lib/healthCheck.ts` runs both checks using Phase 5's existing `getCronStatus()`/`listSystemEvents()` accessors, and sends one summary email via Resend if either trips. It's called once at the end of the existing daily `job-alerts` cron — no new Vercel cron job (this project is on Vercel's Hobby plan: 2-cron/daily-only cap, already at capacity).
+**Architecture:** A new `runHealthCheck()` in `src/lib/healthCheck.ts` runs both checks using Phase 5's existing `getCronStatus()`/`listSystemEvents()` accessors, and sends one summary email via Resend if either trips. It's called once at the start of the existing daily `job-alerts` cron (before that cron's own logic) — no new Vercel cron job (this project is on Vercel's Hobby plan: 2-cron/daily-only cap, already at capacity).
 
 **Tech Stack:** Resend (already a dependency, already used in `weekly-email`/`email/send`), Supabase (read-only, via existing Phase 5 accessors), Next.js Route Handler.
 
@@ -18,7 +18,7 @@
 - `src/lib/healthCheck.ts` — `runHealthCheck()`
 
 **Modify:**
-- `src/app/api/cron/job-alerts/route.ts` — call `runHealthCheck()` at the end
+- `src/app/api/cron/job-alerts/route.ts` — call `runHealthCheck()` at the start
 - `.env.example`, `CLAUDE.md` — document `ALERT_EMAIL`
 - `.env.local` — add `ALERT_EMAIL` (not committed)
 
