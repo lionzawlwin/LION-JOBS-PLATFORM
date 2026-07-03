@@ -56,7 +56,7 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 |-------|---------|
 | `/` | Public job board — hero, search, job grid |
 | `/apply/[jobId]` | Candidate application form |
-| `/dashboard` | Internal admin console — 12 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access |
+| `/dashboard` | Internal admin console — 13 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access, System Health |
 
 ### Access control — staff table, per-tab/per-action RBAC
 
@@ -64,7 +64,7 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 
 Role is attached to the session/JWT at sign-in (`authOptions.ts`'s `jwt` callback) and does **not** update until that staff member's next login — changing someone's role in the Team & Access tab takes effect on their next sign-in, not immediately.
 
-**Enforcement is per-tab/per-action RBAC, since Phase 4**: `requireTabAccess(domain, level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level (`none`/`view`/`manage`) matrix in `src/lib/permissions.ts`, covering all 4 roles across all 12 dashboard tabs. `owner`/`admin` have full access everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus view-only on Legal/Billing/Overview and no access to recruitment or marketing tabs; `viewer` is read-only everywhere except Post Job/Team. `/api/staff/*` still additionally requires `requireRole(['owner', 'admin'])` for managing the roster itself. Known gap, deliberately deferred: no row-level scoping exists for `cse` — a `cse` role sees every company/lead, not just their own assigned accounts (would need a `Staff` ↔ `CseRep` link that doesn't exist yet).
+**Enforcement is per-tab/per-action RBAC, since Phase 4**: `requireTabAccess(domain, level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level (`none`/`view`/`manage`) matrix in `src/lib/permissions.ts`, covering all 4 roles across all 13 dashboard tabs. `owner`/`admin` have full access everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus view-only on Legal/Billing/Overview and no access to recruitment or marketing tabs; `viewer` is read-only everywhere except Post Job/Team. System Health (added Phase 5, after this RBAC model was built) follows the same row as Team & Access — `owner`/`admin` only, `cse` and `viewer` have no access. `/api/staff/*` still additionally requires `requireRole(['owner', 'admin'])` for managing the roster itself. Known gap, deliberately deferred: no row-level scoping exists for `cse` — a `cse` role sees every company/lead, not just their own assigned accounts (would need a `Staff` ↔ `CseRep` link that doesn't exist yet).
 
 ### State management
 
@@ -94,7 +94,9 @@ shadcn/ui primitives live in `src/components/ui/`. The project uses `@base-ui/re
 | `ALERT_EMAIL` | No | Where Phase 6's health-check alerts (cron silence, failure-rate spikes) are sent. Unset = the check silently no-ops, matching every other optional integration in this repo. |
 | `PUBLISH_WEBHOOK_SECRET` / `GITHUB_ACTIONS_TOKEN` / `GITHUB_REPO` / `SITE_URL` | Yes (prod) | Triggers the GitHub Actions workflow that posts new jobs to Telegram/Facebook |
 
-`GOOGLE_SHEET_ID`, `GOOGLE_JOBS_TAB`, `GOOGLE_CANDIDATES_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` are **archived** — leftover from the pre-Supabase data layer, no longer read by any code path. Safe to delete from Vercel env; see `.env.example`'s archive section.
+`GOOGLE_SHEET_ID`, `GOOGLE_JOBS_TAB`, `GOOGLE_CANDIDATES_TAB`, `GOOGLE_COMPANIES_TAB`, `GOOGLE_FEEDBACK_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` are **archived** — leftover from the pre-Supabase data layer, no longer read by any code path. `GOOGLE_CANDIDATES_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` were deleted from Vercel Production on 2026-07-03; the rest were already absent. See `.env.example`'s archive section for historical reference only — do not re-add.
+
+`MAKE_EMPLOYER_WEBHOOK_URL` and `MAKE_DRIVE_WEBHOOK_URL` were found live in Vercel (Production + Preview) during a 2026-07-03 audit but read by **no code path in `src/` or `.github/`** — unlike the vars above, they were never in `.env.example`'s archive list, so this was dead-on-arrival config from a planned-but-unbuilt feature rather than a migration leftover. Repo owner confirmed deletion; removed from Vercel the same day.
 
 Copy `.env.example` to `.env.local` for local development.
 

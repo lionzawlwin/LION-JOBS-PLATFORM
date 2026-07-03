@@ -56,8 +56,10 @@ level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level
 matrix in `src/lib/permissions.ts`. `owner`/`admin` have full access
 everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus
 view-only on Legal/Billing/Overview; `viewer` is read-only everywhere except
-Post Job/Team. Role changes take effect on the staff member's **next
-login**, not immediately (it's baked into the JWT at sign-in).
+Post Job/Team. System Health (added Phase 5) follows Team & Access's row —
+`owner`/`admin` only, `cse`/`viewer` have no access. Role changes take effect
+on the staff member's **next login**, not immediately (it's baked into the
+JWT at sign-in).
 
 **Known gap, deliberately deferred**: no row-level scoping exists for `cse`
 — a `cse` role sees every company/lead, not just their own assigned
