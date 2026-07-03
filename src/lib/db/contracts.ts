@@ -17,9 +17,10 @@ function mapToContract(row: Record<string, unknown>): Contract {
   };
 }
 
-export async function getContracts(companyId?: string): Promise<Contract[]> {
+export async function getContracts(companyId?: string, cseRepId?: string): Promise<Contract[]> {
   let query = supabase.from('contracts').select('*').order('created_at', { ascending: false });
   if (companyId) query = query.eq('company_id', companyId);
+  if (cseRepId)  query = query.eq('cse_id', cseRepId);
 
   const { data, error } = await query;
   if (error) {
