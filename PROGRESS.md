@@ -113,3 +113,29 @@ Asked to run all remaining phases overnight with standing authorization to push 
 - **No direct pushes to `main`.** Every push there auto-deploys to production (`CLAUDE.md`), and this repo has its own deliberately-configured branch protection + required CI gate (see `972bfbc`, `38d72b9` in git history) — shipping unreviewed changes to a live site with real users while unsupervised is exactly what those exist to prevent. Continued using feature branches + PRs, same as Phases 4 and 5.
 - **No fabricated Phase 6+ scope.** There is no roadmap document anywhere in this repo (checked exhaustively). "Phase 6" was, at the start of tonight, one sentence ("alerting — out of scope for Phase 5"), not a spec. Building and shipping invented requirements unreviewed is the same mistake as an earlier request tonight to build nonexistent HR/Payroll modules, which was also declined.
 - **What was actually done instead**: drafted `docs/superpowers/specs/2026-07-04-phase-6-alerting-design.md` — an explicitly UNAPPROVED design proposal for Phase 6 (alerting on Sentry-invisible failure patterns: cron silence, failure-rate spikes, delivered via a new hourly cron + Resend email, reusing 100% of existing Phase 4/5 infrastructure). Every judgment call in it is flagged for the repo owner to confirm or correct. **No implementation code was written against it.** Pushed to `docs/phase-6-alerting-proposal` (not merged, not on `main`) for review.
+
+---
+
+# Phase 6: Alerting on Failures — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-6-alerting-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-phase-6-alerting.md`
+Process: superpowers:subagent-driven-development (fresh subagent per task, spec review then code-quality review)
+Branch: `feat/phase-6-alerting`, pushed to origin. PR not yet opened — needs to be created manually and merged by a human (`gh` unavailable in this environment).
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | ALERT_EMAIL env var | ✅ Done |
+| 2 | src/lib/healthCheck.ts | ✅ Done |
+| 3 | Wire into job-alerts cron | ✅ Done |
+| 4 | Final verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Repo owner approved the Phase 6 design (drafted overnight, unapproved, while asleep) as-proposed the next morning, after explicitly cancelling the "overnight autonomous" framing and returning to normal step-by-step review — this phase was built with the same process as Phases 4/5 (spec → plan → subagent-driven implementation → review → push → wait for merge), not the unsupervised mode that was declined.
+- 2026-07-04: Original design's Task 4 (delivery mechanism) proposed a new hourly Vercel cron. The repo owner confirmed this project is on Vercel's Hobby (free) plan — capped at 2 cron jobs, once-per-day minimum interval, already at capacity with `job-alerts`/`weekly-email`. Revised before planning: no new cron; `runHealthCheck()` piggybacks on the existing daily `job-alerts` invocation instead, and the failure-spike window widened from 1h to 24h with the threshold recalibrated accordingly (5/hour → 15/day, same intent). Confirmed `vercel.json` has zero diff against `main` on this branch.
+- 2026-07-04: Task 2's code-quality review caught a **Critical** bug before it ever shipped: the plan's original single `CRON_SILENCE_HOURS = 36` constant, applied uniformly to both crons, would have falsely alerted on `weekly-email` roughly 5 days out of every 7 — a healthy weekly cron is silent that long by design. Fixed by keying the threshold per route (`job-alerts`: 36h, `weekly-email`: 192h/8d, giving 1 day of slack past its 7-day cadence).
+- 2026-07-04: Same review also caught that a found-but-undeliverable alert (missing `ALERT_EMAIL`/`RESEND_API_KEY`) was being silently dropped instead of at least being recorded — `runHealthCheck()` now calls `logFailure()` in that case, so Sentry/System Health still see it even when no email goes out.
+- 2026-07-04: A one-time, self-correcting Day-1 false positive was identified and deliberately left as-is: `runHealthCheck()` runs before `job-alerts` logs its own success/failure for that same invocation, so a brand-new deployment's very first cron run would report "has never recorded a run" for itself. Not fixed because (a) this specific deployment's crons already have run history from before this phase started, making it moot in practice, and (b) fixing it properly would require restructuring `job-alerts`' single-call-site design into multiple call sites for marginal benefit — documented here rather than silently ignored.
+- 2026-07-04: Explicitly out of scope, per the approved spec: Slack/Discord/SMS channels, admin-configurable thresholds (a settings UI), alerting on individual `logFailure()` calls one-at-a-time (that's Sentry's own native alert rules, configured in the Sentry dashboard, not this codebase), and any change to Phase 4/5's existing code — this phase only added one new file and one new call site.
+- 2026-07-04: Could not verify the alert email actually arrives via Resend from this environment (no outbound network verification available here) — recommend the repo owner trigger a manual test (e.g. temporarily lower `FAILURE_SPIKE_THRESHOLD` in `src/lib/healthCheck.ts`, or manually insert a test row into `system_events`) after merge to confirm delivery.
