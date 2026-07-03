@@ -90,7 +90,7 @@ shadcn/ui primitives live in `src/components/ui/`. The project uses `@base-ui/re
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Yes | Transactional email + weekly digest / job-alert crons |
 | `ADMIN_KEY` | Yes | Header-based auth for `POST/DELETE /api/jobs` |
 | `CRON_SECRET` | Yes | Authenticates Vercel cron hits to `/api/cron/*` |
-| `SENTRY_DSN` | Yes | Sentry project DSN for server-side exception capture (Phase 5). Unset = `Sentry.init` is a no-op, matching every other optional integration in this repo. |
+| `SENTRY_DSN` | No | Sentry project DSN for server-side exception capture (Phase 5). Unset = `Sentry.init` is a no-op, matching every other optional integration in this repo. |
 | `PUBLISH_WEBHOOK_SECRET` / `GITHUB_ACTIONS_TOKEN` / `GITHUB_REPO` / `SITE_URL` | Yes (prod) | Triggers the GitHub Actions workflow that posts new jobs to Telegram/Facebook |
 
 `GOOGLE_SHEET_ID`, `GOOGLE_JOBS_TAB`, `GOOGLE_CANDIDATES_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` are **archived** — leftover from the pre-Supabase data layer, no longer read by any code path. Safe to delete from Vercel env; see `.env.example`'s archive section.
