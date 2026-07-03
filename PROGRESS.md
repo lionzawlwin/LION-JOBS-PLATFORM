@@ -305,7 +305,7 @@ Process: ad hoc (new CEO session, no separate spec/plan — small, low-risk conf
 
 Spec: `docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md`
 Plan: `docs/superpowers/plans/2026-07-04-phase-10-cse-row-scoping.md`
-Branch: `feat/phase-10-cse-row-scoping` (stacked on `feat/phase-9-ops-hygiene-test-harness`, which was still an open, unmerged PR when this phase started). Pushed to origin, PR opened against the Phase 9 branch — **not merged**, awaiting human review.
+Branch: `feat/phase-10-cse-row-scoping` (originally stacked on `feat/phase-9-ops-hygiene-test-harness`, which was still an open, unmerged PR when this phase started). PR #16 opened against the Phase 9 branch, later retargeted to `main` once PR #15 (Phase 9) merged. Both PRs reviewed and merge-approved by the repo owner; PR #15 merged first, then PR #16 — merged into `main`, deployed to production, and smoke-tested (`/` → 200, `/api/jobs` → 200, `/dashboard` → 307).
 
 | Task | Description | Status |
 |------|--------------|--------|

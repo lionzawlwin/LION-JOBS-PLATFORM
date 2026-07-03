@@ -75,13 +75,13 @@ all; inventing one is a real product decision, not a technical gap. See
 `docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md`.
 
 **Status as of this document**: Phase 10 is implemented, tested (36/36
-passing), and in PR #16 — **not yet merged to `main`, not yet live in
-production**. PR #16 targets PR #15 (Phase 9's ops-hygiene/Vitest branch),
-also not yet merged — both need human review and merge before any of this
-is live. Existing `cse` staff rows will see empty Companies/Enterprise
-views immediately after merge until manually linked to a CSE rep via the
-new Team & Access "CSE Rep" column — this is expected, not a bug, and
-should be done right after merging.
+passing), merged to `main` via PR #16, and confirmed live in production
+(smoke-tested post-deploy: `/` → 200, `/api/jobs` → 200, `/dashboard` →
+307). No `cse`-role staff existed in the roster at merge time, so the
+fail-closed empty-view behavior for unlinked `cse` staff was not yet
+observed live — it will apply the moment the first `cse` staff member is
+added, until they're linked to a CSE rep via the Team & Access "CSE Rep"
+column.
 
 ## Environment variables
 
@@ -126,10 +126,8 @@ Phase 8's completion — migration `0010` landed mid-Phase-8 as a code-review
 fix-forward, after the Phase 8 plan doc's Task 5 was written, so that plan's
 literal text still says `0009`. This document describes the current,
 corrected state on purpose; don't read the discrepancy as an error.)*
-`0011` (Phase 10, `staff.cse_rep_id`) is applied to Production but its
-application code is still sitting in an unmerged PR (see Access control
-section above) — the column exists and is safe (nullable, no default), but
-nothing reads or writes it in `main` until PR #16 merges.
+`0011` (Phase 10, `staff.cse_rep_id`) is applied to Production and its
+application code is merged and live (see Access control section above).
 
 ## Cron jobs
 
@@ -196,19 +194,18 @@ that would need a `@supabase/supabase-js` mock this repo doesn't have.
 before both preview and production Vercel builds — a failing test blocks
 deploy.
 
-## Open PRs awaiting human review (as of this document)
+## Recently merged (Phases 9–10)
 
-- **PR #15** — Phase 9 (ops hygiene: `ADMIN_EMAIL`/dead-env-var cleanup in
-  Vercel, doc sync, the Vitest harness above).
-- **PR #16** — Phase 10 (CSE row-level scoping, described above). Stacked
-  on top of PR #15 (targets that branch, not `main`) since it depends on
-  Phase 9's Vitest harness.
+- **PR #15** — Phase 9: ops hygiene (`ADMIN_EMAIL`/dead-env-var cleanup in
+  Vercel, doc sync) and the Vitest harness described above. Merged to
+  `main`, deployed, smoke-tested.
+- **PR #16** — Phase 10: CSE row-level scoping, described above. Originally
+  stacked on PR #15's branch (opened before #15 merged); retargeted to
+  `main` and merged after #15 landed. Merged, deployed, smoke-tested.
 
-Neither was merged autonomously — this repo's branch protection and
-required CI gate exist specifically to keep unreviewed changes off `main`
-(which auto-deploys to production on every push). Merge #15 first, then
-#16 (or merge #16 into #15's branch, then merge that combined branch to
-`main` — either order works since #16 already contains #15's commits).
+Both went through this repo's normal review path (spec → plan → repo-owner
+review and explicit merge approval) before merging — branch protection and
+the required CI gate stayed in effect for both; they weren't bypassed.
 
 ## Where to find more history
 
