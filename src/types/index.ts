@@ -101,6 +101,7 @@ export interface B2bLead {
   jobDescription: string;
   benefits: string;
   submittedAt: string;
+  statusUpdatedAt: string;
   status: string;
 }
 
