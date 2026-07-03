@@ -81,11 +81,17 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
         />
       </div>
 
-      {/* Sidebar — mobile drawer */}
+      {/* Sidebar — mobile drawer trigger. Bottom-LEFT, not bottom-right:
+          the root layout renders a global <SocialFloatWidget /> fixed at
+          bottom-6 right-5 z-50 on every page, including /dashboard. A
+          bottom-right trigger here sits under it (lower z-index, same
+          corner) and is completely covered — confirmed live on a real
+          mobile device, not a hypothetical. Bottom-left has nothing else
+          fixed there. */}
       <button
         onClick={() => setMobileNavOpen(true)}
         aria-label="Open dashboard navigation"
-        className="fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg md:hidden"
+        className="fixed bottom-4 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg md:hidden"
       >
         <Menu size={20} />
       </button>
