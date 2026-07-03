@@ -33,7 +33,7 @@ const STATS = [
   { value: '95%',  label: 'Client Satisfaction' },
 ];
 
-export default function HireWithUsPage() {
+export default function CompanyPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -42,7 +42,7 @@ export default function HireWithUsPage() {
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 py-16 text-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-200 hover:text-white transition-colors">
+            <Link href="/candidate" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-200 hover:text-white transition-colors">
               <ArrowLeft size={14} /> Back to Job Board
             </Link>
             <div className="max-w-3xl">
@@ -54,7 +54,7 @@ export default function HireWithUsPage() {
                 for Your Team
               </h1>
               <p className="mt-4 text-lg text-brand-100 max-w-xl">
-                Myanmar's premier recruitment agency. We source, screen, and deliver pre-qualified candidates —
+                Myanmar&apos;s premier recruitment agency. We source, screen, and deliver pre-qualified candidates —
                 so you only meet people worth interviewing.
               </p>
             </div>

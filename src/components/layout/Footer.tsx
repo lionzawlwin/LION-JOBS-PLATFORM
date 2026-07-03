@@ -13,7 +13,7 @@ const CONTACT = {
 };
 
 const QUICK_LINKS: { labelKey: TranslationKey; href: string }[] = [
-  { labelKey: 'home_browse_all_jobs', href: '/#jobs' },
+  { labelKey: 'home_browse_all_jobs', href: '/candidate#jobs' },
   { labelKey: 'nav_drop_cv',          href: '/drop-cv' },
   { labelKey: 'nav_resume',           href: '/resume-builder' },
   { labelKey: 'nav_my_apps',          href: '/my-applications' },

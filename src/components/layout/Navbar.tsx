@@ -54,7 +54,7 @@ export function Navbar() {
 
         {/* ── Desktop nav ── */}
         <nav className="hidden items-center gap-5 md:flex">
-          <Link href="/#jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hover:text-brand-600">
+          <Link href="/candidate#jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hover:text-brand-600">
             {t('nav_find_jobs')}
           </Link>
           <Link href="/resume-builder" className="text-sm font-medium text-muted-foreground hover:text-brand-600 transition-colors">
@@ -87,13 +87,13 @@ export function Navbar() {
             <Inbox size={14} /> {t('nav_drop_cv')}
           </Link>
           <Link
-            href="/hire-with-us"
+            href="/company"
             className={cn(buttonVariants({ size: 'sm' }), 'border border-gold-300 bg-gold-50 text-gold-700 hover:bg-gold-100 dark:border-gold-600/40 dark:bg-gold-500/10 dark:text-gold-300 dark:hover:bg-gold-500/20 rounded-xl gap-1.5')}
           >
-            <Building2 size={14} /> Hire Talent
+            <Building2 size={14} /> {t('nav_hire_talent')}
           </Link>
           <Link
-            href="/#jobs"
+            href="/candidate#jobs"
             className={cn(buttonVariants({ size: 'sm' }), 'bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-md shadow-brand-600/25 hover:shadow-brand-600/40 transition-shadow')}
           >
             {t('nav_browse')}
@@ -130,7 +130,7 @@ export function Navbar() {
       {menuOpen && (
         <div className="border-t border-border bg-background/98 backdrop-blur-xl md:hidden">
           <nav className="flex flex-col gap-1 px-4 py-3">
-            <Link href="/#jobs" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+            <Link href="/candidate#jobs" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               {t('nav_find_jobs')}
             </Link>
             <Link href="/resume-builder" onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
@@ -148,11 +148,11 @@ export function Navbar() {
                 <Inbox size={15} /> {t('nav_drop_cv')}
               </Link>
               <Link
-                href="/hire-with-us"
+                href="/company"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 rounded-xl border border-gold-300 bg-gold-50 px-3 py-2.5 text-sm font-semibold text-gold-700 dark:border-gold-600/40 dark:bg-gold-500/10 dark:text-gold-300"
               >
-                <Building2 size={15} /> Hire Talent
+                <Building2 size={15} /> {t('nav_hire_talent')}
               </Link>
             </div>
           </nav>

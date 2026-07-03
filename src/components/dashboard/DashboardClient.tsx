@@ -20,6 +20,8 @@ import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { getAccessLevel, type TabDomain } from '@/lib/permissions';
+import { Sidebar } from './Sidebar';
+import { Menu } from 'lucide-react';
 import type { StaffRole } from '@/types';
 
 type Tab = TabDomain;
@@ -30,10 +32,16 @@ interface Props {
 }
 
 export function DashboardClient({ isAdmin = false, role }: Props) {
-  const [activeTab,   setActiveTab]   = useState<Tab>('overview');
-  const [candView,    setCandView]    = useState<'table' | 'board'>('table');
-  const { t } = useLanguage();
   const effectiveRole = role ?? 'viewer';
+  // owner/admin/viewer keep the existing Overview default; cse's actual
+  // working domain is Companies/Enterprise/B2B Leads (they have no
+  // access to Candidates/Post Job/Content at all), so defaulting them
+  // there avoids landing on a tab they'd immediately need to navigate
+  // away from. Per Phase 11 spec, signed off by the repo owner.
+  const [activeTab,   setActiveTab]   = useState<Tab>(effectiveRole === 'cse' ? 'enterprise' : 'overview');
+  const [candView,    setCandView]    = useState<'table' | 'board'>('table');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { t } = useLanguage();
 
   const ALL_TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
     { value: 'overview',   label: t('admin_tab_overview'),   icon: <BarChart2     size={14} /> },
@@ -63,28 +71,38 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
   }
 
   return (
-    <>
-      {/* Tab switcher */}
-      <div className="mb-6 overflow-x-auto">
-        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-1 min-w-max">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap',
-                activeTab === tab.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <div className="flex gap-6">
+      {/* Sidebar — desktop */}
+      <div className="hidden md:block">
+        <Sidebar
+          tabs={TABS}
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+        />
       </div>
 
+      {/* Sidebar — mobile drawer */}
+      <button
+        onClick={() => setMobileNavOpen(true)}
+        aria-label="Open dashboard navigation"
+        className="fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg md:hidden"
+      >
+        <Menu size={20} />
+      </button>
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileNavOpen(false)} />
+          <div className="relative">
+            <Sidebar
+              tabs={TABS}
+              activeTab={activeTab}
+              onSelect={(tab) => { setActiveTab(tab); setMobileNavOpen(false); }}
+            />
+          </div>
+        </div>
+      )}
+
+      <main className="min-w-0 flex-1">
       {/* Context banner */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
@@ -150,6 +168,7 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
       {activeTab === 'billing'     && <BillingView />}
       {activeTab === 'team'        && <TeamView />}
       {activeTab === 'system-health' && <SystemHealthView />}
-    </>
+      </main>
+    </div>
   );
 }
