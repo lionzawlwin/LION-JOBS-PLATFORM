@@ -139,3 +139,29 @@ Branch: `feat/phase-6-alerting`, pushed to origin. PR not yet opened — needs t
 - 2026-07-04: A one-time, self-correcting Day-1 false positive was identified and deliberately left as-is: `runHealthCheck()` runs before `job-alerts` logs its own success/failure for that same invocation, so a brand-new deployment's very first cron run would report "has never recorded a run" for itself. Not fixed because (a) this specific deployment's crons already have run history from before this phase started, making it moot in practice, and (b) fixing it properly would require restructuring `job-alerts`' single-call-site design into multiple call sites for marginal benefit — documented here rather than silently ignored.
 - 2026-07-04: Explicitly out of scope, per the approved spec: Slack/Discord/SMS channels, admin-configurable thresholds (a settings UI), alerting on individual `logFailure()` calls one-at-a-time (that's Sentry's own native alert rules, configured in the Sentry dashboard, not this codebase), and any change to Phase 4/5's existing code — this phase only added one new file and one new call site.
 - 2026-07-04: Could not verify the alert email actually arrives via Resend from this environment (no outbound network verification available here) — recommend the repo owner trigger a manual test (e.g. temporarily lower `FAILURE_SPIKE_THRESHOLD` in `src/lib/healthCheck.ts`, or manually insert a test row into `system_events`) after merge to confirm delivery.
+
+---
+
+# Phase 7: CRM/Enterprise Alerting — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-7-crm-alerting-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-phase-7-crm-alerting.md`
+Process: superpowers:subagent-driven-development (fresh subagent per task, spec review then code-quality review)
+Branch: `feat/phase-7-crm-alerting`, pushed to origin. PR not yet opened — needs to be created manually and merged by a human (`gh` unavailable in this environment).
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | B2bLead.statusUpdatedAt type | ✅ Done |
+| 2 | b2b_leads.status_updated_at migration | ✅ Done |
+| 3 | Wire new column into leads.ts accessor | ✅ Done |
+| 4 | src/lib/crmAlerts.ts | ✅ Done |
+| 5 | Wire into job-alerts cron | ✅ Done |
+| 6 | Final verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: One digest email covering 4 triggers (expiring contracts, stale companies, unanswered new leads, stalled pipeline leads), piggybacked on the existing daily `job-alerts` cron alongside Phase 6's health check — same Vercel Hobby-plan constraint, no new cron.
+- 2026-07-04: `b2b_leads` had no way to measure "stuck in pipeline" — only `submitted_at` existed, which conflates lead age with stall time. Added `status_updated_at`, backfilled to `submitted_at` for existing rows, stamped on every future `updateB2bLeadStatus()` call.
+- 2026-07-04: CSE attribution for companies/contracts reuses the exact derivation `EnterpriseView.tsx` already uses (most recent Active contract's cseId) — no new data relationship. B2B leads have no CSE assignment anywhere in the data model, so those two triggers list without CSE attribution by design.
+- 2026-07-04: Explicitly out of scope, per the approved spec: per-CSE targeted emails, new dashboard UI, configurable thresholds, alerting on other CRM entities (Interactions, CseRep activity).
+- 2026-07-04: Could not verify the digest email actually arrives via Resend, or that migration 0008's backfill produced sensible values on live data, from this environment — recommend the repo owner spot-check both after merge.
