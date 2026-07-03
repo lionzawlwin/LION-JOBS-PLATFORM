@@ -113,6 +113,17 @@ export const translations = {
     footer_brand_desc:             "Myanmar's premier AI-powered recruitment agency. We architect careers and build the teams that define Myanmar's next decade.",
     footer_tagline:                'AI-Powered · Human-Verified · Free for Candidates',
 
+    // Navbar (pre-existing gap, fixed while touching these lines for Phase 11)
+    nav_hire_talent: 'Hire Talent',
+
+    // Chooser page
+    chooser_headline:       'What brings you to Lion Jobs?',
+    chooser_sub:            'Choose your path to get started.',
+    chooser_candidate_title: 'Find a Job',
+    chooser_candidate_sub:  'Search 500+ vetted roles, apply in minutes, completely free.',
+    chooser_company_title:  'Hire Talent',
+    chooser_company_sub:    'Get pre-screened, quality candidates matched to your team.',
+
     // Apply form — personal tab
     form_full_name:     'Full Name',
     form_email:         'Email Address',
@@ -809,6 +820,17 @@ export const translations = {
     footer_contact_heading:        'ဆက်သွယ်ရန်',
     footer_brand_desc:             'မြန်မာနိုင်ငံ၏ ထိပ်တန်း AI ခေါ်ယူရေးအေဂျင်စီ။ ကျွန်ုပ်တို့သည် အသက်မွေးဝမ်းကျောင်းလမ်းကြောင်းများကို တည်ဆောက်ပြီး မြန်မာနိုင်ငံ၏ နောက်ဆယ်စုနှစ်ကို ပုံဖော်မည့် အဖွဲ့များကို တည်ဆောက်ပေးနေပါသည်။',
     footer_tagline:                'AI နည်းပညာသုံး · လူဖြင့် စစ်ဆေးအတည်ပြု · လျှောက်ထားသူများအတွက် အခမဲ့',
+
+    // Navbar (pre-existing gap, fixed while touching these lines for Phase 11)
+    nav_hire_talent: 'ဝန်ထမ်းငှားရန်',
+
+    // Chooser page
+    chooser_headline:       'Lion Jobs သို့ ဘာကြောင့် ရောက်လာတာလဲ?',
+    chooser_sub:            'စတင်ရန် သင့်လမ်းကြောင်းကို ရွေးချယ်ပါ။',
+    chooser_candidate_title: 'အလုပ်ရှာရန်',
+    chooser_candidate_sub:  'အတည်ပြုပြီးသား ရာထူး ၅၀၀+ ကို ရှာဖွေပြီး မိနစ်ပိုင်းအတွင်း အခမဲ့ လျှောက်ထားပါ။',
+    chooser_company_title:  'ဝန်ထမ်းငှားရန်',
+    chooser_company_sub:    'သင့်အဖွဲ့နှင့် ကိုက်ညီသော အရည်အချင်းပြည့်ဝသော ကိုယ်စားလှယ်လောင်းများကို ရယူပါ။',
 
     // Apply form — personal tab
     form_full_name:     'အမည်အပြည့်အစုံ',
