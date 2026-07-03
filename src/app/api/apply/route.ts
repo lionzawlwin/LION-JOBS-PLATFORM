@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       route:    '/api/apply',
       message:  'CRITICAL — database insert failed',
       error:    err,
-      context:  { position, hasJobId: Boolean(jobId) },
+      context:  { hasJobId: Boolean(jobId) },
     });
     return Response.json(
       { error: 'Could not save your application. Please try again or contact us directly.' },

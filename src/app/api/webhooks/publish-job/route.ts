@@ -57,12 +57,11 @@ async function triggerGitHubActions(payload: object): Promise<void> {
   if (res.ok) {
     console.log('[publish-job] GitHub Actions dispatch sent successfully');
   } else {
-    const body = await res.text().catch(() => '');
     await logFailure({
       category: 'webhook',
       route:    '/api/webhooks/publish-job',
       message:  `GitHub Actions dispatch failed: ${res.status}`,
-      context:  { status: res.status, bodySnippet: body.slice(0, 200) },
+      context:  { status: res.status },
     });
   }
 }
