@@ -1,48 +1,21 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
-import { AdminBar } from '@/components/layout/AdminBar';
-import { HomeClient } from '@/components/HomeClient';
-import { getJobs } from '@/lib/db';
-
-// ISR: Vercel regenerates this page at most once per hour.
-// Between revalidations, users get cached HTML — Googlebot included.
-export const revalidate = 3600;
+import { ChooserClient } from '@/components/ChooserClient';
 
 export const metadata: Metadata = {
-  title: 'Lion Jobs Agency | Find Jobs in Myanmar | အလုပ်အကိုင် ရှာဖွေရာ',
+  title: 'Lion Jobs Agency — Find Jobs or Hire Talent in Myanmar',
   description:
-    "Browse 500+ vetted jobs in Yangon, Mandalay and across Myanmar. " +
-    "Free for candidates. Apply in minutes. အလုပ်အကိုင် ရှာဖွေပေးသည်။ " +
-    "Myanmar's premier recruitment agency.",
-  keywords: [
-    'jobs in myanmar', 'jobs in yangon', 'myanmar job agency',
-    'အလုပ်အကိုင်', 'ရန်ကုန် အလုပ်', 'lion jobs', 'recruitment myanmar',
-  ],
+    "Myanmar's premier recruitment agency. Job seekers browse 500+ vetted " +
+    'roles for free. Employers get pre-screened candidates fast.',
   alternates: {
     canonical: `${process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app'}/`,
   },
   openGraph: {
-    title: "Lion Jobs Agency — Myanmar's #1 Job Portal",
-    description: 'Browse 500+ vetted jobs in Yangon & beyond. Free for candidates.',
+    title: 'Lion Jobs Agency',
+    description: "Myanmar's premier recruitment agency — for candidates and employers.",
     type: 'website',
-    locale: 'my_MM',
-    alternateLocale: ['en_US'],
   },
 };
 
-export default async function HomePage() {
-  // Fetched server-side at build / revalidation time.
-  const initialJobs = await getJobs();
-
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <HomeClient initialJobs={initialJobs} />
-      </main>
-      <AdminBar />
-      <Footer />
-    </div>
-  );
+export default function ChooserPage() {
+  return <ChooserClient />;
 }
