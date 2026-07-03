@@ -260,3 +260,8 @@ Branch: `feat/phase-8-cleanup-handover`, pushed to origin. PR opened, awaiting h
   production query volume) — this is a coverage/correctness addition
   justified by the query shapes already in the code, not a benchmarked
   performance claim.
+- 2026-07-03: Final review caught two more minor doc wording issues:
+  MIGRATIONS.md's date-typo note mischaracterized when the typo was
+  introduced (this same session, not before it) — corrected;
+  CTO_HANDOVER.md's "eight phases of design specs" count was fragile and
+  has been reworded to not claim a specific number.

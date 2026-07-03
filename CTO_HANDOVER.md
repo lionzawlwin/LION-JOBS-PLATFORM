@@ -2,7 +2,7 @@
 
 This document is written for a human successor, not an AI agent — for
 agent-facing operating instructions see `CLAUDE.md`. It synthesizes
-`CLAUDE.md`, `PROGRESS.md`, and eight phases of design specs under
+`CLAUDE.md`, `PROGRESS.md`, and the design specs under
 `docs/superpowers/specs/` into one onboarding read. Where this document is
 silent or wrong, those source documents are the ground truth — this is a
 summary, not a replacement.

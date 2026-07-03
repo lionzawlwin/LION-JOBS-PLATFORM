@@ -46,10 +46,10 @@ production, not the order they'd ideally have been designed:
 
 > Note (2026-07-03): `0009`'s row previously read `2026-07-03`, one day
 > earlier than `0008`'s `2026-07-04` directly above it, even though `0009`
-> was applied after `0008` — a pre-existing date-ordering typo from before
-> this session. Corrected `0009` to `2026-07-04` (matching `0008`) and dated
-> `0010` the same, so the table reads in non-decreasing date order. No
-> other rows were touched.
+> was applied after `0008` — a date-ordering typo introduced earlier in
+> this same session, not inherited from before it. Corrected `0009` to
+> `2026-07-04` (matching `0008`) and dated `0010` the same, so the table
+> reads in non-decreasing date order. No other rows were touched.
 
 The next migration is `0011_<short_description>.sql`. Keep the `IF NOT
 EXISTS` / `ADD COLUMN IF NOT EXISTS` guards every file here already uses —
