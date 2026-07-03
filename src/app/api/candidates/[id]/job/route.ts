@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateJob } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(
@@ -29,7 +30,7 @@ export async function PATCH(
   try {
     await updateCandidateJob(id, jobId ?? '', jobTitle ?? '', company ?? '');
   } catch (err) {
-    console.error('[candidates/job] error:', err);
+    await logFailure({ category: 'other', route: '/api/candidates/[id]/job', message: 'Could not update job link', error: err, context: { applicationId: id } });
     if (process.env.NODE_ENV !== 'production') {
       return Response.json({ ok: true, dev: true });
     }
