@@ -95,7 +95,6 @@ export async function POST(req: NextRequest) {
       noticePeriod, cityLocation, education, experienceYears,
       currentCompany, currentSalary, languages, skills, portfolioUrl,
     });
-    console.log(`[apply] Candidate "${fullName}" saved to database.`);
   } catch (err) {
     await logFailure({
       category: 'other',
@@ -125,12 +124,9 @@ export async function POST(req: NextRequest) {
           folderId,
         );
 
-        console.log(`[apply] CV uploaded to Drive for "${fullName}": ${driveUrl}`);
-
         // c. Write the Drive URL back into the application record
         if (applicationId) {
           await updateCandidateCvUrl(applicationId, driveUrl);
-          console.log(`[apply] cv_url updated in database for application ${applicationId}`);
         }
       } catch (err) {
         // Non-fatal — database row already exists
@@ -194,7 +190,6 @@ export async function POST(req: NextRequest) {
 
         if (result) {
           await saveAiScore(applicationId, result.score, result.summary, result.reasoning);
-          console.log(`[apply] AI score ${result.score}/100 saved for application ${applicationId}`);
         }
       } catch (err) {
         await logFailure({

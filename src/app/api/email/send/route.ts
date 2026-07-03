@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
       subject: email.subject,
       html:    email.html,
     });
-    console.log(`[email] Sent ${type} to ${to}:`, result);
     return Response.json({ ok: true, id: result.data?.id });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/email/send', message: 'Resend error', error: err, context: { emailType: type } });
