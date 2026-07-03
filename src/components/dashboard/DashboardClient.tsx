@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { getAccessLevel, type TabDomain } from '@/lib/permissions';
 import { Sidebar } from './Sidebar';
 import { Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffRole } from '@/types';
 
 type Tab = TabDomain;
@@ -71,44 +72,70 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
   }
 
   return (
-    <div className="flex gap-6">
-      {/* Sidebar — desktop */}
-      <div className="hidden md:block">
-        <Sidebar
-          tabs={TABS}
-          activeTab={activeTab}
-          onSelect={setActiveTab}
-        />
+    <>
+      {/* Mobile nav bar — static, not floating. Sticky, full-bleed (the
+          negative margins cancel the parent container's px-4/sm:px-6
+          padding so this reads as a proper app bar, not an indented
+          button). Desktop uses the persistent rail sidebar below instead
+          — this bar only exists <md. */}
+      <div className="sticky top-0 z-30 -mx-4 mb-4 flex items-center gap-3 border-b border-border bg-background px-4 py-3 sm:-mx-6 sm:px-6 md:hidden">
+        <button
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open dashboard navigation"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Menu size={18} />
+        </button>
+        <span className="text-sm font-semibold text-foreground">
+          {TABS.find((tab) => tab.value === activeTab)?.label}
+        </span>
       </div>
 
-      {/* Sidebar — mobile drawer trigger. Bottom-LEFT, not bottom-right:
-          the root layout renders a global <SocialFloatWidget /> fixed at
-          bottom-6 right-5 z-50 on every page, including /dashboard. A
-          bottom-right trigger here sits under it (lower z-index, same
-          corner) and is completely covered — confirmed live on a real
-          mobile device, not a hypothetical. Bottom-left has nothing else
-          fixed there. */}
-      <button
-        onClick={() => setMobileNavOpen(true)}
-        aria-label="Open dashboard navigation"
-        className="fixed bottom-4 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg md:hidden"
-      >
-        <Menu size={20} />
-      </button>
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileNavOpen(false)} />
-          <div className="relative">
-            <Sidebar
-              tabs={TABS}
-              activeTab={activeTab}
-              onSelect={(tab) => { setActiveTab(tab); setMobileNavOpen(false); }}
-            />
-          </div>
+      <div className="flex gap-6">
+        {/* Sidebar — desktop */}
+        <div className="hidden md:block">
+          <Sidebar
+            tabs={TABS}
+            activeTab={activeTab}
+            onSelect={setActiveTab}
+          />
         </div>
-      )}
 
-      <main className="min-w-0 flex-1">
+        {/* Sidebar — mobile drawer. Slides in from the left over a solid
+            (not see-through) panel — Sidebar.tsx's "drawer" variant uses
+            an opaque bg-background, only the backdrop behind it fades in
+            translucent. */}
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <div className="fixed inset-0 z-50 flex md:hidden">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/50"
+                onClick={() => setMobileNavOpen(false)}
+              />
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'tween', duration: 0.25, ease: 'easeOut' }}
+                className="relative h-full"
+              >
+                <Sidebar
+                  tabs={TABS}
+                  activeTab={activeTab}
+                  onSelect={(tab) => { setActiveTab(tab); setMobileNavOpen(false); }}
+                  variant="drawer"
+                  onClose={() => setMobileNavOpen(false)}
+                />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <main className="min-w-0 flex-1">
       {/* Context banner */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
@@ -174,7 +201,8 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
       {activeTab === 'billing'     && <BillingView />}
       {activeTab === 'team'        && <TeamView />}
       {activeTab === 'system-health' && <SystemHealthView />}
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 }
