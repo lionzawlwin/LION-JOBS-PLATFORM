@@ -4,6 +4,7 @@ import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 import { scoreCandidateAgainstJob, extractTextFromBase64 } from '@/lib/ai/cvAnalyzer';
 import { getJobs } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 // 5 submissions per IP per 10 minutes — generous for real applicants,
@@ -96,9 +97,12 @@ export async function POST(req: NextRequest) {
     });
     console.log(`[apply] Candidate "${fullName}" saved to database.`);
   } catch (err) {
-    console.error('[apply] CRITICAL — database insert failed:', err);
-    console.error('[apply] Candidate data that failed to save:', {
-      fullName, email, phone, position, jobId,
+    await logFailure({
+      category: 'other',
+      route:    '/api/apply',
+      message:  'CRITICAL — database insert failed',
+      error:    err,
+      context:  { hasJobId: Boolean(jobId) },
     });
     return Response.json(
       { error: 'Could not save your application. Please try again or contact us directly.' },
@@ -130,7 +134,13 @@ export async function POST(req: NextRequest) {
         }
       } catch (err) {
         // Non-fatal — database row already exists
-        console.error('[apply] Drive upload error (non-critical — DB write succeeded):', err);
+        await logFailure({
+          category: 'other',
+          route:    '/api/apply',
+          message:  'Drive upload error (non-critical — DB write succeeded)',
+          error:    err,
+          context:  { applicationId: applicationId ?? null },
+        });
       }
     })();
   }
@@ -187,7 +197,13 @@ export async function POST(req: NextRequest) {
           console.log(`[apply] AI score ${result.score}/100 saved for application ${applicationId}`);
         }
       } catch (err) {
-        console.error('[apply] AI scoring error (non-critical):', err);
+        await logFailure({
+          category: 'ai_scoring',
+          route:    '/api/apply',
+          message:  'AI scoring error (non-critical)',
+          error:    err,
+          context:  { applicationId: applicationId ?? null },
+        });
       }
     })();
   }

@@ -1,6 +1,7 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 // Staff-only: read consent status for the Candidate Drawer badge.
@@ -67,7 +68,7 @@ export async function POST(
     });
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[candidates/consent/post]', err);
+    await logFailure({ category: 'other', route: '/api/candidates/[id]/consent', message: 'Could not record consent', error: err, context: { applicationId: id } });
     return Response.json({ error: 'Could not record consent.' }, { status: 502 });
   }
 }

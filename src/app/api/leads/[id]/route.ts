@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { deleteB2bLead } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 export async function DELETE(
@@ -15,7 +16,7 @@ export async function DELETE(
     await deleteB2bLead(id);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[leads/delete]', err);
+    await logFailure({ category: 'other', route: '/api/leads/[id]', message: 'Could not delete lead', error: err, context: { leadId: id } });
     return Response.json({ error: 'Could not delete lead.' }, { status: 502 });
   }
 }

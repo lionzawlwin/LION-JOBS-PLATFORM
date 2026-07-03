@@ -232,3 +232,23 @@ export interface Invoice {
   issuedAt: string;
   createdAt: string;
 }
+
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other';
+export type EventLevel = 'error' | 'info';
+
+export interface SystemEvent {
+  id: string;
+  category: FailureCategory;
+  level: EventLevel;
+  route: string;
+  message: string;
+  context: Record<string, string | number | boolean | null> | null;
+  createdAt: string;
+}
+
+export interface CronStatus {
+  route: string;
+  lastRunAt: string;
+  ok: boolean;
+  message: string;
+}

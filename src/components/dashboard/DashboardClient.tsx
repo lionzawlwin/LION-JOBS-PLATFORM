@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale, Receipt, UserCog } from 'lucide-react';
+import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale, Receipt, UserCog, Activity } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
@@ -13,6 +13,7 @@ import { EmailCampaigns } from './EmailCampaigns';
 import { LegalView } from './LegalView';
 import { BillingView } from './BillingView';
 import { TeamView } from './TeamView';
+import { SystemHealthView } from './SystemHealthView';
 import { AnalyticsOverview } from './AnalyticsOverview';
 import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
@@ -47,6 +48,7 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
     { value: 'legal',      label: t('admin_tab_legal'),      icon: <Scale         size={14} /> },
     { value: 'billing',    label: t('admin_tab_billing'),    icon: <Receipt       size={14} /> },
     { value: 'team',       label: t('admin_tab_team'),       icon: <UserCog       size={14} /> },
+    { value: 'system-health', label: t('admin_tab_system_health'), icon: <Activity size={14} /> },
   ];
 
   const TABS = ALL_TABS.filter((tab) => getAccessLevel(effectiveRole, tab.value) !== 'none');
@@ -100,6 +102,7 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
           {activeTab === 'legal'       && t('admin_banner_legal')}
           {activeTab === 'billing'     && t('admin_banner_billing')}
           {activeTab === 'team'        && t('admin_banner_team')}
+          {activeTab === 'system-health' && t('admin_banner_system_health')}
         </span>
       </div>
 
@@ -146,6 +149,7 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
       {activeTab === 'legal'       && <LegalView />}
       {activeTab === 'billing'     && <BillingView />}
       {activeTab === 'team'        && <TeamView />}
+      {activeTab === 'system-health' && <SystemHealthView />}
     </>
   );
 }

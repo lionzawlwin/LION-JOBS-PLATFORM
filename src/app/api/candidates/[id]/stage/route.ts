@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { updateCandidateStage } from '@/lib/db';
+import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 import type { ApplicationStatus } from '@/types';
 
@@ -11,6 +13,10 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (!(await requireTabAccess('candidates', 'manage'))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { id } = await context.params;
 
   let body: unknown;
@@ -28,7 +34,7 @@ export async function PATCH(
   try {
     await updateCandidateStage(id, parsed.data.stage as ApplicationStatus);
   } catch (err) {
-    console.error('[stage] error:', err);
+    await logFailure({ category: 'other', route: '/api/candidates/[id]/stage', message: 'Could not update stage', error: err, context: { applicationId: id } });
     if (process.env.NODE_ENV !== 'production') {
       return Response.json({ ok: true, dev: true });
     }

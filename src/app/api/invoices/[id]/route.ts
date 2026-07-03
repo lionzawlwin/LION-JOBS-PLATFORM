@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getInvoiceById, updateInvoiceStatus } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
 
@@ -43,7 +44,13 @@ export async function PATCH(
     await updateInvoiceStatus(id, body.status as InvoiceStatus);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[invoices/[id]/patch]', err);
+    await logFailure({
+      category: 'invoicing',
+      route:    '/api/invoices/[id]',
+      message:  'Could not update invoice status',
+      error:    err,
+      context:  { invoiceId: id },
+    });
     return Response.json({ error: 'Could not update invoice status.' }, { status: 502 });
   }
 }

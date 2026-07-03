@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getCandidates } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 export async function GET(_req: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(_req: NextRequest) {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (err) {
-    console.error('[/api/candidates]', err);
+    await logFailure({ category: 'other', route: '/api/candidates', message: 'Failed to load candidates', error: err });
     return Response.json(
       { error: 'Failed to load candidates. Check server configuration.' },
       { status: 503 },

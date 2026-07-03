@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateCvUrl } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(
@@ -19,7 +20,7 @@ export async function PATCH(
     await updateCandidateCvUrl(id, cvUrl);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[cv-url/patch]', err);
+    await logFailure({ category: 'other', route: '/api/candidates/[id]/cv-url', message: 'Could not update CV URL', error: err, context: { applicationId: id } });
     return Response.json({ error: 'Could not update CV URL.' }, { status: 502 });
   }
 }

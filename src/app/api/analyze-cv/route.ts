@@ -2,6 +2,7 @@ import { requireTabAccess } from '@/lib/auth';
 import { getCandidates, saveAiScore } from '@/lib/db';
 import { getJobs } from '@/lib/db';
 import { scoreCandidateAgainstJob } from '@/lib/ai/cvAnalyzer';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 /**
@@ -62,7 +63,15 @@ export async function POST(req: NextRequest) {
         processed++;
       }
     } catch (err) {
-      errors.push(`${candidate.id}: ${(err as Error).message}`);
+      const msg = `${candidate.id}: ${(err as Error).message}`;
+      errors.push(msg);
+      await logFailure({
+        category: 'ai_scoring',
+        route:    '/api/analyze-cv',
+        message:  msg,
+        error:    err,
+        context:  { applicationId: candidate.id },
+      });
     }
   }
 

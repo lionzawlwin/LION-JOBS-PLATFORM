@@ -186,6 +186,7 @@ export const translations = {
     admin_tab_legal:       'Legal',
     admin_tab_billing:     'Billing',
     admin_tab_team:        'Team & Access',
+    admin_tab_system_health:     'System Health',
     // Admin dashboard — context banner
     admin_banner_prefix:      'Admin dashboard — Lion Jobs Agency internal use only.',
     admin_banner_overview:    ' Real-time analytics across candidates, jobs, and companies.',
@@ -200,6 +201,7 @@ export const translations = {
     admin_banner_legal:       ' B2B service contracts and candidate anti-bypass consent tracking.',
     admin_banner_billing:     ' Generate and track invoices for placed candidates.',
     admin_banner_team:        ' Staff roster and intended roles. Does not yet control dashboard login.',
+    admin_banner_system_health:     ' Recent failures and cron job status. Visible to Owner and Admin only.',
 
     // Enterprise — status/type enum display labels (data values stay English; these are display-only)
     status_lead:            'Lead',
@@ -816,6 +818,7 @@ export const translations = {
     admin_tab_legal:       'ဥပဒေရေးရာ',
     admin_tab_billing:     'ငွေတောင်းခံလွှာ',
     admin_tab_team:        'အဖွဲ့ နှင့် ဝင်ရောက်ခွင့်',
+    admin_tab_system_health:     'စနစ် ကျန်းမာရေး',
     // Admin dashboard — context banner
     admin_banner_prefix:      'အက်ဒမင် ဒက်ရှ်ဘုတ် — Lion Jobs Agency ၏ အတွင်းပိုင်းအသုံးပြုမှုအတွက်သာ။',
     admin_banner_overview:    ' လျှောက်ထားသူများ၊ အလုပ်များနှင့် ကုမ္ပဏီများအတွက် အချိန်နှင့်တပြေးညီ ခွဲခြမ်းစိတ်ဖြာမှု။',
@@ -830,6 +833,7 @@ export const translations = {
     admin_banner_legal:       ' B2B စာချုပ်များနှင့် ကိုယ်စားလှယ်လောင်း သဘောတူညီချက် ခြေရာခံမှု။',
     admin_banner_billing:     ' ခန့်အပ်ပြီးသော ကိုယ်စားလှယ်လောင်းများအတွက် ငွေတောင်းခံလွှာများ ထုတ်ပေးပြီး ခြေရာခံပါ။',
     admin_banner_team:        ' ဝန်ထမ်းစာရင်းနှင့် ရည်ရွယ်ထားသော အခန်းကဏ္ဍများ။ ဒက်ရှ်ဘုတ် ဝင်ရောက်ခွင့်ကို မထိန်းချုပ်သေးပါ။',
+    admin_banner_system_health:     ' လတ်တလော မအောင်မြင်မှုများနှင့် cron အလုပ်အခြေအနေ။ ပိုင်ရှင်နှင့် အက်ဒမင်သာ ကြည့်ရှုနိုင်သည်။',
 
     // Enterprise — status/type enum display labels
     status_lead:            'အလားအလာ',

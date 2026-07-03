@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateB2bLeadStatus } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 const VALID_STATUSES = new Set([
@@ -35,7 +36,7 @@ export async function PATCH(
     await updateB2bLeadStatus(id, status);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[leads/status] error:', err);
+    await logFailure({ category: 'other', route: '/api/leads/[id]/status', message: 'Could not update lead status', error: err, context: { leadId: id } });
     if (process.env.NODE_ENV !== 'production') {
       return Response.json({ ok: true, dev: true });
     }

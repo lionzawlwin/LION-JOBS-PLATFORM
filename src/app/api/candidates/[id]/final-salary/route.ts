@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateFinalSalary } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(
@@ -30,7 +31,13 @@ export async function PATCH(
     await updateCandidateFinalSalary(id, body.finalAgreedSalary);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[final-salary/patch]', err);
+    await logFailure({
+      category: 'invoicing',
+      route:    '/api/candidates/[id]/final-salary',
+      message:  'Could not update final agreed salary',
+      error:    err,
+      context:  { applicationId: id },
+    });
     return Response.json({ error: 'Could not update final agreed salary.' }, { status: 502 });
   }
 }

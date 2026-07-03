@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { requireTabAccess } from '@/lib/auth';
 import { getAgencySettings, updateAgencySettings } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 // Business/legal terms — keep loose but sane so a fat-fingered admin edit
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest) {
     await updateAgencySettings(parsed.data);
     return Response.json({ ok: true });
   } catch (err) {
-    console.error('[legal/settings/patch]', err);
+    await logFailure({ category: 'other', route: '/api/legal/settings', message: 'Could not update agency settings', error: err });
     return Response.json({ error: (err as Error).message }, { status: 502 });
   }
 }

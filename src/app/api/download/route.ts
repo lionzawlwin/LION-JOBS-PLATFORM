@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 
 // Converts various Google Drive URL formats to a direct download URL
 function toDriveDownloadUrl(url: string): string {
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     return new Response(upstream.body, { status: 200, headers });
   } catch (err) {
-    console.error('[download proxy]', err);
+    await logFailure({ category: 'other', route: '/api/download', message: 'Failed to fetch remote file', error: err });
     return new Response('Failed to fetch remote file', { status: 502 });
   }
 }

@@ -39,8 +39,9 @@ production, not the order they'd ideally have been designed:
 | `0004_add_billing_invoicing.sql` | 2026-07-02 | `applications.final_agreed_salary`, `invoices` |
 | `0005_add_staff.sql` | 2026-07-03 | `staff` table (Team & Access roster, no login-gate wiring yet) |
 | `0006_enable_staff_rls.sql` | 2026-07-03 | Enables RLS on `staff` — see "Lesson learned" below |
+| `0007_add_system_events.sql` | 2026-07-03 | `system_events` table (Phase 5 observability) |
 
-The next migration is `0007_<short_description>.sql`. Keep the `IF NOT
+The next migration is `0008_<short_description>.sql`. Keep the `IF NOT
 EXISTS` / `ADD COLUMN IF NOT EXISTS` guards every file here already uses —
 they're why re-running any of these four by accident is harmless.
 

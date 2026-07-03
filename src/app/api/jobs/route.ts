@@ -2,6 +2,7 @@ import { getJobs, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
 import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' },
     });
   } catch (err) {
-    console.error('[GET /api/jobs]', err);
+    await logFailure({ category: 'other', route: '/api/jobs', message: 'Failed to load jobs', error: err });
     return Response.json(
       { error: 'Failed to load jobs. Check server configuration.' },
       { status: 503 },
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[POST /api/jobs] DB write failed:', msg);
+    await logFailure({ category: 'other', route: '/api/jobs', message: `DB write failed: ${msg}`, error: err });
     return NextResponse.json(
       { error: `Failed to save job: ${msg}` },
       { status: 502 },
@@ -130,7 +131,13 @@ export async function POST(req: NextRequest) {
         benefits: Array.isArray(body.benefits) ? body.benefits : [],
       }),
       signal: AbortSignal.timeout(9_000),
-    }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
+    }).catch((err) => logFailure({
+      category: 'webhook',
+      route:    '/api/jobs',
+      message:  'Webhook trigger to publish-job failed',
+      error:    err,
+      context:  { jobId },
+    }));
   }
 
   return NextResponse.json(

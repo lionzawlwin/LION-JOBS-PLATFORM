@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getJobs } from '@/lib/db';
 import { buildJobSlug, formatSalary } from '@/lib/utils';
 import { secureCompare } from '@/lib/apiSecurity';
+import { logFailure } from '@/lib/observability';
 import type { Job } from '@/types';
 
 // ── Zod schema for Mode B (raw field input) ───────────────────────
@@ -56,8 +57,12 @@ async function triggerGitHubActions(payload: object): Promise<void> {
   if (res.ok) {
     console.log('[publish-job] GitHub Actions dispatch sent successfully');
   } else {
-    const body = await res.text().catch(() => '');
-    console.error(`[publish-job] GitHub Actions dispatch failed: ${res.status} — ${body}`);
+    await logFailure({
+      category: 'webhook',
+      route:    '/api/webhooks/publish-job',
+      message:  `GitHub Actions dispatch failed: ${res.status}`,
+      context:  { status: res.status },
+    });
   }
 }
 
@@ -180,7 +185,12 @@ export async function POST(req: NextRequest) {
 
   // ── Trigger GitHub Actions (non-blocking) ────────────────────────
   triggerGitHubActions(payload).catch((err) =>
-    console.error('[publish-job] GitHub Actions trigger error:', err),
+    logFailure({
+      category: 'webhook',
+      route:    '/api/webhooks/publish-job',
+      message:  'GitHub Actions trigger error',
+      error:    err,
+    }),
   );
 
   return NextResponse.json({ ok: true, payload });
