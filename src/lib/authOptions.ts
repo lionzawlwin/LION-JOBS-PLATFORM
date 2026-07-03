@@ -27,17 +27,19 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       // `user` is only populated on the initial sign-in call, not on every
       // subsequent token read — so this DB lookup runs once per login, not
-      // once per request. Role changes made in the Team & Access tab take
-      // effect on that staff member's next sign-in, not immediately.
+      // once per request. Role/CSE-link changes made in the Team & Access
+      // tab take effect on that staff member's next sign-in, not immediately.
       if (user?.email) {
         const staffMember = await getStaffByEmail(user.email);
         token.role = staffMember?.role ?? (user.email === ADMIN_EMAIL ? 'owner' : 'viewer');
+        token.cseRepId = staffMember?.cseRepId ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.role = (token.role as StaffRole | undefined) ?? 'viewer';
+        session.user.cseRepId = token.cseRepId ?? null;
       }
       return session;
     },
