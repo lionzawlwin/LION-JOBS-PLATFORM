@@ -201,7 +201,12 @@ Branch: `feat/phase-8-cleanup-handover`, pushed to origin. PR opened, awaiting h
   (confirmed ~1.2-1.6GB) because the ESLint ignore pattern wasn't rooted
   (`.next/**` vs `**/.next/**`). Fixed by rooting all three ignore patterns
   (`.next/**`, `out/**`, `build/**`). Verified `npm run lint` now completes
-  (55 real findings from actual source files, no crash).
+  (55 real findings immediately after the fix, while the stale worktree's
+  own duplicate source tree was still on disk and still being linted; 28
+  findings — 17 errors, 11 warnings — after Task 2 removed the worktree.
+  Both counts are real source-file findings, not crashes; the number
+  dropped because Task 2 removed a second copy of the source tree, not
+  because findings were fixed).
 - 2026-07-03: Confirmed `worktree-b2b-enterprise-crm`'s tip commit was
   already an ancestor of `main` before removing the worktree — it was the
   Billing & Invoicing subsystem's working tree, fully landed. Removed via
