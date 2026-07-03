@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
 
@@ -78,7 +79,13 @@ export async function POST(req: NextRequest) {
     });
     return Response.json(invoice, { status: 201 });
   } catch (err) {
-    console.error('[invoices/post]', err);
+    await logFailure({
+      category: 'invoicing',
+      route:    '/api/invoices',
+      message:  'Could not create invoice',
+      error:    err,
+      context:  { applicationId, companyId },
+    });
     return Response.json({ error: 'Could not create invoice.' }, { status: 502 });
   }
 }
