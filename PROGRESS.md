@@ -70,7 +70,7 @@ Branch: `feat/phase-4-rbac` (not yet merged — PR opened for human review)
 Spec: `docs/superpowers/specs/2026-07-03-phase-5-observability-design.md`
 Plan: `docs/superpowers/plans/2026-07-03-phase-5-observability.md`
 Process: superpowers:subagent-driven-development (fresh subagent per task, spec review then code-quality review)
-Branch: `feat/phase-5-observability` (not yet merged — PR opened for human review)
+Branch: `feat/phase-5-observability`, pushed to origin. No PR opened yet (`gh` unavailable in this environment) — needs to be created manually at github.com and merged by a human.
 
 | Task | Description | Status |
 |------|--------------|--------|
