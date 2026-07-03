@@ -1,6 +1,7 @@
 import { deleteJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 
 // ── DELETE /api/jobs/[id] ─────────────────────────────────────────
 // Removes the job row from the database.
@@ -27,7 +28,7 @@ export async function DELETE(
     await deleteJob(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[DELETE /api/jobs/[id]]', err);
+    await logFailure({ category: 'other', route: '/api/jobs/[id]', message: 'Failed to delete job', error: err, context: { jobId: id } });
     return NextResponse.json({ error: 'Failed to delete job' }, { status: 502 });
   }
 }

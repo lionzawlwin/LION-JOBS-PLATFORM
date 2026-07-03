@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendB2bLead } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 
 export async function POST(req: NextRequest) {
   let body: Record<string, string>;
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     leadId = await appendB2bLead(leadData);
   } catch (err) {
-    console.error('[employers/request] DB error:', err);
+    await logFailure({ category: 'other', route: '/api/employers/request', message: 'DB error saving lead', error: err });
     return NextResponse.json({ error: 'Failed to save lead. Please try again.' }, { status: 502 });
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendEmailSubscriber } from '@/lib/db';
+import { logFailure } from '@/lib/observability';
 
 // In-memory sliding-window rate limit: 3 requests per IP per minute
 const ipLog = new Map<string, number[]>();
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     await appendEmailSubscriber({ email, category: body.category, ip });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[api/subscribe]', err);
+    await logFailure({ category: 'other', route: '/api/subscribe', message: 'Subscription failed', error: err });
     return NextResponse.json({ error: 'Subscription failed. Please try again.' }, { status: 500 });
   }
 }

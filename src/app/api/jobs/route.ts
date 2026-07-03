@@ -2,6 +2,7 @@ import { getJobs, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
 import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[POST /api/jobs] DB write failed:', msg);
+    await logFailure({ category: 'other', route: '/api/jobs', message: `DB write failed: ${msg}`, error: err });
     return NextResponse.json(
       { error: `Failed to save job: ${msg}` },
       { status: 502 },

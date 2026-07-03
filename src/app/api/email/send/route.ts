@@ -1,4 +1,5 @@
 import { requireTabAccess } from '@/lib/auth';
+import { logFailure } from '@/lib/observability';
 import { Resend } from 'resend';
 import {
   buildWelcomeEmail,
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
     console.log(`[email] Sent ${type} to ${to}:`, result);
     return Response.json({ ok: true, id: result.data?.id });
   } catch (err) {
-    console.error('[email] Resend error:', err);
+    await logFailure({ category: 'other', route: '/api/email/send', message: 'Resend error', error: err, context: { emailType: type } });
     return Response.json({ error: (err as Error).message }, { status: 502 });
   }
 }
