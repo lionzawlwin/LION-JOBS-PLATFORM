@@ -8,6 +8,7 @@ function mapToStaff(row: Record<string, unknown>): Staff {
     name:      row.name as string,
     role:      row.role as StaffRole,
     active:    (row.active as boolean) ?? true,
+    cseRepId:  (row.cse_rep_id as string) ?? null,
     createdAt: row.created_at as string,
   };
 }
@@ -60,12 +61,13 @@ export async function createStaff(data: {
 
 export async function updateStaff(
   id: string,
-  data: Partial<{ name: string; role: StaffRole; active: boolean }>,
+  data: Partial<{ name: string; role: StaffRole; active: boolean; cseRepId: string | null }>,
 ): Promise<void> {
   const update: Record<string, unknown> = {};
-  if (data.name   !== undefined) update.name = data.name;
-  if (data.role   !== undefined) update.role = data.role;
-  if (data.active !== undefined) update.active = data.active;
+  if (data.name     !== undefined) update.name = data.name;
+  if (data.role     !== undefined) update.role = data.role;
+  if (data.active   !== undefined) update.active = data.active;
+  if (data.cseRepId !== undefined) update.cse_rep_id = data.cseRepId;
 
   const { error } = await supabase.from('staff').update(update).eq('id', id);
   if (error) throw new Error(`Failed to update staff member: ${error.message}`);

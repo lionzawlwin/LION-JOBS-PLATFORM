@@ -11,9 +11,9 @@ summary, not a replacement.
 
 A Next.js 16 job board + internal recruiting/CRM admin console for Lion Jobs
 Agency (Myanmar). Public job board, candidate application flow, and a
-12-tab internal dashboard (Overview, Candidates, Post Job, Manage Jobs,
+13-tab internal dashboard (Overview, Candidates, Post Job, Manage Jobs,
 Companies, Enterprise/CRM, B2B Leads, Content Studio, Email Campaigns,
-Legal, Billing, Team & Access) used by agency staff.
+Legal, Billing, Team & Access, System Health) used by agency staff.
 
 ## Architecture at a glance
 
@@ -61,9 +61,27 @@ Post Job/Team. System Health (added Phase 5) follows Team & Access's row —
 on the staff member's **next login**, not immediately (it's baked into the
 JWT at sign-in).
 
-**Known gap, deliberately deferred**: no row-level scoping exists for `cse`
-— a `cse` role sees every company/lead, not just their own assigned
-accounts. Would need a `Staff` ↔ `CseRep` link that doesn't exist yet.
+**Row-level scoping for `cse` (Phase 10)**: a new nullable `staff.cse_rep_id`
+(migration `0011`, applied to Production) links a `cse`-role login to a
+`cse_reps` row, attached to the session/JWT the same way `role` is.
+`GET /api/companies`, `/api/contracts`, and `/api/interactions` scope to
+that link server-side — **application-layer filtering, not a Postgres RLS
+policy** (this app's service-role Supabase client bypasses RLS entirely,
+see `0006_enable_staff_rls.sql`'s own comment, so a policy here would be
+silently ineffective). An unlinked `cse` (`cse_rep_id: NULL`) fails closed —
+sees an empty list, not everything. **`b2b_leads` is explicitly NOT
+scoped** — that table has no CSE-assignment concept in its data model at
+all; inventing one is a real product decision, not a technical gap. See
+`docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md`.
+
+**Status as of this document**: Phase 10 is implemented, tested (36/36
+passing), and in PR #16 — **not yet merged to `main`, not yet live in
+production**. PR #16 targets PR #15 (Phase 9's ops-hygiene/Vitest branch),
+also not yet merged — both need human review and merge before any of this
+is live. Existing `cse` staff rows will see empty Companies/Enterprise
+views immediately after merge until manually linked to a CSE rep via the
+new Team & Access "CSE Rep" column — this is expected, not a bug, and
+should be done right after merging.
 
 ## Environment variables
 
@@ -102,12 +120,16 @@ Process: write `supabase/migrations/NNNN_description.sql` with `IF NOT
 EXISTS` guards, `npx supabase db push`, then `npx supabase migration list`
 to confirm local/remote agree — **verify, don't assume it worked.**
 
-As of this document, migrations run through `0010` (see `MIGRATIONS.md` for
+As of this document, migrations run through `0011` (see `MIGRATIONS.md` for
 the full per-file breakdown). *(Note: this reflects the repo's state as of
 Phase 8's completion — migration `0010` landed mid-Phase-8 as a code-review
 fix-forward, after the Phase 8 plan doc's Task 5 was written, so that plan's
 literal text still says `0009`. This document describes the current,
 corrected state on purpose; don't read the discrepancy as an error.)*
+`0011` (Phase 10, `staff.cse_rep_id`) is applied to Production but its
+application code is still sitting in an unmerged PR (see Access control
+section above) — the column exists and is safe (nullable, no default), but
+nothing reads or writes it in `main` until PR #16 merges.
 
 ## Cron jobs
 
@@ -161,6 +183,32 @@ not exposed through the Vercel CLI or public API, only the dashboard UI.
 - Sentry alert rules (e.g. paging on spike thresholds) are configured in
   the Sentry dashboard itself, not in this codebase — nothing here manages
   that config.
+
+## Testing (Phase 9+)
+
+`npm test` (Vitest) exists now — it didn't for Phases 4–8. Coverage so far
+is intentionally narrow: pure/unmocked logic only (`src/lib/permissions.ts`'s
+RBAC matrix, `src/lib/cseScope.ts`'s CSE-attribution derivation), chosen
+because those are the highest-risk-if-silently-wrong surfaces and need no
+mocking infrastructure. No DB-accessor or route-level tests exist yet —
+that would need a `@supabase/supabase-js` mock this repo doesn't have.
+`npm test` is wired into `.github/workflows/deploy.yml` as a required step
+before both preview and production Vercel builds — a failing test blocks
+deploy.
+
+## Open PRs awaiting human review (as of this document)
+
+- **PR #15** — Phase 9 (ops hygiene: `ADMIN_EMAIL`/dead-env-var cleanup in
+  Vercel, doc sync, the Vitest harness above).
+- **PR #16** — Phase 10 (CSE row-level scoping, described above). Stacked
+  on top of PR #15 (targets that branch, not `main`) since it depends on
+  Phase 9's Vitest harness.
+
+Neither was merged autonomously — this repo's branch protection and
+required CI gate exist specifically to keep unreviewed changes off `main`
+(which auto-deploys to production on every push). Merge #15 first, then
+#16 (or merge #16 into #15's branch, then merge that combined branch to
+`main` — either order works since #16 already contains #15's commits).
 
 ## Where to find more history
 

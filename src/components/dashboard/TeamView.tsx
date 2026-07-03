@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2, UserPlus, AlertTriangle, Info } from 'lucide-react';
 import { useStaff } from '@/hooks/useStaff';
+import { useCseReps } from '@/hooks/useCseReps';
 import type { StaffRole } from '@/types';
 
 const ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
@@ -52,6 +53,18 @@ export function TeamView() {
     try {
       const ok = await updateStaffMember(id, { active });
       if (!ok) alert('Could not update status. Please try again.');
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  const { cseReps } = useCseReps();
+
+  async function changeCseRep(id: string, cseRepId: string) {
+    setSavingId(id);
+    try {
+      const ok = await updateStaffMember(id, { cseRepId: cseRepId || null });
+      if (!ok) alert('Could not update linked CSE rep. Please try again.');
     } finally {
       setSavingId(null);
     }
@@ -135,6 +148,7 @@ export function TeamView() {
                   <th className="pb-2">Name</th>
                   <th className="pb-2">Email</th>
                   <th className="pb-2">Role</th>
+                  <th className="pb-2">CSE Rep</th>
                   <th className="pb-2">Status</th>
                   <th className="pb-2">Added</th>
                 </tr>
@@ -153,6 +167,21 @@ export function TeamView() {
                       >
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
+                    </td>
+                    <td className="py-2">
+                      {member.role === 'cse' ? (
+                        <select
+                          value={member.cseRepId ?? ''}
+                          onChange={(e) => changeCseRep(member.id, e.target.value)}
+                          disabled={savingId === member.id}
+                          className="rounded-xl border border-border bg-background px-2 py-1 text-xs text-foreground"
+                        >
+                          <option value="">Unlinked</option>
+                          {cseReps.map((rep) => <option key={rep.id} value={rep.id}>{rep.name}</option>)}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-2">
                       <button

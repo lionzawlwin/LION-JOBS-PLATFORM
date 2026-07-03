@@ -1,4 +1,4 @@
-import { requireTabAccess } from '@/lib/auth';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getContracts, appendContract } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
@@ -7,7 +7,9 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const companyId = req.nextUrl.searchParams.get('company_id') ?? undefined;
-  const contracts = await getContracts(companyId);
+  const scope = await getSessionScope();
+  const cseRepId = scope?.role === 'cse' ? (scope.cseRepId ?? '__none__') : undefined;
+  const contracts = await getContracts(companyId, cseRepId);
   return Response.json(contracts, { headers: { 'Cache-Control': 'no-store' } });
 }
 

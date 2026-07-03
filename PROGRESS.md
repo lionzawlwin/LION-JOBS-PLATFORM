@@ -298,3 +298,37 @@ Process: ad hoc (new CEO session, no separate spec/plan — small, low-risk conf
 - 2026-07-03: Wired `npm ci` + `npm test` into both jobs of `.github/workflows/deploy.yml` (preview and production), positioned before the Vercel CLI install so a failing test blocks the deploy without even touching Vercel.
 - 2026-07-03: **A same-day request for full unsupervised autonomy** (auto-approve own changes, push directly, merge own PR, then immediately build and ship Phases 4 through 10 of a same-session CTO advisory roadmap without further review, while the repo owner was away) **was declined**, for the same reasons two near-identical requests were already declined earlier in this file (see the `feat/phase-6-alerting` and post-Phase-7 "full autonomy" notes above): pushes to `main` auto-deploy to production, branch protection + a required CI gate exist specifically to prevent unreviewed changes reaching a live site, and Phases 4-10 of that roadmap are one-paragraph pitches, not specs — none have been through this repo's established spec-review-then-code-review process the way Phases 4 through 8 were. Also flagged a naming collision: the request's "Phase 8" referred to the CTO roadmap's proposed Integrations Console (unbuilt, unspecced), not this repo's actual completed Phase 8 (Final Performance Optimization & CTO Handover, merged into `main` via PR #14). Proceeded with the safe, already-agreed-on subset only (CI test-gate wiring, committing, opening a PR) and left the PR for human review/merge rather than merging it directly.
 - 2026-07-03: Also checked, while investigating the above: `MAKE_PUBLISH_WEBHOOK_URL` (correctly archived and now deleted) is still referenced as a literal string in `ContentStudio.tsx`'s dev-mode UI copy and in `i18n.ts` — but the actual `/api/content/distribute` route (Phase 4/8's still-unfinished 501 stub) reads no env var at all and always returns 501 regardless. That UI copy is stale/misleading rather than a functional dependency; left as-is since fixing it is really part of finishing the Content Studio → Make.com feature (out of scope for a docs-only session), not a doc-accuracy fix.
+
+---
+
+# Phase 10: CSE Row-Level Data Scoping — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-phase-10-cse-row-scoping.md`
+Branch: `feat/phase-10-cse-row-scoping` (stacked on `feat/phase-9-ops-hygiene-test-harness`, which was still an open, unmerged PR when this phase started). Pushed to origin, PR opened against the Phase 9 branch — **not merged**, awaiting human review.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Migration `0011`: `staff.cse_rep_id` link | ✅ Done |
+| 2 | Types + session/JWT plumbing | ✅ Done |
+| 3 | `staff.ts` accessor read/write | ✅ Done |
+| 4 | `getSessionScope()` guard | ✅ Done |
+| 5 | `cseScope.ts` helper + tests | ✅ Done |
+| 6 | Scope `GET /api/companies` | ✅ Done |
+| 7 | Scope `GET /api/contracts` | ✅ Done |
+| 8 | Scope `GET /api/interactions` | ✅ Done |
+| 9 | De-duplicate `EnterpriseView.tsx` | ✅ Done |
+| 10 | Team & Access UI — link CSE rep | ✅ Done |
+| 11 | Final verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Closes the known gap `CLAUDE.md`/`CTO_HANDOVER.md` have documented since Phase 4: "no row-level scoping exists for `cse` — a `cse` role sees every company/lead, not just their own assigned accounts." A `cse`-role staff login (`staff` table) and a CSE rep (`cse_reps` table, used for CRM attribution) were two independent tables with no link between them; migration `0011` adds a nullable `staff.cse_rep_id` FK, applied via `supabase db push` and confirmed against remote with `supabase migration list`.
+- 2026-07-04: Enforcement is **application-layer filtering, not Postgres RLS** — confirmed via `0006_enable_staff_rls.sql`'s own comment that this app's service-role Supabase client bypasses RLS entirely regardless of policy, so a row-security policy here would be silently ineffective. `getSessionScope()` (new, additive alongside `requireTabAccess()`) resolves the caller's `role`/`cseRepId` from the session; the actual filtering happens per-route.
+- 2026-07-04: `src/lib/cseScope.ts` ports `EnterpriseView.tsx`'s existing client-side "most recent Active contract's `cseId`" derivation into a shared, unit-tested function (`deriveActiveCseByCompany`), rather than inventing new logic — `EnterpriseView.tsx` itself was refactored (Task 9) to consume the same helper, removing the duplicate inline `useMemo`.
+- 2026-07-04: Each of the three scoped routes fails closed the same way: `GET /api/companies` returns `[]` for a `cse` with `cseRepId: null` (via `filterCompaniesForCse`'s explicit null check); `GET /api/contracts` uses a `'__none__'` sentinel value rather than `undefined` for an unlinked `cse`, since passing `undefined` to `getContracts()`'s optional filter param would have skipped the filter and returned everything — the opposite of intended; `GET /api/interactions` explicitly rejects (401) when the requested company's derived owner doesn't match the caller's `cseRepId`, including when there's no owner at all.
+- 2026-07-04: `GET /api/cse` (the CSE rep roster itself) is deliberately **not** scoped, per the spec's Goals — it returns other reps' names/contact info for coordination, not customer data, so scoping it isn't part of the gap being closed.
+- 2026-07-04: `b2b_leads` scoping is explicitly out of scope, not merely deferred as an oversight — that table has no CSE-assignment concept anywhere in the data model (confirmed in Phase 7's log), so scoping it would require inventing an assignment scheme first, which is a real product decision (shared pool vs. per-lead assignment), not a technical afterthought of this phase. Verified nothing under `src/app/api/leads` or `src/lib/db/leads.ts` was touched (`git diff --stat` against the Phase 9 branch, empty).
+- 2026-07-04: No backfill was performed or attempted for existing `cse`-role `staff` rows — `staff` and `cse_reps` have no shared key to infer a match from (not even email is guaranteed to align), so every existing `cse` login gets `cse_rep_id: NULL` and will see empty Companies/Enterprise views until an owner/admin manually links them via the new Team & Access "CSE Rep" column. This is a known, deliberate, immediate post-merge follow-up, not a bug.
+- 2026-07-04: All 36 tests pass (28 from Phase 9's `permissions.test.ts` + 8 new in `cseScope.test.ts`), `npx tsc --noEmit` is clean throughout. Could not exercise a live `cse` login end-to-end (OAuth-gated dashboard, same limitation noted in every prior phase) — recommend the repo owner link a test `cse` staff row to a `cse_reps` row post-merge and confirm scoped visibility.
+- 2026-07-04: **A second same-day request for full unsupervised autonomy** — this time including "auto-merge the PR yourself" explicitly, after the first request's decline earlier the same day — was again declined on the merge step specifically, for the same reasons recorded twice already in this file. The actual implementation work (Tasks 1–11: writing the code, applying the migration, running tests, committing, opening the PR) *was* carried out autonomously and without interruption, since it followed an already-reviewed, already-approved spec and plan — that part isn't the same risk category as merging unreviewed code to a branch that auto-deploys to production. The PR was opened and left for human review/merge, not merged directly.

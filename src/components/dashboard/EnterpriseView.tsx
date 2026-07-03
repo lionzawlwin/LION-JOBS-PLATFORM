@@ -11,6 +11,7 @@ import { ManageCseModal } from './ManageCseModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
 import type { CompanyStatus } from '@/types';
+import { deriveActiveCseByCompany } from '@/lib/cseScope';
 
 const STATUSES: CompanyStatus[] = ['Lead', 'Active', 'In-Contract', 'Inactive'];
 const STATUS_KEYS: Record<CompanyStatus, TranslationKey> = {
@@ -31,16 +32,10 @@ export function EnterpriseView() {
   const { contracts: allContracts } = useAllContracts();
   const { t } = useLanguage();
 
-  const assignedCseByCompany = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const c of allContracts) {
-      if (c.status !== 'Active' || !c.cseId) continue;
-      if (!map.has(c.companyId)) {
-        map.set(c.companyId, c.cseId);
-      }
-    }
-    return map;
-  }, [allContracts]);
+  const assignedCseByCompany = useMemo(
+    () => deriveActiveCseByCompany(allContracts),
+    [allContracts],
+  );
 
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
   const [cseFilter, setCseFilter] = useState('');

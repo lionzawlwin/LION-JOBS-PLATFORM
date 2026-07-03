@@ -21,9 +21,10 @@ export async function PATCH(
 
   try {
     await updateStaff(id, {
-      name:   body.name   !== undefined ? String(body.name) : undefined,
-      role:   body.role   !== undefined ? (body.role as StaffRole) : undefined,
-      active: body.active !== undefined ? Boolean(body.active) : undefined,
+      name:     body.name     !== undefined ? String(body.name) : undefined,
+      role:     body.role     !== undefined ? (body.role as StaffRole) : undefined,
+      active:   body.active   !== undefined ? Boolean(body.active) : undefined,
+      cseRepId: body.cseRepId !== undefined ? (body.cseRepId === null ? null : String(body.cseRepId)) : undefined,
     });
     return Response.json({ ok: true });
   } catch (err) {

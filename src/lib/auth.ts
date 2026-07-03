@@ -29,3 +29,14 @@ export async function requireTabAccess(domain: TabDomain, level: 'view' | 'manag
   const role = session?.user?.role;
   return !!role && hasAccess(role, domain, level);
 }
+
+// Phase 10: row-level scoping. Separate from requireTabAccess() by design —
+// that function only answers "is this tab/action allowed," this one answers
+// "whose data should be returned." Routes that need row scoping call both.
+// See docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md.
+export async function getSessionScope(): Promise<{ role: StaffRole; cseRepId: string | null } | null> {
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role;
+  if (!role) return null;
+  return { role, cseRepId: session?.user?.cseRepId ?? null };
+}

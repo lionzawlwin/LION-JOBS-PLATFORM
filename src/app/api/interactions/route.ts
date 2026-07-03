@@ -1,5 +1,6 @@
-import { requireTabAccess } from '@/lib/auth';
-import { getInteractions, appendInteraction } from '@/lib/db';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
+import { getInteractions, appendInteraction, getContracts } from '@/lib/db';
+import { deriveActiveCseByCompany } from '@/lib/cseScope';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -10,6 +11,16 @@ export async function GET(req: NextRequest) {
   if (!companyId) {
     return Response.json({ error: 'company_id query param is required.' }, { status: 422 });
   }
+
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse') {
+    const contracts = await getContracts();
+    const owner = deriveActiveCseByCompany(contracts).get(companyId);
+    if (!owner || owner !== scope.cseRepId) {
+      return Response.json({ error: 'Unauthorised' }, { status: 401 });
+    }
+  }
+
   const interactions = await getInteractions(companyId);
   return Response.json(interactions, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -23,7 +23,7 @@ export function useStaff() {
     return true;
   }
 
-  async function updateStaffMember(id: string, update: Partial<{ name: string; role: StaffRole; active: boolean }>) {
+  async function updateStaffMember(id: string, update: Partial<{ name: string; role: StaffRole; active: boolean; cseRepId: string | null }>) {
     const res = await fetch(`/api/staff/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },

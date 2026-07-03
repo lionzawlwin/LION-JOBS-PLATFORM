@@ -1,12 +1,21 @@
-import { requireTabAccess } from '@/lib/auth';
-import { getCompanies, appendCompany } from '@/lib/db';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
+import { getCompanies, appendCompany, getContracts } from '@/lib/db';
+import { filterCompaniesForCse } from '@/lib/cseScope';
 import type { NextRequest } from 'next/server';
 
 export async function GET() {
   if (!(await requireTabAccess('companies', 'view'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
+  const scope = await getSessionScope();
   const companies = await getCompanies();
+
+  if (scope?.role === 'cse') {
+    const contracts = await getContracts();
+    const scoped = filterCompaniesForCse(companies, contracts, scope.cseRepId);
+    return Response.json(scoped, { headers: { 'Cache-Control': 'no-store' } });
+  }
+
   return Response.json(companies, {
     headers: { 'Cache-Control': 'no-store' },
   });

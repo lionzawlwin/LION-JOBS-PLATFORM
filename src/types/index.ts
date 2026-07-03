@@ -190,6 +190,7 @@ export interface Staff {
   name:      string;
   role:      StaffRole;
   active:    boolean;
+  cseRepId:  string | null;
   createdAt: string;
 }
 
