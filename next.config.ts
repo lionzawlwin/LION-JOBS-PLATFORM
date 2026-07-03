@@ -11,6 +11,17 @@ if (!process.env.NEXTAUTH_URL) {
 }
 
 const nextConfig: NextConfig = {
+  // ── Redirects ─────────────────────────────────────────────────
+  async redirects() {
+    return [
+      {
+        source: '/hire-with-us',
+        destination: '/company',
+        permanent: true,
+      },
+    ];
+  },
+
   // ── Images ────────────────────────────────────────────────────
   images: {
     formats: ['image/avif', 'image/webp'],
