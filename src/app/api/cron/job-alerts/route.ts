@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getJobs } from '@/lib/db';
 import { logFailure, logCronSuccess } from '@/lib/observability';
+import { runHealthCheck } from '@/lib/healthCheck';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,6 +16,8 @@ export async function GET(req: Request) {
   }
 
   try {
+    await runHealthCheck();
+
     const jobs = await getJobs();
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
