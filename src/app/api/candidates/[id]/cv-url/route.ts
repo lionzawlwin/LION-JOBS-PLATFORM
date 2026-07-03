@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateCvUrl } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
@@ -6,7 +6,7 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('candidates', 'manage'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

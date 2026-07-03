@@ -1,9 +1,9 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getCompanies, appendCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 export async function GET() {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('companies', 'view'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const companies = await getCompanies();
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('companies', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const body = await req.json().catch(() => null);

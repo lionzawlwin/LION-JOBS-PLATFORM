@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getCandidates, saveAiScore } from '@/lib/db';
 import { getJobs } from '@/lib/db';
 import { scoreCandidateAgainstJob } from '@/lib/ai/cvAnalyzer';
@@ -12,7 +12,7 @@ import type { NextRequest } from 'next/server';
  * Auth: any authenticated staff member
  */
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('candidates', 'manage'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

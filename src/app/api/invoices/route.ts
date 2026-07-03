@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
@@ -6,7 +6,7 @@ import type { InvoiceStatus } from '@/types';
 const VALID_STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Paid', 'Overdue'];
 
 export async function GET(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('billing', 'view'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('billing', 'manage'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

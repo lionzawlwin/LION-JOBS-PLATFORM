@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getAgencySettings, updateAgencySettings } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('legal', 'manage'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

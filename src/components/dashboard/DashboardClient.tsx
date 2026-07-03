@@ -18,19 +18,23 @@ import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { getAccessLevel, type TabDomain } from '@/lib/permissions';
+import type { StaffRole } from '@/types';
 
-type Tab = 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies' | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal' | 'billing' | 'team';
+type Tab = TabDomain;
 
 interface Props {
   isAdmin?: boolean;
+  role?: StaffRole;
 }
 
-export function DashboardClient({ isAdmin = false }: Props) {
+export function DashboardClient({ isAdmin = false, role }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('overview');
   const [candView,    setCandView]    = useState<'table' | 'board'>('table');
   const { t } = useLanguage();
+  const effectiveRole = role ?? 'viewer';
 
-  const TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
+  const ALL_TABS: { value: Tab; label: string; icon: React.ReactNode }[] = [
     { value: 'overview',   label: t('admin_tab_overview'),   icon: <BarChart2     size={14} /> },
     { value: 'candidates', label: t('admin_tab_candidates'), icon: <Users         size={14} /> },
     { value: 'post-job',   label: t('admin_tab_post_job'),   icon: <PlusSquare    size={14} /> },
@@ -44,6 +48,8 @@ export function DashboardClient({ isAdmin = false }: Props) {
     { value: 'billing',    label: t('admin_tab_billing'),    icon: <Receipt       size={14} /> },
     { value: 'team',       label: t('admin_tab_team'),       icon: <UserCog       size={14} /> },
   ];
+
+  const TABS = ALL_TABS.filter((tab) => getAccessLevel(effectiveRole, tab.value) !== 'none');
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only

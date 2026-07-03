@@ -1,8 +1,8 @@
-import { requireStaff } from '@/lib/auth';
+import { requireTabAccess } from '@/lib/auth';
 import { getEnterpriseStats } from '@/lib/db';
 
 export async function GET() {
-  if (!(await requireStaff())) {
+  if (!(await requireTabAccess('enterprise', 'view'))) {
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const stats = await getEnterpriseStats();

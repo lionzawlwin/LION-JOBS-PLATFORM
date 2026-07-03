@@ -66,7 +66,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <DashboardClient isAdmin={isAdmin} />
+          <DashboardClient isAdmin={isAdmin} role={role} />
         </div>
       </main>
 
