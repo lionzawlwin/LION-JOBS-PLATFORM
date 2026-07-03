@@ -57,7 +57,7 @@ async function checkFailureSpikes(): Promise<string[]> {
   return problems;
 }
 
-// Called once at the end of the daily job-alerts cron (this project's
+// Called once at the start of the daily job-alerts cron (this project's
 // Vercel plan caps crons at 2, daily-only, so this piggybacks rather than
 // adding a 3rd). Never throws — a health-check failure must not break the
 // cron it's riding on.
