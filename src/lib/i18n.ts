@@ -47,6 +47,71 @@ export const translations = {
     urgent:             'Urgent',
     featured:           'Featured',
     back_to_jobs:       'Back to all jobs',
+    jc_apply:           'Apply',
+    jc_more_suffix:     'more',
+
+    // Job filters bar
+    jf_filter_label:      'Filter',
+    jf_all_categories:    'All Categories',
+    jf_all_types:         'All Types',
+    jf_any_location:      'Any Location',
+    jf_salary_label:      'Salary',
+    jf_clear_all:         'Clear all',
+    jf_salary_range_label: 'Salary (K MMK / month)',
+    jf_min:               'Min',
+    jf_max:               'Max',
+    jf_to:                'to',
+    jf_under_500k:        'Under 500K',
+    jf_500k_1m:           '500K–1M',
+    jf_1m_plus:           '1M+',
+    jf_showing:           'Showing',
+    jf_role_singular:     'role',
+    jf_role_plural:       'roles',
+    jf_matching_filters:  'matching your filters',
+    search_bar_placeholder: 'Search jobs by title, company, or keyword…',
+
+    // Job grid empty/loading states
+    jg_no_roles_found: 'No roles found',
+    jg_no_roles_sub:   'No positions match your current filters. Try broadening your search or clearing a filter.',
+
+    // Homepage job listing section
+    home_section_eyebrow:   'Lion Jobs Agency',
+    home_open_positions:    'Open Positions',
+    home_open_positions_sub: 'Every role is vetted and salary-verified by our team before it goes live.',
+    home_saved:             'Saved',
+    home_live_suffix:       'live',
+    home_no_saved_jobs:     'No saved jobs yet',
+    home_no_saved_sub:      'Click the bookmark icon on any job card to save it here.',
+    home_browse_all_jobs:   'Browse All Jobs',
+
+    // Telegram job alerts
+    alerts_channel_open: 'Channel Open',
+
+    // JoinCommunity (social channels section)
+    jc2_free_alerts_badge: 'Free Job Alerts',
+    jc2_never_miss:        'Never Miss a Job Opportunity',
+    jc2_join_channels_sub: 'Join our official channels and get new jobs delivered to you — daily, for free.',
+    jc2_tag_channel:       'Channel',
+    jc2_tag_page:          'Page',
+    jc2_tag_community:     'Community',
+    jc2_telegram_desc:     'Subscribe to our channel for real-time job postings and hiring news.',
+    jc2_telegram_cta:      'Join Telegram Channel',
+    jc2_whatsapp_desc:     'Follow our WhatsApp channel for daily job alerts sent straight to your phone.',
+    jc2_whatsapp_cta:      'Follow on WhatsApp',
+    jc2_facebook_desc:     'Like our Facebook page to see job posts, company updates, and career tips.',
+    jc2_facebook_cta:      'Like on Facebook',
+    jc2_viber_desc:        'Join our Viber community to connect with other job seekers and get instant alerts.',
+    jc2_viber_cta:         'Join Viber Community',
+    jc2_free_label:        '100% free',
+    jc2_no_spam:           'No spam',
+    jc2_unsub_anytime:     'Unsubscribe any time',
+
+    // Footer
+    footer_platform_heading:       'Platform',
+    footer_top_categories_heading: 'Top Categories',
+    footer_contact_heading:        'Contact',
+    footer_brand_desc:             "Myanmar's premier AI-powered recruitment agency. We architect careers and build the teams that define Myanmar's next decade.",
+    footer_tagline:                'AI-Powered · Human-Verified · Free for Candidates',
 
     // Apply form — personal tab
     form_full_name:     'Full Name',
@@ -679,6 +744,71 @@ export const translations = {
     urgent:             'အရေးပေါ်',
     featured:           'အထူးသတိပြု',
     back_to_jobs:       'အလုပ်အားလုံးသို့ ပြန်',
+    jc_apply:           'လျှောက်ရန်',
+    jc_more_suffix:     'နောက်ထပ်',
+
+    // Job filters bar
+    jf_filter_label:      'စစ်ထုတ်ရန်',
+    jf_all_categories:    'အမျိုးအစား အားလုံး',
+    jf_all_types:         'အလုပ်အမျိုးအစား အားလုံး',
+    jf_any_location:      'တည်နေရာ မရွေးချယ်ရသေး',
+    jf_salary_label:      'လစာ',
+    jf_clear_all:         'အားလုံး ဖျက်ရန်',
+    jf_salary_range_label: 'လစာ (K MMK / လ)',
+    jf_min:               'အနည်းဆုံး',
+    jf_max:               'အများဆုံး',
+    jf_to:                'မှ',
+    jf_under_500k:        '၅သိန်းအောက်',
+    jf_500k_1m:           '၅သိန်း–၁သန်း',
+    jf_1m_plus:           '၁သန်းနှင့်အထက်',
+    jf_showing:           'ပြသနေသည်',
+    jf_role_singular:     'ရာထူး',
+    jf_role_plural:       'ရာထူးများ',
+    jf_matching_filters:  'သင့်စစ်ထုတ်မှုနှင့် ကိုက်ညီသော',
+    search_bar_placeholder: 'ရာထူးအမည်၊ ကုမ္ပဏီ သို့ စကားလုံးဖြင့် ရှာဖွေပါ…',
+
+    // Job grid empty/loading states
+    jg_no_roles_found: 'ရာထူး မတွေ့ပါ',
+    jg_no_roles_sub:   'သင့်လက်ရှိစစ်ထုတ်မှုများနှင့် ကိုက်ညီသော ရာထူးများ မရှိပါ။ ရှာဖွေမှုကို ကျယ်ပြန့်အောင်ပြုလုပ်ပါ သို့မဟုတ် စစ်ထုတ်မှုတစ်ခုကို ဖျက်ကြည့်ပါ။',
+
+    // Homepage job listing section
+    home_section_eyebrow:   'Lion Jobs Agency',
+    home_open_positions:    'ဖွင့်ထားသော ရာထူးများ',
+    home_open_positions_sub: 'ရာထူးတိုင်းကို ကျွန်ုပ်တို့အဖွဲ့မှ စိစစ်၍ လစာအတည်ပြုပြီးမှသာ တင်ပြပါသည်။',
+    home_saved:             'သိမ်းထားသည်',
+    home_live_suffix:       'ရှိသည်',
+    home_no_saved_jobs:     'သိမ်းထားသော အလုပ် မရှိသေးပါ',
+    home_no_saved_sub:      'အလုပ်ကတ်တစ်ခုချင်းစီရှိ bookmark အိုင်ကွန်ကို နှိပ်၍ ဤနေရာတွင် သိမ်းဆည်းနိုင်ပါသည်။',
+    home_browse_all_jobs:   'အလုပ်အားလုံးကြည့်ရန်',
+
+    // Telegram job alerts
+    alerts_channel_open: 'Channel ဖွင့်ပြီးပါပြီ',
+
+    // JoinCommunity (social channels section)
+    jc2_free_alerts_badge: 'အခမဲ့ အလုပ်သတိပေးချက်',
+    jc2_never_miss:        'အလုပ်အခွင့်အလမ်း လွတ်မသွားပါစေနှင့်',
+    jc2_join_channels_sub: 'ကျွန်ုပ်တို့၏ တရားဝင် Channel များသို့ ဝင်ရောက်၍ နေ့စဉ် အခမဲ့ အလုပ်အသစ်များ ရယူပါ။',
+    jc2_tag_channel:       'Channel',
+    jc2_tag_page:          'Page',
+    jc2_tag_community:     'Community',
+    jc2_telegram_desc:     'အလုပ်အသစ်များနှင့် ခေါ်ယူရေးသတင်းများကို လက်ငင်းသိရှိရန် ကျွန်ုပ်တို့ channel ကို subscribe လုပ်ပါ။',
+    jc2_telegram_cta:      'Telegram Channel သို့ ဝင်ရောက်ရန်',
+    jc2_whatsapp_desc:     'နေ့စဉ် အလုပ်သတိပေးချက်များ သင့်ဖုန်းသို့ တိုက်ရိုက်ရရှိရန် ကျွန်ုပ်တို့ WhatsApp channel ကို follow လုပ်ပါ။',
+    jc2_whatsapp_cta:      'WhatsApp တွင် Follow လုပ်ရန်',
+    jc2_facebook_desc:     'အလုပ်ကြော်ငြာများ၊ ကုမ္ပဏီသတင်းများနှင့် အသက်မွေးဝမ်းကျောင်း အကြံပြုချက်များကို ကြည့်ရှုရန် ကျွန်ုပ်တို့ Facebook page ကို like လုပ်ပါ။',
+    jc2_facebook_cta:      'Facebook တွင် Like လုပ်ရန်',
+    jc2_viber_desc:        'အလုပ်ရှာဖွေသူများနှင့် ချိတ်ဆက်ပြီး ချက်ချင်းသတိပေးချက်များ ရယူရန် ကျွန်ုပ်တို့ Viber community သို့ ဝင်ရောက်ပါ။',
+    jc2_viber_cta:         'Viber Community သို့ ဝင်ရောက်ရန်',
+    jc2_free_label:        '၁၀၀% အခမဲ့',
+    jc2_no_spam:           'Spam မရှိ',
+    jc2_unsub_anytime:     'အချိန်မရွေး ရပ်ဆိုင်းနိုင်သည်',
+
+    // Footer
+    footer_platform_heading:       'ပလက်ဖောင်း',
+    footer_top_categories_heading: 'ထိပ်တန်း အမျိုးအစားများ',
+    footer_contact_heading:        'ဆက်သွယ်ရန်',
+    footer_brand_desc:             'မြန်မာနိုင်ငံ၏ ထိပ်တန်း AI ခေါ်ယူရေးအေဂျင်စီ။ ကျွန်ုပ်တို့သည် အသက်မွေးဝမ်းကျောင်းလမ်းကြောင်းများကို တည်ဆောက်ပြီး မြန်မာနိုင်ငံ၏ နောက်ဆယ်စုနှစ်ကို ပုံဖော်မည့် အဖွဲ့များကို တည်ဆောက်ပေးနေပါသည်။',
+    footer_tagline:                'AI နည်းပညာသုံး · လူဖြင့် စစ်ဆေးအတည်ပြု · လျှောက်ထားသူများအတွက် အခမဲ့',
 
     // Apply form — personal tab
     form_full_name:     'အမည်အပြည့်အစုံ',

@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { MapPin, Phone, Mail, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 
 const CONTACT = {
   address: 'No. 29, Room 3A, 2nd Floor, Kyay Tine Su 1st Street, Pain Nae Kone Ward, Insein Township, Yangon.',
@@ -8,16 +12,22 @@ const CONTACT = {
   email:   'lionzawlwin@gmail.com',
 };
 
-const QUICK_LINKS = [
-  { label: 'Browse All Jobs',  href: '/#jobs' },
-  { label: 'Drop Your CV',     href: '/drop-cv' },
-  { label: 'Resume Builder',   href: '/resume-builder' },
-  { label: 'My Applications',  href: '/my-applications' },
+const QUICK_LINKS: { labelKey: TranslationKey; href: string }[] = [
+  { labelKey: 'home_browse_all_jobs', href: '/#jobs' },
+  { labelKey: 'nav_drop_cv',          href: '/drop-cv' },
+  { labelKey: 'nav_resume',           href: '/resume-builder' },
+  { labelKey: 'nav_my_apps',          href: '/my-applications' },
 ];
 
+// Category names are stored as literal English enum values (matching
+// job.category in the DB, same as JobFilters' CATEGORIES) — intentionally
+// not translated here to stay consistent with the filter dropdown, which
+// also shows these as raw values. Translating category vocabulary is a
+// separate content decision, not part of this i18n wiring fix.
 const CATEGORIES = ['Engineering', 'Design', 'Marketing', 'Finance', 'Healthcare', 'Remote'];
 
 export function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="relative overflow-hidden bg-gradient-to-b from-brand-700 to-brand-950 text-white">
       {/* Myanmar lotus pattern overlay */}
@@ -40,27 +50,27 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-white/60">
-              Myanmar&apos;s premier AI-powered recruitment agency. We architect careers and build the teams that define Myanmar&apos;s next decade.
+              {t('footer_brand_desc')}
             </p>
             {/* CTA chip */}
             <Link
               href="/drop-cv"
               className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold text-gold-400 hover:bg-gold-500/20 transition-colors"
             >
-              Drop Your CV <ArrowRight size={12} />
+              {t('nav_drop_cv')} <ArrowRight size={12} />
             </Link>
           </div>
 
           {/* ── Quick Links ── */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">
-              Platform
+              {t('footer_platform_heading')}
             </h3>
             <ul className="space-y-2.5 text-sm">
-              {QUICK_LINKS.map(({ label, href }) => (
+              {QUICK_LINKS.map(({ labelKey, href }) => (
                 <li key={href}>
                   <Link href={href} className="text-white/60 hover:text-white transition-colors">
-                    {label}
+                    {t(labelKey)}
                   </Link>
                 </li>
               ))}
@@ -70,7 +80,7 @@ export function Footer() {
           {/* ── Top Categories ── */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">
-              Top Categories
+              {t('footer_top_categories_heading')}
             </h3>
             <ul className="space-y-2.5 text-sm">
               {CATEGORIES.map((cat) => (
@@ -86,7 +96,7 @@ export function Footer() {
           {/* ── Contact ── */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-4">
-              Contact
+              {t('footer_contact_heading')}
             </h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2.5 text-white/60">
@@ -118,7 +128,7 @@ export function Footer() {
         {/* ── Bottom bar ── */}
         <div className="mt-12 border-t border-white/8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30">
           <p>© {new Date().getFullYear()} Lion Jobs Agency · Yangon, Myanmar</p>
-          <p className="text-white/20">AI-Powered · Human-Verified · Free for Candidates</p>
+          <p className="text-white/20">{t('footer_tagline')}</p>
         </div>
       </div>
     </footer>

@@ -98,7 +98,7 @@ export function JobAlerts() {
             >
               <TelegramIcon />
               {subscribed ? (
-                <>Channel Open <ExternalLink size={12} /></>
+                <>{t('alerts_channel_open')} <ExternalLink size={12} /></>
               ) : (
                 t('alerts_subscribe')
               )}

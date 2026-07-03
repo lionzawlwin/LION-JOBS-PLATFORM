@@ -1,12 +1,14 @@
 'use client';
 
 import { openDeepLink, LION_LINKS, type DeepLinkConfig } from '@/lib/deepLink';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 
 type Channel = {
-  name:        string;
-  tagline:     string;
-  description: string;
-  cta:         string;
+  name:            string;
+  taglineKey:      TranslationKey;
+  descriptionKey:  TranslationKey;
+  ctaKey:          TranslationKey;
   link:        DeepLinkConfig;
   bg:          string;
   hoverBg:     string;
@@ -18,10 +20,10 @@ type Channel = {
 
 const CHANNELS: Channel[] = [
   {
-    name:        'Telegram',
-    tagline:     'Channel',
-    description: 'Subscribe to our channel for real-time job postings and hiring news.',
-    cta:         'Join Telegram Channel',
+    name:            'Telegram',
+    taglineKey:      'jc2_tag_channel',
+    descriptionKey:  'jc2_telegram_desc',
+    ctaKey:          'jc2_telegram_cta',
     link:        LION_LINKS.telegramChannel,
     bg:          'bg-[#229ED9]',
     hoverBg:     'hover:bg-[#1a86bb]',
@@ -35,10 +37,10 @@ const CHANNELS: Channel[] = [
     ),
   },
   {
-    name:        'WhatsApp',
-    tagline:     'Channel',
-    description: 'Follow our WhatsApp channel for daily job alerts sent straight to your phone.',
-    cta:         'Follow on WhatsApp',
+    name:            'WhatsApp',
+    taglineKey:      'jc2_tag_channel',
+    descriptionKey:  'jc2_whatsapp_desc',
+    ctaKey:          'jc2_whatsapp_cta',
     link:        LION_LINKS.whatsappChannel,
     bg:          'bg-[#25D366]',
     hoverBg:     'hover:bg-[#1eba57]',
@@ -52,10 +54,10 @@ const CHANNELS: Channel[] = [
     ),
   },
   {
-    name:        'Facebook',
-    tagline:     'Page',
-    description: 'Like our Facebook page to see job posts, company updates, and career tips.',
-    cta:         'Like on Facebook',
+    name:            'Facebook',
+    taglineKey:      'jc2_tag_page',
+    descriptionKey:  'jc2_facebook_desc',
+    ctaKey:          'jc2_facebook_cta',
     link:        LION_LINKS.facebookPage,
     bg:          'bg-[#1877F2]',
     hoverBg:     'hover:bg-[#1060cc]',
@@ -69,10 +71,10 @@ const CHANNELS: Channel[] = [
     ),
   },
   {
-    name:        'Viber',
-    tagline:     'Community',
-    description: 'Join our Viber community to connect with other job seekers and get instant alerts.',
-    cta:         'Join Viber Community',
+    name:            'Viber',
+    taglineKey:      'jc2_tag_community',
+    descriptionKey:  'jc2_viber_desc',
+    ctaKey:          'jc2_viber_cta',
     link:        LION_LINKS.viberCommunity,
     bg:          'bg-[#7360F2]',
     hoverBg:     'hover:bg-[#5e4dd4]',
@@ -88,6 +90,7 @@ const CHANNELS: Channel[] = [
 ];
 
 export function JoinCommunity() {
+  const { t } = useLanguage();
   return (
     <section className="my-14 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -95,13 +98,13 @@ export function JoinCommunity() {
         {/* Header */}
         <div className="mb-8 text-center">
           <span className="mb-3 inline-block rounded-full bg-brand-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-700 dark:bg-brand-600/10 dark:text-brand-400">
-            Free Job Alerts
+            {t('jc2_free_alerts_badge')}
           </span>
           <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-            Never Miss a Job Opportunity
+            {t('jc2_never_miss')}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Join our official channels and get new jobs delivered to you — daily, for free.
+            {t('jc2_join_channels_sub')}
           </p>
         </div>
 
@@ -121,20 +124,20 @@ export function JoinCommunity() {
                 </div>
                 <div>
                   <p className="text-base font-bold text-foreground">{ch.name}</p>
-                  <p className={`text-xs font-semibold ${ch.textColor}`}>{ch.tagline}</p>
+                  <p className={`text-xs font-semibold ${ch.textColor}`}>{t(ch.taglineKey)}</p>
                 </div>
               </div>
 
               {/* Description */}
               <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
-                {ch.description}
+                {t(ch.descriptionKey)}
               </p>
 
               {/* CTA */}
               <span
                 className={`mt-5 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-colors ${ch.bg} ${ch.hoverBg}`}
               >
-                {ch.cta}
+                {t(ch.ctaKey)}
                 <svg
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -153,7 +156,7 @@ export function JoinCommunity() {
 
         {/* Footer note */}
         <p className="mt-5 text-center text-xs text-muted-foreground">
-          100% free &nbsp;·&nbsp; No spam &nbsp;·&nbsp; Unsubscribe any time
+          {t('jc2_free_label')} &nbsp;·&nbsp; {t('jc2_no_spam')} &nbsp;·&nbsp; {t('jc2_unsub_anytime')}
         </p>
       </div>
     </section>
