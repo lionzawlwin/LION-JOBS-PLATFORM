@@ -3,7 +3,7 @@ import type { StaffRole } from '@/types';
 export type TabDomain =
   | 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies'
   | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal'
-  | 'billing' | 'team';
+  | 'billing' | 'team' | 'system-health';
 
 export type AccessLevel = 'none' | 'view' | 'manage';
 
@@ -17,22 +17,22 @@ export const PERMISSIONS: Record<StaffRole, Record<TabDomain, AccessLevel>> = {
   owner: {
     overview: 'manage', candidates: 'manage', 'post-job': 'manage', 'manage-jobs': 'manage',
     companies: 'manage', enterprise: 'manage', 'b2b-leads': 'manage', content: 'manage',
-    campaigns: 'manage', legal: 'manage', billing: 'manage', team: 'manage',
+    campaigns: 'manage', legal: 'manage', billing: 'manage', team: 'manage', 'system-health': 'manage',
   },
   admin: {
     overview: 'manage', candidates: 'manage', 'post-job': 'manage', 'manage-jobs': 'manage',
     companies: 'manage', enterprise: 'manage', 'b2b-leads': 'manage', content: 'manage',
-    campaigns: 'manage', legal: 'manage', billing: 'manage', team: 'manage',
+    campaigns: 'manage', legal: 'manage', billing: 'manage', team: 'manage', 'system-health': 'manage',
   },
   cse: {
     overview: 'view', candidates: 'none', 'post-job': 'none', 'manage-jobs': 'none',
     companies: 'manage', enterprise: 'manage', 'b2b-leads': 'manage', content: 'none',
-    campaigns: 'none', legal: 'view', billing: 'view', team: 'none',
+    campaigns: 'none', legal: 'view', billing: 'view', team: 'none', 'system-health': 'none',
   },
   viewer: {
     overview: 'view', candidates: 'view', 'post-job': 'none', 'manage-jobs': 'view',
     companies: 'view', enterprise: 'view', 'b2b-leads': 'view', content: 'view',
-    campaigns: 'view', legal: 'view', billing: 'view', team: 'none',
+    campaigns: 'view', legal: 'view', billing: 'view', team: 'none', 'system-health': 'none',
   },
 };
 
