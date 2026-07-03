@@ -20,7 +20,7 @@ export async function appendSystemEvent(data: {
   message:  string;
   context?: Record<string, string | number | boolean | null>;
 }): Promise<void> {
-  const id = `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `evt-${crypto.randomUUID()}`;
 
   const { error } = await supabase.from('system_events').insert({
     id,
