@@ -186,11 +186,11 @@ export function AnalyticsOverview() {
           {/* Company Pipeline mini */}
           <div className="mt-6 grid grid-cols-3 gap-2 pt-5 border-t border-border text-center">
             {[
-              { label: t('ov_pipeline_leads'),    val: s.leads,    cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
-              { label: t('ov_pipeline_clients'),  val: s.clients,  cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' },
-              { label: t('ov_pipeline_inactive'), val: s.inactive, cls: 'bg-muted text-muted-foreground' },
-            ].map(({ label, val, cls }) => (
-              <div key={label} className={cn('rounded-xl py-2.5 px-2', cls)}>
+              { id: 'leads',    label: t('ov_pipeline_leads'),    val: s.leads,    cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300' },
+              { id: 'clients',  label: t('ov_pipeline_clients'),  val: s.clients,  cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300' },
+              { id: 'inactive', label: t('ov_pipeline_inactive'), val: s.inactive, cls: 'bg-muted text-muted-foreground' },
+            ].map(({ id, label, val, cls }) => (
+              <div key={id} className={cn('rounded-xl py-2.5 px-2', cls)}>
                 <p className="text-xl font-extrabold tabular-nums">{val}</p>
                 <p className="text-xs font-semibold">{label}</p>
               </div>
