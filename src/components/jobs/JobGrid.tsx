@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { JobCard } from './JobCard';
 import { JobCardSkeleton } from './JobCardSkeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Job } from '@/types';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function JobGrid({ jobs, loading, error }: Props) {
+  const { t } = useLanguage();
   if (loading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -45,9 +47,9 @@ export function JobGrid({ jobs, loading, error }: Props) {
             <path d="M28 38v4h8v-4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-foreground">No roles found</p>
+        <p className="text-base font-semibold text-foreground">{t('jg_no_roles_found')}</p>
         <p className="mt-1.5 text-sm text-muted-foreground max-w-xs mx-auto">
-          No positions match your current filters. Try broadening your search or clearing a filter.
+          {t('jg_no_roles_sub')}
         </p>
       </div>
     );

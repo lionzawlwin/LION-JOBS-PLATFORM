@@ -8,6 +8,7 @@ import { ShareButton } from '@/components/jobs/ShareButton';
 import { SaveButton } from '@/components/jobs/SaveButton';
 import { MatchBadge } from '@/components/jobs/MatchBadge';
 import { getJobSignals } from '@/lib/jobSignals';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Job } from '@/types';
 
 const SITE_URL =
@@ -50,6 +51,7 @@ const SIGNAL_STYLES: Record<string, string> = {
 };
 
 export function JobCard({ job }: { job: Job }) {
+  const { t } = useLanguage();
   const slug    = buildJobSlug(job);
   const jobUrl  = `${SITE_URL}/jobs/${slug}`;
   const signals = getJobSignals(job);
@@ -118,12 +120,12 @@ export function JobCard({ job }: { job: Job }) {
           <div className="flex flex-wrap gap-1.5">
             {job.isUrgent && (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                <Zap size={9} className="shrink-0" /> Urgent
+                <Zap size={9} className="shrink-0" /> {t('urgent')}
               </span>
             )}
             {job.isFeatured && (
               <span className="inline-flex items-center rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 dark:bg-gold-600/10 dark:text-gold-400">
-                ⭐ Featured
+                ⭐ {t('featured')}
               </span>
             )}
             {signals.map((s) => (
@@ -166,7 +168,7 @@ export function JobCard({ job }: { job: Job }) {
         {job.requirements.length > 0 && (
           <p className="text-xs text-muted-foreground/75 leading-relaxed line-clamp-1">
             {job.requirements.slice(0, 4).join(' · ')}
-            {job.requirements.length > 4 ? ` · +${job.requirements.length - 4} more` : ''}
+            {job.requirements.length > 4 ? ` · +${job.requirements.length - 4} ${t('jc_more_suffix')}` : ''}
           </p>
         )}
       </div>
@@ -181,10 +183,10 @@ export function JobCard({ job }: { job: Job }) {
                   <DollarSign size={13} className="shrink-0 text-brand-600" />
                   <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.currency)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">/ month</p>
+                <p className="text-xs text-muted-foreground">/ {t('per_month')}</p>
               </>
             ) : (
-              <span className="text-sm font-medium text-muted-foreground">Negotiable</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('negotiable')}</span>
             )}
           </div>
 
@@ -198,7 +200,7 @@ export function JobCard({ job }: { job: Job }) {
               'transition-all duration-200 hover:gap-2',
             )}
           >
-            Apply <ArrowRight size={12} />
+            {t('jc_apply')} <ArrowRight size={12} />
           </Link>
         </div>
       </div>

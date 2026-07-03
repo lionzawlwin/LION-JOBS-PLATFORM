@@ -9,6 +9,7 @@ import {
   SelectTrigger,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobCategory, JobFilters, JobType } from '@/types';
 
 const CATEGORIES: JobCategory[] = [
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export function JobFilters({ filters, onChange, total }: Props) {
+  const { t } = useLanguage();
   const [showSalary, setShowSalary] = useState(false);
   const hasSalary = (filters.salaryMin ?? 0) > 0 || (filters.salaryMax ?? 0) > 0;
   const hasActiveFilters = Boolean(filters.category || filters.type || filters.location || hasSalary);
@@ -46,7 +48,7 @@ export function JobFilters({ filters, onChange, total }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
           <SlidersHorizontal size={13} />
-          Filter
+          {t('jf_filter_label')}
         </div>
 
         {/* Category */}
@@ -62,11 +64,11 @@ export function JobFilters({ filters, onChange, total }: Props) {
           )}>
             {/* Render text explicitly — avoids @base-ui label-resolution race */}
             <span className={cn('text-sm', !filters.category && 'text-muted-foreground')}>
-              {filters.category || 'All Categories'}
+              {filters.category || t('jf_all_categories')}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t('jf_all_categories')}</SelectItem>
             {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -83,12 +85,12 @@ export function JobFilters({ filters, onChange, total }: Props) {
               : 'bg-background',
           )}>
             <span className={cn('text-sm', !filters.type && 'text-muted-foreground')}>
-              {filters.type || 'All Types'}
+              {filters.type || t('jf_all_types')}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            <SelectItem value="all">{t('jf_all_types')}</SelectItem>
+            {TYPES.map((ty) => <SelectItem key={ty} value={ty}>{ty}</SelectItem>)}
           </SelectContent>
         </Select>
 
@@ -104,11 +106,11 @@ export function JobFilters({ filters, onChange, total }: Props) {
               : 'bg-background',
           )}>
             <span className={cn('text-sm', !filters.location && 'text-muted-foreground')}>
-              {filters.location || 'Any Location'}
+              {filters.location || t('jf_any_location')}
             </span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">Any Location</SelectItem>
+            <SelectItem value="any">{t('jf_any_location')}</SelectItem>
             {LOCATIONS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -124,7 +126,7 @@ export function JobFilters({ filters, onChange, total }: Props) {
               : 'border-border/70 bg-background text-muted-foreground hover:text-foreground',
           )}
         >
-          Salary
+          {t('jf_salary_label')}
           {hasSalary && <span className="text-[10px] font-bold">✓</span>}
           <ChevronDown size={12} className={cn('transition-transform', showSalary && 'rotate-180')} />
         </button>
@@ -135,7 +137,7 @@ export function JobFilters({ filters, onChange, total }: Props) {
             onClick={clearAll}
             className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <X size={11} /> Clear all
+            <X size={11} /> {t('jf_clear_all')}
           </button>
         )}
 
@@ -169,21 +171,21 @@ export function JobFilters({ filters, onChange, total }: Props) {
       {/* ── Salary Range Row ── */}
       {showSalary && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Salary (K MMK / month)</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('jf_salary_range_label')}</span>
           <div className="flex items-center gap-2">
             <input
               type="number"
               min={0}
-              placeholder="Min"
+              placeholder={t('jf_min')}
               value={filters.salaryMin || ''}
               onChange={(e) => onChange({ salaryMin: Number(e.target.value) || 0 })}
               className="h-9 w-24 rounded-lg border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
             />
-            <span className="text-xs text-muted-foreground">to</span>
+            <span className="text-xs text-muted-foreground">{t('jf_to')}</span>
             <input
               type="number"
               min={0}
-              placeholder="Max"
+              placeholder={t('jf_max')}
               value={filters.salaryMax || ''}
               onChange={(e) => onChange({ salaryMax: Number(e.target.value) || 0 })}
               className="h-9 w-24 rounded-lg border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
@@ -191,9 +193,9 @@ export function JobFilters({ filters, onChange, total }: Props) {
           </div>
           <div className="flex gap-2 ml-auto">
             {[
-              { label: 'Under 500K', min: 0, max: 500 },
-              { label: '500K–1M', min: 500, max: 1000 },
-              { label: '1M+', min: 1000, max: 0 },
+              { label: t('jf_under_500k'), min: 0, max: 500 },
+              { label: t('jf_500k_1m'), min: 500, max: 1000 },
+              { label: t('jf_1m_plus'), min: 1000, max: 0 },
             ].map((preset) => (
               <button
                 key={preset.label}
@@ -216,9 +218,9 @@ export function JobFilters({ filters, onChange, total }: Props) {
       {/* ── Results count ── */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Showing <span className="font-bold text-foreground">{total}</span>{' '}
-          {total === 1 ? 'role' : 'roles'}
-          {hasActiveFilters ? ' matching your filters' : ''}
+          {t('jf_showing')} <span className="font-bold text-foreground">{total}</span>{' '}
+          {total === 1 ? t('jf_role_singular') : t('jf_role_plural')}
+          {hasActiveFilters ? ` ${t('jf_matching_filters')}` : ''}
         </span>
       </div>
     </div>

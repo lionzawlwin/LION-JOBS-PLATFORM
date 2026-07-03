@@ -2,6 +2,7 @@
 
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobFilters } from '@/types';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function SearchBar({ filters, onChange }: Props) {
+  const { t } = useLanguage();
   return (
     <div className="relative">
       <Search
@@ -19,7 +21,7 @@ export function SearchBar({ filters, onChange }: Props) {
       <Input
         value={filters.keyword}
         onChange={(e) => onChange({ keyword: e.target.value })}
-        placeholder="Search jobs by title, company, or keyword…"
+        placeholder={t('search_bar_placeholder')}
         className="pl-9 h-11 bg-background text-sm"
       />
     </div>

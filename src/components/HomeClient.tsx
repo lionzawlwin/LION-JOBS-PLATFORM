@@ -15,6 +15,7 @@ import { useJobs, filterJobs } from '@/hooks/useJobs';
 import { useSavedJobs } from '@/hooks/useSavedJobs';
 import { JoinCommunity } from '@/components/JoinCommunity';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Job, JobCategory, JobFilters as FiltersType } from '@/types';
 
 const DEFAULT_FILTERS: FiltersType = {
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export function HomeClient({ initialJobs }: Props) {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<FiltersType>(DEFAULT_FILTERS);
   const [showSaved, setShowSaved] = useState(false);
   const { savedIds } = useSavedJobs();
@@ -64,13 +66,13 @@ export function HomeClient({ initialJobs }: Props) {
           <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-600">
-                Lion Jobs Agency
+                {t('home_section_eyebrow')}
               </p>
               <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-                Open Positions
+                {t('home_open_positions')}
               </h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Every role is vetted and salary-verified by our team before it goes live.
+                {t('home_open_positions_sub')}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -86,7 +88,7 @@ export function HomeClient({ initialJobs }: Props) {
                 )}
               >
                 <Bookmark size={12} className={cn(showSaved && 'fill-current')} />
-                Saved
+                {t('home_saved')}
                 {savedIds.length > 0 && (
                   <span className={cn(
                     'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold',
@@ -99,7 +101,7 @@ export function HomeClient({ initialJobs }: Props) {
 
               {!loading && (
                 <span className="rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold text-brand-700 dark:border-brand-700/30 dark:bg-brand-600/10 dark:text-brand-300">
-                  {displayJobs.length} {displayJobs.length === 1 ? 'role' : 'roles'} live
+                  {displayJobs.length} {displayJobs.length === 1 ? t('jf_role_singular') : t('jf_role_plural')} {t('home_live_suffix')}
                 </span>
               )}
             </div>
@@ -117,16 +119,16 @@ export function HomeClient({ initialJobs }: Props) {
           {showSaved && savedIds.length === 0 && (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
               <Bookmark size={32} className="text-muted-foreground/40" />
-              <p className="text-sm font-medium text-muted-foreground">No saved jobs yet</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('home_no_saved_jobs')}</p>
               <p className="text-xs text-muted-foreground">
-                Click the bookmark icon on any job card to save it here.
+                {t('home_no_saved_sub')}
               </p>
               <button
                 type="button"
                 onClick={() => setShowSaved(false)}
                 className="mt-1 rounded-lg bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition-colors"
               >
-                Browse All Jobs
+                {t('home_browse_all_jobs')}
               </button>
             </div>
           )}
