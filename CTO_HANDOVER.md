@@ -100,7 +100,11 @@ EXISTS` guards, `npx supabase db push`, then `npx supabase migration list`
 to confirm local/remote agree — **verify, don't assume it worked.**
 
 As of this document, migrations run through `0010` (see `MIGRATIONS.md` for
-the full per-file breakdown).
+the full per-file breakdown). *(Note: this reflects the repo's state as of
+Phase 8's completion — migration `0010` landed mid-Phase-8 as a code-review
+fix-forward, after the Phase 8 plan doc's Task 5 was written, so that plan's
+literal text still says `0009`. This document describes the current,
+corrected state on purpose; don't read the discrepancy as an error.)*
 
 ## Cron jobs
 
