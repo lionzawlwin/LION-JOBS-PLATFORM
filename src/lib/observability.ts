@@ -23,17 +23,31 @@ export async function logFailure(input: {
     // Sentry itself failing to accept the event must not block the DB write below.
   }
 
-  await appendSystemEvent({
-    category: input.category,
-    route:    input.route,
-    message:  input.message,
-    context:  input.context,
-  });
+  try {
+    await appendSystemEvent({
+      category: input.category,
+      route:    input.route,
+      message:  input.message,
+      context:  input.context,
+    });
+  } catch (err) {
+    // appendSystemEvent() already swallows Supabase-layer {error} responses
+    // internally, but a network-level throw (not just a returned error) can
+    // still escape it — catch that here too so "never throws" actually holds
+    // for every caller, including unawaited fire-and-forget chains like
+    // `somePromise.catch(logFailure)`, where an unhandled rejection here
+    // would otherwise surface as a Node unhandledRejection.
+    console.error('[observability] logFailure could not persist system_events row:', err);
+  }
 }
 
 // Cron routes call this on every run, success or failure, so "last run
 // time" is always answerable — see getCronStatus() in
 // src/lib/db/systemEvents.ts.
 export async function logCronSuccess(route: string, message: string): Promise<void> {
-  await appendSystemEvent({ category: 'cron', level: 'info', route, message });
+  try {
+    await appendSystemEvent({ category: 'cron', level: 'info', route, message });
+  } catch (err) {
+    console.error('[observability] logCronSuccess could not persist system_events row:', err);
+  }
 }
