@@ -1,13 +1,10 @@
-# Phase 6: Alerting on Failures — Design Proposal (UNAPPROVED)
+# Phase 6: Alerting on Failures — Design Spec
 
-> **Status: awaiting your review.** This is a proposal, not an approved
-> spec. Per this project's own brainstorming process (and per the
-> `docs/superpowers/plans/2026-07-03-phase-5-observability.md` note that
-> named this "Phase 6, out of scope" for Phase 5), a design like this
-> normally goes through clarifying questions with you before being
-> finalized. You were asleep when this was drafted, so the questions below
-> are answered with my best judgment and flagged explicitly — please
-> correct any of them before I turn this into an implementation plan.
+> **Status: approved 2026-07-04.** All 4 open questions below were accepted
+> as proposed (email as primary channel, Sentry-native alerts for
+> general/individual failures + custom-built cron-silence and
+> failure-rate-spike digests, 36h/5-per-hour thresholds, non-goals list
+> accepted as-is). Proceeding to an implementation plan.
 > **No code has been written against this spec. Nothing has been
 > implemented.**
 
