@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' },
     });
   } catch (err) {
-    console.error('[GET /api/jobs]', err);
+    await logFailure({ category: 'other', route: '/api/jobs', message: 'Failed to load jobs', error: err });
     return Response.json(
       { error: 'Failed to load jobs. Check server configuration.' },
       { status: 503 },
@@ -131,7 +131,13 @@ export async function POST(req: NextRequest) {
         benefits: Array.isArray(body.benefits) ? body.benefits : [],
       }),
       signal: AbortSignal.timeout(9_000),
-    }).catch((err) => console.error('[POST /api/jobs] Webhook trigger failed:', err));
+    }).catch((err) => logFailure({
+      category: 'webhook',
+      route:    '/api/jobs',
+      message:  'Webhook trigger to publish-job failed',
+      error:    err,
+      context:  { jobId },
+    }));
   }
 
   return NextResponse.json(
