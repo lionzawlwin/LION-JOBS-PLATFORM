@@ -52,11 +52,19 @@ export interface GetJobsPaginatedOptions {
 // untouched and unfiltered — its other 11 call sites (sitemap, cron
 // digests, webhooks, apply flow, individual job/company pages) all
 // genuinely need the complete list and would silently break if paginated.
+//
+// Also used, with a generous limit override, by two dashboard call sites
+// (JobsPanel.tsx's management table, AnalyticsOverview.tsx's stats) that
+// need the effectively-complete list rather than a paginated homepage
+// view — the 1000-row cap below covers this app's current scale (500+
+// jobs) with real headroom; if the job count ever exceeds it, those two
+// dashboard views would need their own real pagination, a follow-up not
+// required at today's scale.
 export async function getJobsPaginated(
   opts: GetJobsPaginatedOptions = {},
 ): Promise<{ jobs: Job[]; total: number }> {
   const { keyword, category, type, location, salaryMin, salaryMax } = opts;
-  const limit  = Math.min(opts.limit ?? 30, 100);
+  const limit  = Math.min(opts.limit ?? 30, 1000);
   const offset = Math.max(opts.offset ?? 0, 0);
 
   try {
