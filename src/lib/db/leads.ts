@@ -22,6 +22,7 @@ function mapToLead(row: Record<string, unknown>): B2bLead {
     jobDescription: (row.job_description as string) ?? '',
     benefits:       (row.benefits as string) ?? '',
     submittedAt:    row.submitted_at as string,
+    statusUpdatedAt: row.status_updated_at as string,
     status:         (row.status as string) ?? 'New',
   };
 }
@@ -93,7 +94,7 @@ export async function updateB2bLeadStatus(
 ): Promise<void> {
   const { error } = await supabase
     .from('b2b_leads')
-    .update({ status })
+    .update({ status, status_updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw new Error(`Failed to update lead status: ${error.message}`);
 }
