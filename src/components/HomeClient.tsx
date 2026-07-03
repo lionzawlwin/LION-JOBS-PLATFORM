@@ -14,8 +14,8 @@ import { JobGrid } from '@/components/jobs/JobGrid';
 import { useJobs, filterJobs } from '@/hooks/useJobs';
 import { useSavedJobs } from '@/hooks/useSavedJobs';
 import { JoinCommunity } from '@/components/JoinCommunity';
-import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 import type { Job, JobCategory, JobFilters as FiltersType } from '@/types';
 
 const DEFAULT_FILTERS: FiltersType = {
@@ -29,16 +29,21 @@ const DEFAULT_FILTERS: FiltersType = {
 
 interface Props {
   initialJobs: Job[];
+  initialTotal?: number;
 }
 
-export function HomeClient({ initialJobs }: Props) {
+export function HomeClient({ initialJobs, initialTotal }: Props) {
   const { t } = useLanguage();
   const [filters, setFilters] = useState<FiltersType>(DEFAULT_FILTERS);
   const [showSaved, setShowSaved] = useState(false);
   const { savedIds } = useSavedJobs();
 
   // Server-side filtering when browsing; fetch all when in saved-jobs mode
-  const { jobs, loading, error } = useJobs(initialJobs, showSaved ? DEFAULT_FILTERS : filters);
+  const { jobs, loading, error, hasMore, loadingMore, loadMore } = useJobs(
+    initialJobs,
+    showSaved ? DEFAULT_FILTERS : filters,
+    initialTotal,
+  );
 
   const displayJobs = showSaved
     ? filterJobs(jobs, filters).filter((j) => savedIds.includes(j.id))
@@ -134,7 +139,14 @@ export function HomeClient({ initialJobs }: Props) {
           )}
 
           {(!showSaved || savedIds.length > 0) && (
-            <JobGrid jobs={displayJobs} loading={loading} error={error} />
+            <JobGrid
+              jobs={displayJobs}
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={loadMore}
+            />
           )}
         </div>
       </section>
