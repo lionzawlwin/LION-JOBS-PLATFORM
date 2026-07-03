@@ -62,3 +62,45 @@ Branch: `feat/phase-4-rbac` (not yet merged — PR opened for human review)
 - 2026-07-03: Explicitly NOT gated, by design: `GET /api/legal/settings` (public, used by the unauthenticated candidate-facing consent modal), `GET /api/jobs` (public job board), `POST /api/candidates/[id]/consent` (public, identity-verified via email/phone match instead), and `/api/staff/*` (already `requireRole(['owner','admin'])` from Phase 3, left exactly as-is).
 - 2026-07-03: Out of scope, deferred: row-level data scoping for `cse` (would need a `Staff`↔`CseRep` link that doesn't exist yet), a DB-backed configurable permissions UI, per-individual-action granularity, and Sentry/Observability (separately agreed as Phase 5).
 - 2026-07-03: Could not exercise live in a browser — the dashboard is gated behind Google OAuth as a live human account, which this session can't drive. Recommend the admin spot-check a `cse` login and a `viewer` login post-merge: confirm hidden tabs stay hidden, confirm a direct API call to a `manage`-gated route as a `cse` session returns 401, confirm the Overview tab no longer crashes for `cse`.
+
+---
+
+# Phase 5: Sentry + System Health — Progress
+
+Spec: `docs/superpowers/specs/2026-07-03-phase-5-observability-design.md`
+Plan: `docs/superpowers/plans/2026-07-03-phase-5-observability.md`
+Process: superpowers:subagent-driven-development (fresh subagent per task, spec review then code-quality review)
+Branch: `feat/phase-5-observability` (not yet merged — PR opened for human review)
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Install @sentry/nextjs, store SENTRY_DSN | ✅ Done |
+| 2 | system_events migration (0007) | ✅ Done |
+| 3 | Types (SystemEvent, FailureCategory, CronStatus) | ✅ Done |
+| 4 | system_events DB accessor | ✅ Done |
+| 5 | src/instrumentation.ts | ✅ Done |
+| 6 | src/lib/observability.ts (logFailure) | ✅ Done |
+| 7 | Cron routes (job-alerts, weekly-email) | ✅ Done |
+| 8 | Webhook + AI scoring routes | ✅ Done |
+| 9 | apply route (3 call sites) | ✅ Done |
+| 10 | Invoicing domain | ✅ Done |
+| 11 | Candidates "other" routes + stage auth fix | ✅ Done |
+| 12 | Remaining "other" routes | ✅ Done |
+| 13 | Coverage verification | ✅ Done |
+| 14 | system-health permissions domain | ✅ Done |
+| 15 | GET /api/system-events | ✅ Done |
+| 16 | SystemHealthView.tsx | ✅ Done |
+| 17 | Wire tab + i18n | ✅ Done |
+| 18 | Final verification | ✅ Done |
+
+## Log
+
+- 2026-07-03: Built Sentry capture (via `src/instrumentation.ts`'s `onRequestError` for truly unhandled exceptions, plus explicit `logFailure()` calls at every already-handled `catch` block) and a local `system_events` Supabase table so the System Health dashboard tab doesn't depend on a live Sentry API call.
+- 2026-07-03: Migrated all 21 pre-existing `console.error` call sites plus 2 cron routes and `analyze-cv` (neither had any error logging before) to `logFailure()`/`logCronSuccess()`, across 24 files total.
+- 2026-07-03: While migrating the candidates domain, found `PATCH /api/candidates/[id]/stage` had never had an auth check at all — not a Phase 4 migration gap (nothing to migrate, it simply lacked `requireStaff()` from day one, letting anyone unauthenticated change a candidate's pipeline stage). Fixed by adding `requireTabAccess('candidates', 'manage')`, same as every other candidate-mutating route.
+- 2026-07-03: `apply.ts`'s AI-scoring catch block is categorized `ai_scoring` (not `other`) since it's the same CV-scoring code path as `/api/analyze-cv` — both report to the same category.
+- 2026-07-03: Task 12's code-quality review caught a gap in the plan's own route inventory: `jobs/route.ts` actually had 3 `console.error` sites (the plan only accounted for 1) — its `GET` catch and a fire-and-forget webhook-trigger `.catch()` were missed. Fixed in a supplementary commit before Task 13 could pass.
+- 2026-07-03: Two real bugs in `src/lib/observability.ts` itself were caught across Task 6/7/8's reviews and fixed: (1) `appendSystemEvent`'s ID scheme (`Date.now()` + short random suffix) risked collisions in tight loops (e.g. weekly-email's per-recipient failure loop) — switched to `crypto.randomUUID()`; (2) `logFailure`/`logCronSuccess`'s documented "never throws" contract only wrapped the Sentry call, not the `appendSystemEvent` DB write — a network-level throw there could still escape as an unhandled rejection through unawaited fire-and-forget chains (`somePromise.catch(logFailure)`). Both DB writes are now wrapped in their own try/catch too.
+- 2026-07-03: `src/instrumentation.ts` initially set `tracesSampleRate: 0`, which a code review caught as NOT a genuine tracing no-op per Sentry's own semantics (`0` is not nullish — tracing instrumentation stays active, just samples nothing before send). Fixed by omitting the key entirely, which is the actual no-op, keeping performance tracing genuinely out of scope as intended.
+- 2026-07-03: Explicitly out of scope, per your instructions: alerting/notifications (Phase 6), Sentry performance tracing/session replay/source-map upload, any change to Phase 4's `requireTabAccess()`/`hasAccess()` enforcement code itself (only its data — the permissions matrix — gained a new `system-health` row, identical to `team`'s).
+- 2026-07-03: Could not verify Sentry events actually arrive at sentry.io from this environment (no outbound network verification available here) — recommend confirming from the Sentry project dashboard after deploy. Could not exercise the System Health tab live in a browser (OAuth-gated dashboard, same limitation as every prior phase).
