@@ -36,7 +36,7 @@ pagination exists anywhere in this app.
 Two integrations run alongside the Supabase data layer, both unrelated to
 each other:
 - `src/lib/drive.ts` — Google Drive for candidate CV storage (service account).
-- Resend — transactional email, weekly digest, and both Phase 6/7/8 alert
+- Resend — transactional email, weekly digest, and both Phase 6/7 alert
   emails.
 
 A previous Google Sheets + Make.com webhook data layer was fully removed in
@@ -83,8 +83,9 @@ Push to `main` → GitHub Actions (`.github/workflows/deploy.yml`) runs
 deployment with the URL commented automatically. `main` has branch
 protection requiring the `verify` status check (install → build →
 type-check) to pass via a PR — **no direct pushes to `main` are possible**,
-even for docs-only changes; this was confirmed the hard way during Phase 7's
-follow-up work when a direct push attempt was rejected by GitHub.
+even for docs-only changes; a direct `git push` attempt is rejected outright
+by GitHub (`GH006: Protected branch update failed`), not just discouraged by
+convention.
 
 ## Database migrations
 

@@ -58,13 +58,13 @@ All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJob
 | `/apply/[jobId]` | Candidate application form |
 | `/dashboard` | Internal admin console — 12 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access |
 
-### Access control — staff table, single access tier
+### Access control — staff table, per-tab/per-action RBAC
 
 `authOptions.ts`'s `signIn` callback accepts anyone with an active row in the `staff` table (`id`, `email`, `name`, `role`: `owner`/`admin`/`cse`/`viewer`, `active`), managed via the Team & Access dashboard tab. `ADMIN_EMAIL` is kept as a **permanent** fallback in `authOptions.ts` only — always works regardless of the staff table's state, so a missing/misconfigured row can never lock out the account this auth system originally belonged to. Every other file uses `requireStaff()` / `requireRole()` from `src/lib/auth.ts`, not `ADMIN_EMAIL` directly — `grep -rl ADMIN_EMAIL src/` should only ever match `authOptions.ts`, `auth.ts`, and explanatory comments in `proxy.ts`/`dashboard/page.tsx`.
 
 Role is attached to the session/JWT at sign-in (`authOptions.ts`'s `jwt` callback) and does **not** update until that staff member's next login — changing someone's role in the Team & Access tab takes effect on their next sign-in, not immediately.
 
-**Current enforcement is single-tier**: `requireStaff()` just checks "is there a session" — any active staff member (any role) has the same dashboard access as every other. The only place role is actually checked is `/api/staff/*` (`requireRole(['owner', 'admin'])`) — managing the roster itself is restricted, nothing else is yet. Per-tab/per-action granular RBAC (e.g. `cse` role seeing only their own Enterprise accounts) is a real, separate, not-yet-scoped follow-up — don't assume `role` gates anything beyond staff management without checking the specific route first.
+**Enforcement is per-tab/per-action RBAC, since Phase 4**: `requireTabAccess(domain, level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level (`none`/`view`/`manage`) matrix in `src/lib/permissions.ts`, covering all 4 roles across all 12 dashboard tabs. `owner`/`admin` have full access everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus view-only on Legal/Billing/Overview and no access to recruitment or marketing tabs; `viewer` is read-only everywhere except Post Job/Team. `/api/staff/*` still additionally requires `requireRole(['owner', 'admin'])` for managing the roster itself. Known gap, deliberately deferred: no row-level scoping exists for `cse` — a `cse` role sees every company/lead, not just their own assigned accounts (would need a `Staff` ↔ `CseRep` link that doesn't exist yet).
 
 ### State management
 
