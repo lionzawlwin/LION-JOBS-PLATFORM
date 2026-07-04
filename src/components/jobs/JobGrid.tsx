@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { JobCard } from './JobCard';
 import { JobCardSkeleton } from './JobCardSkeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,9 +11,12 @@ interface Props {
   jobs: Job[];
   loading: boolean;
   error?: string | null;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function JobGrid({ jobs, loading, error }: Props) {
+export function JobGrid({ jobs, loading, error, hasMore, loadingMore, onLoadMore }: Props) {
   const { t } = useLanguage();
   if (loading) {
     return (
@@ -56,23 +60,39 @@ export function JobGrid({ jobs, loading, error }: Props) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <AnimatePresence mode="popLayout">
-        {jobs.map((job, i) => (
-          <motion.div
-            key={job.id}
-            layout
-            initial={{ opacity: 0, y: 28, scale: 0.96 }}
-            animate={{
-              opacity: 1, y: 0, scale: 1,
-              transition: { delay: i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-            }}
-            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatePresence mode="popLayout">
+          {jobs.map((job, i) => (
+            <motion.div
+              key={job.id}
+              layout
+              initial={{ opacity: 0, y: 28, scale: 0.96 }}
+              animate={{
+                opacity: 1, y: 0, scale: 1,
+                transition: { delay: i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+              }}
+              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+            >
+              <JobCard job={job} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {hasMore && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <JobCard job={job} />
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
+            {loadingMore && <Loader2 size={14} className="animate-spin" />}
+            {loadingMore ? t('jg_loading_more') : t('jg_load_more')}
+          </button>
+        </div>
+      )}
+    </>
   );
 }

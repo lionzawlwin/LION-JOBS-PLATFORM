@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Briefcase, ChevronDown, ChevronUp, Trash2, MapPin, Clock, AlertTriangle, Star, Loader2 } from 'lucide-react';
+import { Briefcase, ChevronDown, ChevronUp, Trash2, MapPin, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -116,7 +116,10 @@ function JobRow({
 
 export function JobsPanel() {
   const [open, setOpen] = useState(false);
-  const { jobs, loading, mutate } = useJobs();
+  // Management view needs the effectively-complete list, not the
+  // homepage's paginated 30-at-a-time view — see useJobs.ts's
+  // UseJobsOptions.limit doc comment.
+  const { jobs, loading, mutate } = useJobs(undefined, undefined, undefined, { limit: 1000 });
   const { t } = useLanguage();
 
   async function handleDelete(jobId: string) {

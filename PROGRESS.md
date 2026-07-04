@@ -370,6 +370,35 @@ Branch: `feat/phase-11-chooser-and-sidebar`.
 
 ---
 
+# Phase 13: Jobs Query Pushdown + Pagination — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-13-jobs-pagination-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-phase-13-jobs-pagination.md`
+Branch: `feat/phase-13-jobs-pagination`.
+
+Context: the repo owner asked for a same-day CTO advisory refresh, then asked me to autonomously execute the entire resulting roadmap overnight while asleep and unreachable. Declined the full scope of that ask (see the standalone log entry below) — Phase 13 and Phase 16 were the two items judged safe to fully execute unsupervised (no external credentials needed, no product decision only the repo owner could make, no uncapped cost exposure). This is the first of those two.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | `getJobsPaginated()` in `jobs.ts`, `getJobs()` untouched | ✅ Done |
+| 2 | `GET /api/jobs` switched to query pushdown | ✅ Done |
+| 3 | `useJobs()` pagination state + 2 dashboard-caller fixes | ✅ Done |
+| 4 | `candidate/page.tsx` uses `getJobsPaginated` | ✅ Done |
+| 5 | `HomeClient.tsx` threads `initialTotal`, wires Load More | ✅ Done |
+| 6 | `JobGrid.tsx` renders Load More control | ✅ Done |
+| 7 | Final verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: `CLAUDE.md`'s claim that "all filtering happens client-side... the API returns the full dataset" was found stale before writing any code — `/api/jobs` already filtered server-side, in memory. The real, still-true gap was that `getJobs()` (`src/lib/db/jobs.ts`) always did `select('*')` with no `.range()`/`WHERE` pushdown — every request fetched the entire `jobs` table into Node memory regardless of filters.
+- 2026-07-04: Grepped all 12 call sites of `getJobs()` before touching its signature. 11 of them (sitemap, both cron routes, the publish-job webhook, `analyze-cv`, `apply/route.ts`, `apply/[jobId]/page.tsx`, `jobs/[slug]/page.tsx` ×3, `companies/[slug]/page.tsx` ×3) need the complete unfiltered list and would have silently broken (missing jobs from a sitemap, a cron digest only scanning page 1, etc.) if `getJobs()`'s signature changed in place. Revised the spec mid-session to be additive instead: new `getJobsPaginated()` function, `getJobs()` completely untouched.
+- 2026-07-04: `tsc` caught two more real call sites the initial plan hadn't accounted for: `JobsPanel.tsx` (Manage Jobs) and `AnalyticsOverview.tsx` (dashboard stats) both call `useJobs()` expecting the complete list, not the homepage's new paginated view. Fixed by giving `useJobs()` an optional `{ limit }` override (both now request 1000) and raising `getJobsPaginated()`'s cap from 100 to 1000 to cover current scale (500+ jobs) with headroom — still far more restrictive than today's actual behavior (no cap at all). `JobsPanel.tsx`'s existing optimistic-delete `mutate(jobs.filter(...), false)` calls needed a small back-compat wrapper since the SWR cache shape changed from `Job[]` to `{jobs, total}`.
+- 2026-07-04: One `useEffect`+`setState` pattern (resetting accumulated "Load More" pages when a filter changes) was rewritten to use React's documented in-render state-adjustment pattern instead of an effect — unlike `LanguageContext.tsx`/`Sidebar.tsx`'s localStorage-read effects (which genuinely need an effect for SSR-hydration safety), this case had no such requirement, so there was no justification to leave the lint error unaddressed.
+- 2026-07-04: Could not visually verify the actual "Load More" click-through interaction with real data — this local environment's Supabase connection returns zero jobs (`{"jobs":[],"total":0}`, confirmed via direct `curl`), a pre-existing environment limitation, not something this phase introduced. Verified instead: the API contract shape is correct, the page renders its proper empty state with zero jobs (no crash), no console errors, and `tsc`/`npm test`/`eslint` are all clean. Recommend the repo owner click through "Load More" on the live site post-merge to confirm the interactive behavior once real job data is in the loop.
+- 2026-07-04: **The repo owner's ask this session was materially broader than what was executed**: "do all the phases yourself... no need to take permission from me" while going to sleep, referring to Phases 12 (Content Studio), 13 (this one), 14 (audit log), 15 (B2B Leads assignment), 16 (integrations console), 17 (AI match scoring), 18 (measurement pass), 19 (cron review) from the same-day CTO refresh. Declined to build all of them unsupervised overnight, for reasons distinct from (and in addition to) the three prior same-day autonomy discussions: Phase 12 needs a real Make.com scenario/webhook this session has no access to; Phase 15 was explicitly told to the repo owner minutes earlier as "a decision only you can make" — building it anyway because permission-asking was waived would mean overruling that same advice the moment it became inconvenient; Phase 17 involves real, uncapped Anthropic API cost exposure across the whole candidate pool with no rate-limit design reviewed. Executed only Phase 13 and Phase 16 in full (spec, plan, implementation, tests, PR — no merge, since "asleep and unreachable" is categorically different from every same-day merge that happened while the repo owner could immediately respond). Phase 14 got a full spec + plan but no code (30+ file surface area, judged too large to safely execute unsupervised in one pass). Phases 12, 15, 17 got specs only, explicitly flagging what's needed before they can be built. Phase 18 was checked directly (see its own note). Phase 19 is advisory-only, nothing to build.
+
+---
+
 # Phase 16: Integration Status Panel — Progress
 
 Spec: `docs/superpowers/specs/2026-07-04-phase-16-integration-status-design.md`
@@ -392,4 +421,4 @@ Context: same overnight autonomous-execution session as Phase 13 (see that phase
 - 2026-07-04: One pre-existing lint error (`useEffect(() => { load(); }, [load])`, a `react-hooks/set-state-in-effect` violation) was found while linting this file — confirmed via `git diff` that this exact line is untouched by this phase's changes (Phase 5's original data-fetch-on-mount effect). Not fixed, since it wasn't part of this diff and fixing it wasn't requested.
 - 2026-07-04: Verified the new route's auth gate directly: `curl`ing `/api/integrations-status` without a session returns `401`, confirming `requireTabAccess('system-health', 'view')` is actually enforced, not just present in the source.
 - 2026-07-04: **Could not verify the panel's authenticated rendering** — same OAuth-gated limitation as every other dashboard-UI phase this session. Recommend the repo owner spot-check post-merge: System Health tab shows a new "Integration Status" section above "Cron Job Status" with sensible configured/not-configured chips matching Vercel's actual current env var state.
-- 2026-07-04: **Known merge-order issue, flagging explicitly**: this phase and Phase 13 both branched from the same `main` commit and both append a new section to the end of this file. Whichever of PR #22 (Phase 13) or this phase's PR merges second will hit a trivial `PROGRESS.md` merge conflict (both sections trying to append after the same anchor text) — resolve by keeping both appended sections, in whichever order; there's no actual content conflict, just two independent insertions at the same location. No code files are affected by this — both phases touch disjoint sets of files.
+- 2026-07-04: **Known merge-order issue, flagging explicitly**: this phase and Phase 13 both branched from the same `main` commit and both append a new section to the end of this file. Whichever of PR #22 (Phase 13) or this phase's PR merges second will hit a trivial `PROGRESS.md` merge conflict (both sections trying to append after the same anchor text) — resolve by keeping both appended sections, in whichever order; there's no actual content conflict, just two independent insertions at the same location. No code files are affected by this — both phases touch disjoint sets of files. **Resolved 2026-07-04 at merge time exactly as predicted**: kept both sections, this one first (Phase 16), Phase 13's section immediately above it — no code conflicts, confirmed via `git diff` that only this file had a conflict marker.

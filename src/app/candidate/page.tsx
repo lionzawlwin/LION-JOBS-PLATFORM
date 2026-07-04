@@ -3,7 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AdminBar } from '@/components/layout/AdminBar';
 import { HomeClient } from '@/components/HomeClient';
-import { getJobs } from '@/lib/db';
+import { getJobsPaginated } from '@/lib/db';
 
 // ISR: Vercel regenerates this page at most once per hour.
 // Between revalidations, users get cached HTML — Googlebot included.
@@ -32,14 +32,16 @@ export const metadata: Metadata = {
 };
 
 export default async function CandidatePage() {
-  // Fetched server-side at build / revalidation time.
-  const initialJobs = await getJobs();
+  // Fetched server-side at build / revalidation time. Page 1 only
+  // (matches what the client will show on first paint) -- Load More
+  // fetches subsequent pages client-side.
+  const { jobs: initialJobs, total: initialTotal } = await getJobsPaginated({ limit: 30 });
 
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
       <main className="flex-1">
-        <HomeClient initialJobs={initialJobs} />
+        <HomeClient initialJobs={initialJobs} initialTotal={initialTotal} />
       </main>
       <AdminBar />
       <Footer />
