@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { updateCseRep, deleteCseRep } from '@/lib/db';
 import type { NextRequest } from 'next/server';
@@ -18,6 +19,7 @@ export async function PATCH(
       email:  body.email  !== undefined ? String(body.email) : undefined,
       active: body.active !== undefined ? Boolean(body.active) : undefined,
     });
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
@@ -34,6 +36,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteCseRep(id);
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

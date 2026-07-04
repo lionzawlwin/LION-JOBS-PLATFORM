@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { getCseReps, appendCseRep } from '@/lib/db';
 import type { NextRequest } from 'next/server';
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone !== undefined ? String(body.phone) : undefined,
       email: body.email !== undefined ? String(body.email) : undefined,
     });
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
