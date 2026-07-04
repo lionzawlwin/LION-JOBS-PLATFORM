@@ -73,6 +73,8 @@ export const translations = {
     // Job grid empty/loading states
     jg_no_roles_found: 'No roles found',
     jg_no_roles_sub:   'No positions match your current filters. Try broadening your search or clearing a filter.',
+    jg_load_more:      'Load More',
+    jg_loading_more:   'Loading…',
 
     // Homepage job listing section
     home_section_eyebrow:   'Lion Jobs Agency',
@@ -558,6 +560,9 @@ export const translations = {
     mj_in_sheets_suffix: '',
     mj_warning:        'Deleting a job permanently removes it from the database. This cannot be undone.',
     mj_no_jobs:        'No jobs found.',
+    mj_suggested_candidates: 'Suggested Candidates',
+    mj_suggested_empty:      'No candidates in the pool yet.',
+    mj_suggested_error:      'Could not load suggested candidates.',
     mj_toast_no_admin_key:      'Admin key not set',
     mj_toast_no_admin_key_desc: 'Open the "Post a New Job" panel above, enter your admin key, and try again.',
     mj_toast_delete_failed:      'Delete failed',
@@ -621,6 +626,7 @@ export const translations = {
     bl_benefits_perks:    'Benefits & Perks',
     bl_message_to_agency: 'Message to Agency',
     bl_website:           'Website',
+    bl_claimed_by:        'Claimed by',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'Job Announcement',
@@ -781,6 +787,8 @@ export const translations = {
     // Job grid empty/loading states
     jg_no_roles_found: 'ရာထူး မတွေ့ပါ',
     jg_no_roles_sub:   'သင့်လက်ရှိစစ်ထုတ်မှုများနှင့် ကိုက်ညီသော ရာထူးများ မရှိပါ။ ရှာဖွေမှုကို ကျယ်ပြန့်အောင်ပြုလုပ်ပါ သို့မဟုတ် စစ်ထုတ်မှုတစ်ခုကို ဖျက်ကြည့်ပါ။',
+    jg_load_more:      'နောက်ထပ် ကြည့်ရန်',
+    jg_loading_more:   'ဖွင့်နေသည်…',
 
     // Homepage job listing section
     home_section_eyebrow:   'Lion Jobs Agency',
@@ -1266,6 +1274,9 @@ export const translations = {
     mj_in_sheets_suffix: '',
     mj_warning:        'အလုပ်တစ်ခု ဖျက်ခြင်းသည် ဒေတာဘေ့စ်မှ အပြီးအပိုင် ဖယ်ရှားပစ်သည်။ ပြန်လည်ရယူ၍ မရပါ။',
     mj_no_jobs:        'အလုပ် မတွေ့ပါ။',
+    mj_suggested_candidates: 'အကြံပြု ကိုယ်စားလှယ်များ',
+    mj_suggested_empty:      'ကိုယ်စားလှယ် အုပ်စုတွင် မည်သူမျှ မရှိသေးပါ။',
+    mj_suggested_error:      'အကြံပြုကိုယ်စားလှယ်များကို ဖွင့်၍မရပါ။',
     mj_toast_no_admin_key:      'အက်ဒမင် Key မသတ်မှတ်ရသေးပါ',
     mj_toast_no_admin_key_desc: 'အထက်ရှိ "အလုပ်အသစ် ကြေညာရန်" ပန်နယ်ကို ဖွင့်၍ သင်၏ အက်ဒမင် key ကို ထည့်ပြီး ထပ်မံကြိုးစားပါ။',
     mj_toast_delete_failed:      'ဖျက်၍ မရပါ',
@@ -1329,6 +1340,7 @@ export const translations = {
     bl_benefits_perks:    'အကျိုးခံစားခွင့်များ',
     bl_message_to_agency: 'အေဂျင်စီသို့ မက်ဆေ့ချ်',
     bl_website:           'ဝက်ဘ်ဆိုက်',
+    bl_claimed_by:        'တာဝန်ယူသူ',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'အလုပ် ကြေညာချက်',

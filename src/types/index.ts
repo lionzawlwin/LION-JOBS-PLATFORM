@@ -103,6 +103,8 @@ export interface B2bLead {
   submittedAt: string;
   statusUpdatedAt: string;
   status: string;
+  claimedByCseRepId: string | null;
+  claimedAt: string | null;
 }
 
 export interface JobFilters {

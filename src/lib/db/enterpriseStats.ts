@@ -1,7 +1,18 @@
+import { unstable_cache } from 'next/cache';
 import { supabase } from '@/lib/supabase';
 import type { EnterpriseStats } from '@/types';
 
-export async function getEnterpriseStats(): Promise<EnterpriseStats> {
+// Uses unstable_cache (not the newer `use cache` directive) deliberately:
+// `use cache`'s Cache Components model defaults to a per-instance in-memory
+// LRU that Next's own docs say "typically doesn't persist across requests"
+// on serverless platforms like Vercel -- reliable cross-request persistence
+// there requires `use cache: remote`, a paid external cache handler (Redis/
+// KV). `unstable_cache` instead persists via Vercel's built-in Data Cache,
+// which works across serverless invocations today with no new
+// infrastructure or cost. Revisit if this app ever migrates off
+// unstable_cache's eventual removal, but not before `use cache: remote` (or
+// self-hosting) is actually in the plan.
+async function computeEnterpriseStats(): Promise<EnterpriseStats> {
   // Intentionally bypasses getContracts()/getCompanies()/getCseReps() — this needs
   // narrow column projections and count-only/aggregate queries those functions
   // don't provide. If contracts/companies schema changes, check this file too.
@@ -42,3 +53,14 @@ export async function getEnterpriseStats(): Promise<EnterpriseStats> {
 
   return { totalActiveContractValue, activeContractsCount, enterpriseAccountsCount, topCse };
 }
+
+// 30s revalidate window covers "several staff viewing Enterprise
+// concurrently" without recomputing 3 aggregate queries per request; tag
+// invalidation (revalidateTag('enterprise-stats')) in the contracts/
+// companies/cse mutation routes keeps it accurate immediately after an edit
+// rather than waiting out the window.
+export const getEnterpriseStats = unstable_cache(
+  computeEnterpriseStats,
+  ['enterprise-stats'],
+  { revalidate: 30, tags: ['enterprise-stats'] },
+);

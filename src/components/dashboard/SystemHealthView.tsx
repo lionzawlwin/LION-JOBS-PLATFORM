@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash } from 'lucide-react';
 import type { SystemEvent, CronStatus, FailureCategory } from '@/types';
+
+interface IntegrationStatus {
+  name: string;
+  configured: boolean;
+  optional: boolean;
+  detail: string;
+}
 
 const CATEGORIES: FailureCategory[] = ['webhook', 'ai_scoring', 'invoicing', 'cron', 'other'];
 
@@ -23,6 +30,7 @@ function fmtDateTime(iso: string) {
 export function SystemHealthView() {
   const [events, setEvents]         = useState<SystemEvent[]>([]);
   const [cronStatus, setCronStatus] = useState<CronStatus[]>([]);
+  const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<FailureCategory | ''>('');
@@ -34,14 +42,21 @@ export function SystemHealthView() {
     try {
       const params = new URLSearchParams({ days: String(days) });
       if (categoryFilter) params.set('category', categoryFilter);
-      const res = await fetch(`/api/system-events?${params.toString()}`);
-      if (!res.ok) {
+      const [eventsRes, integrationsRes] = await Promise.all([
+        fetch(`/api/system-events?${params.toString()}`),
+        fetch('/api/integrations-status'),
+      ]);
+      if (!eventsRes.ok) {
         setError(true);
         return;
       }
-      const data = await res.json();
+      const data = await eventsRes.json();
       setEvents(data.events ?? []);
       setCronStatus(data.cronStatus ?? []);
+      if (integrationsRes.ok) {
+        const integrationsData = await integrationsRes.json();
+        setIntegrations(integrationsData.integrations ?? []);
+      }
     } catch {
       setError(true);
     } finally {
@@ -57,7 +72,40 @@ export function SystemHealthView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Integration Status — is each integration even configured?
+          system_events (below) only records activity that happened; an
+          unconfigured integration silently no-ops and never shows up
+          there at all. This answers a different question: is it turned
+          on in the first place. */}
+      <div>
+        <h3 className="mb-3 text-sm font-bold text-foreground">Integration Status</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {integrations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            integrations.map((i) => (
+              <div key={i.name} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                {i.configured ? (
+                  <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                ) : i.optional ? (
+                  <CircleSlash size={18} className="mt-0.5 shrink-0 text-muted-foreground/50" />
+                ) : (
+                  <CircleAlert size={18} className="mt-0.5 shrink-0 text-amber-600" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">{i.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {i.configured ? 'Configured' : i.optional ? 'Not configured (optional)' : 'Not configured'}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/70 truncate" title={i.detail}>{i.detail}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">Cron Job Status</h3>
         <button
           onClick={() => load()}

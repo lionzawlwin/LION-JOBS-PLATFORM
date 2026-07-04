@@ -1,12 +1,95 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Briefcase, ChevronDown, ChevronUp, Trash2, MapPin, Clock, AlertTriangle, Star, Loader2 } from 'lucide-react';
+import { Briefcase, ChevronDown, ChevronUp, Trash2, MapPin, Clock, AlertTriangle, Loader2, Target } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Job } from '@/types';
+
+interface SuggestedCandidate {
+  candidateId:     string;
+  name:            string;
+  phone:           string;
+  cityLocation:    string | null;
+  experienceYears: string | null;
+  score:           number;
+  breakdown: {
+    skillOverlap:    number;
+    keywordMatch:    number;
+    locationMatch:   number;
+    experienceMatch: number;
+  };
+  reasons: string[];
+}
+
+function scoreColor(score: number): string {
+  if (score >= 70) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+  if (score >= 40) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+  return 'bg-muted text-muted-foreground';
+}
+
+function SuggestedCandidatesPanel({ jobId }: { jobId: string }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [results, setResults] = useState<SuggestedCandidate[]>([]);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/suggested-candidates?limit=10`);
+        if (!res.ok) { if (!cancelled) setError(true); return; }
+        const json = await res.json();
+        if (!cancelled) setResults(json.results ?? []);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [jobId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <Loader2 size={16} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="py-4 text-center text-xs text-red-600 dark:text-red-400">{t('mj_suggested_error')}</p>;
+  }
+
+  if (results.length === 0) {
+    return <p className="py-4 text-center text-xs text-muted-foreground">{t('mj_suggested_empty')}</p>;
+  }
+
+  return (
+    <div className="space-y-1.5 py-2">
+      {results.map((r) => (
+        <div key={r.candidateId} className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+          <span className={cn('flex h-8 w-11 shrink-0 items-center justify-center rounded-lg text-xs font-bold', scoreColor(r.score))}>
+            {r.score}%
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-foreground">{r.name}</p>
+            <p className="truncate text-[10px] text-muted-foreground">
+              {r.cityLocation || '—'}{r.experienceYears ? ` · ${r.experienceYears} yr` : ''}
+            </p>
+          </div>
+          <p className="hidden max-w-[45%] truncate text-[10px] text-muted-foreground sm:block" title={r.reasons.join(' ')}>
+            {r.reasons[0]}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function TypeBadge({ type }: { type: Job['type'] }) {
   const colors: Record<Job['type'], string> = {
@@ -32,6 +115,7 @@ function JobRow({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [loading,    setLoading]    = useState(false);
+  const [showMatches, setShowMatches] = useState(false);
   const { t } = useLanguage();
 
   async function handleDelete() {
@@ -43,7 +127,8 @@ function JobRow({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 transition-colors hover:border-border/80">
+    <div className="rounded-xl border border-border bg-background transition-colors hover:border-border/80">
+    <div className="flex items-center gap-3 px-4 py-3">
 
       {/* Icon */}
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-600/10 dark:text-brand-400">
@@ -80,6 +165,20 @@ function JobRow({
         </div>
       )}
 
+      {/* Suggested Candidates toggle */}
+      <button
+        onClick={() => setShowMatches((v) => !v)}
+        className={cn(
+          'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+          showMatches
+            ? 'bg-brand-600 text-white'
+            : 'border border-border text-muted-foreground hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-900/20',
+        )}
+      >
+        <Target size={12} />
+        <span className="hidden sm:inline">{t('mj_suggested_candidates')}</span>
+      </button>
+
       {/* Delete control */}
       <div className="flex shrink-0 items-center gap-2">
         {confirming && !loading && (
@@ -111,12 +210,21 @@ function JobRow({
       </div>
 
     </div>
+    {showMatches && (
+      <div className="border-t border-border px-4">
+        <SuggestedCandidatesPanel jobId={job.id} />
+      </div>
+    )}
+    </div>
   );
 }
 
 export function JobsPanel() {
   const [open, setOpen] = useState(false);
-  const { jobs, loading, mutate } = useJobs();
+  // Management view needs the effectively-complete list, not the
+  // homepage's paginated 30-at-a-time view — see useJobs.ts's
+  // UseJobsOptions.limit doc comment.
+  const { jobs, loading, mutate } = useJobs(undefined, undefined, undefined, { limit: 1000 });
   const { t } = useLanguage();
 
   async function handleDelete(jobId: string) {
