@@ -826,9 +826,61 @@ established reasoning for declining scope under a standing autonomy grant:
 
 ## Merging
 
-None of the three PRs were merged. Every push to `main` auto-deploys to
-production (per `CLAUDE.md`), and this repo's branch protection + required
-CI gate exist specifically to prevent unreviewed changes from reaching a
-live site while unsupervised — the same reasoning recorded (and held)
-every other time this exact tradeoff came up in this file. All three are
-ready for review whenever the repo owner is back.
+None of the three PRs were merged overnight. Every push to `main`
+auto-deploys to production (per `CLAUDE.md`), and this repo's branch
+protection + required CI gate exist specifically to prevent unreviewed
+changes from reaching a live site while unsupervised — the same reasoning
+recorded (and held) every other time this exact tradeoff came up in this
+file. All three were left ready for review.
+
+## Post-merge (2026-07-05): reviewed, merged, and live-verified
+
+The repo owner reviewed all four PRs the next morning and asked for them
+to be merged in strict order — #46, then #47, then #48, then #49 — to
+control the anticipated `MIGRATIONS.md`/`system_events`-file conflict
+between #46 and #48 (both branched from the same pre-merge `main` commit).
+
+- #47 and #48 each needed their branch brought up to date with `main`
+  before GitHub would allow the merge (branch protection requires the
+  head branch to be current). #48's update surfaced real merge conflicts
+  in `supabase/MIGRATIONS.md`, `src/app/api/system-events/route.ts`,
+  `src/lib/db/systemEvents.ts`, and `SystemHealthView.tsx` — exactly the
+  conflict flagged in advance in both PRs' descriptions. Resolved by hand:
+  every conflict was two independent, additive changes (Feature A's
+  `resolved` filter plumbing vs. Feature C's `rateLimitHits24h` plumbing)
+  living in the same functions with no actual logical overlap, so both
+  sides were kept in full. Re-verified `tsc`/`npm test`/`npm run lint`
+  clean after resolving, before pushing.
+- Resolving that conflict required a broad `git add -A`, which briefly
+  staged an unrelated pre-existing untracked file
+  (`docs/superpowers/reports/2026-07-04-overnight-report.html`) that had
+  nothing to do with this feature. Caught before merging by reviewing
+  `git status` output rather than trusting `-A` blindly, inspected for
+  secrets (none — just a static HTML summary), and removed with a
+  dedicated follow-up commit rather than letting it ride into `main`
+  silently.
+- All four PRs merged cleanly in the requested order, CI green throughout
+  (`verify` + `deploy-preview` passing on each, `deploy-production`
+  correctly skipping on non-`main` pushes). Production smoke test after
+  the final merge: `/` → 200, `/api/jobs` → 200, `/dashboard` → 307
+  (redirects to login, not a crash).
+- **Live feature verification**: attempted via the repo's `browse`
+  skill using cookies imported from the repo owner's own logged-in
+  Chrome/Edge session (the standard workaround for this dashboard's
+  OAuth gate, which no session in this environment can complete
+  end-to-end on its own). Two import attempts only picked up the
+  NextAuth CSRF/callback-url cookies, never the actual session token —
+  confirmed by inspecting `browse cookies` output (no session token
+  present) and by the dashboard redirecting to `/login` on navigation,
+  not by assumption. The cookie-picker's local listener then became
+  unreachable on a third attempt (`ERR_CONNECTION_REFUSED`) and the
+  underlying `browse` server itself crashed on the next restart attempt —
+  an environment/tooling instability, not a dashboard-side issue.
+- Given that, **the repo owner checked all three features directly in
+  production themselves** and confirmed: system-event resolution works,
+  B2B lead release-to-shared-pool works, and the rate-limit-hits counter
+  is visible in System Health. This closes the "needs a live spot-check"
+  open item every one of #46/#47/#48's PR descriptions carried — noted
+  here as owner-confirmed rather than agent-verified, the same distinction
+  this file has drawn everywhere else an OAuth-gated feature could only be
+  checked by a human.
