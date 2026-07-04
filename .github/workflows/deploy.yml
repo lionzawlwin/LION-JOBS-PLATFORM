@@ -32,6 +32,11 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Dependency vulnerability audit (advisory, non-blocking)
+        run: |
+          npm audit --audit-level=high || echo "::warning::npm audit found high/critical vulnerabilities, review before the next dependency bump. Not blocking this deploy since a newly-disclosed transitive-dependency CVE with no code changes shouldn't lock out an unrelated urgent fix."
+        continue-on-error: true
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -91,6 +96,11 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Dependency vulnerability audit (advisory, non-blocking)
+        run: |
+          npm audit --audit-level=high || echo "::warning::npm audit found high/critical vulnerabilities, review before the next dependency bump. Not blocking this deploy since a newly-disclosed transitive-dependency CVE with no code changes shouldn't lock out an unrelated urgent fix."
+        continue-on-error: true
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
