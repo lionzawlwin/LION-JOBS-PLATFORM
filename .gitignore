@@ -55,3 +55,6 @@ next-env.d.ts
 # Supabase CLI local link/cache state (machine-specific, not portable config)
 supabase/.temp/
 supabase/.branches/
+
+# Local git worktrees (agent isolation)
+.worktrees/
