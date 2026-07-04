@@ -356,6 +356,55 @@ export async function getCandidatesByEmailOrPhone(
   });
 }
 
+// Exact-match lookup for Candidate Portal magic-link login. Deliberately
+// not the ilike-partial-match search above -- a login lookup must never
+// match more or less than the exact account the caller typed.
+export async function getCandidateRecordByEmail(
+  email: string,
+): Promise<{ id: string; fullName: string } | null> {
+  const { data, error } = await supabase
+    .from('candidates')
+    .select('id, full_name')
+    .ilike('email', email.trim())
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { id: data.id as string, fullName: data.full_name as string };
+}
+
+// All applications for one person (by their underlying candidates.id, not
+// an applications.id) -- what the Candidate Portal's "My Applications"
+// view is built on.
+export async function getCandidateApplicationsByCandidateId(
+  candidateId: string,
+): Promise<Candidate[]> {
+  const { data, error } = await supabase
+    .from('candidates')
+    .select(`
+      id, full_name, email, phone,
+      city_location, education, experience_years,
+      current_company, current_salary, languages, skills,
+      portfolio_url, source, created_at,
+      applications (
+        id, job_id, job_title, company, stage, applied_at,
+        notes, salary_expected, interview_date, interview_location, interviewer_contact, final_agreed_salary,
+        google_drive_cv_url, linkedin_url,
+        ai_score, ai_summary, ai_reasoning, ai_processed_at
+      )
+    `)
+    .eq('id', candidateId)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error) console.error('[db/candidates] getCandidateApplicationsByCandidateId error:', error.message);
+    return [];
+  }
+
+  const candidate = data as CandidateRow;
+  const apps = candidate.applications ?? [];
+  return apps.map((app) => mapToCandidate(candidate, app));
+}
+
 export async function updateCandidateInterviewDetails(
   applicationId:      string,
   interviewLocation:  string,
