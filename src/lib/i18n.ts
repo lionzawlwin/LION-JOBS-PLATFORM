@@ -73,6 +73,8 @@ export const translations = {
     // Job grid empty/loading states
     jg_no_roles_found: 'No roles found',
     jg_no_roles_sub:   'No positions match your current filters. Try broadening your search or clearing a filter.',
+    jg_load_more:      'Load More',
+    jg_loading_more:   'Loading…',
 
     // Homepage job listing section
     home_section_eyebrow:   'Lion Jobs Agency',
@@ -781,6 +783,8 @@ export const translations = {
     // Job grid empty/loading states
     jg_no_roles_found: 'ရာထူး မတွေ့ပါ',
     jg_no_roles_sub:   'သင့်လက်ရှိစစ်ထုတ်မှုများနှင့် ကိုက်ညီသော ရာထူးများ မရှိပါ။ ရှာဖွေမှုကို ကျယ်ပြန့်အောင်ပြုလုပ်ပါ သို့မဟုတ် စစ်ထုတ်မှုတစ်ခုကို ဖျက်ကြည့်ပါ။',
+    jg_load_more:      'နောက်ထပ် ကြည့်ရန်',
+    jg_loading_more:   'ဖွင့်နေသည်…',
 
     // Homepage job listing section
     home_section_eyebrow:   'Lion Jobs Agency',

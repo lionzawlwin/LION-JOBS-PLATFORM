@@ -102,7 +102,9 @@ const STAGE_STYLE: Record<string, string> = {
 // ── Main Component ────────────────────────────────────────────────
 export function AnalyticsOverview() {
   const { candidates, loading: lcand } = useCandidates();
-  const { jobs, loading: ljobs } = useJobs();
+  // Stats need the effectively-complete job list, not the homepage's
+  // paginated 30-at-a-time view — see useJobs.ts's UseJobsOptions.limit.
+  const { jobs, loading: ljobs } = useJobs(undefined, undefined, undefined, { limit: 1000 });
   const { data: companies = [] } = useSWR<Company[]>('/api/companies', fetcher, {
     revalidateOnFocus: false,
   });

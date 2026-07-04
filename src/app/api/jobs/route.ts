@@ -1,4 +1,4 @@
-import { getJobs, appendJob } from '@/lib/db';
+import { getJobsPaginated, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
 import { requireTabAccess } from '@/lib/auth';
@@ -7,33 +7,21 @@ import { logFailure } from '@/lib/observability';
 // ── GET /api/jobs ─────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   try {
-    const sp       = req.nextUrl.searchParams;
-    const keyword  = sp.get('keyword')?.toLowerCase().trim()  ?? '';
-    const category = sp.get('category')?.trim() ?? '';
-    const type     = sp.get('type')?.trim()     ?? '';
-    const location = sp.get('location')?.toLowerCase().trim() ?? '';
+    const sp        = req.nextUrl.searchParams;
+    const keyword   = sp.get('keyword')?.toLowerCase().trim()  ?? '';
+    const category  = sp.get('category')?.trim() ?? '';
+    const type      = sp.get('type')?.trim()     ?? '';
+    const location  = sp.get('location')?.toLowerCase().trim() ?? '';
     const salaryMin = parseInt(sp.get('salaryMin') ?? '0', 10) || 0;
     const salaryMax = parseInt(sp.get('salaryMax') ?? '0', 10) || 0;
+    const limit     = parseInt(sp.get('limit')  ?? '30', 10) || 30;
+    const offset    = parseInt(sp.get('offset') ?? '0', 10)  || 0;
 
-    let jobs = await getJobs();
+    const { jobs, total } = await getJobsPaginated({
+      keyword, category, type, location, salaryMin, salaryMax, limit, offset,
+    });
 
-    const hasFilter = keyword || category || type || location || salaryMin || salaryMax;
-    if (hasFilter) {
-      jobs = jobs.filter((job) => {
-        if (category && job.category !== category)                      return false;
-        if (type     && job.type     !== type)                          return false;
-        if (location && !job.location.toLowerCase().includes(location)) return false;
-        if (salaryMin > 0 && job.salaryMax > 0 && job.salaryMax < salaryMin) return false;
-        if (salaryMax > 0 && job.salaryMin > 0 && job.salaryMin > salaryMax) return false;
-        if (keyword) {
-          const hay = `${job.title} ${job.company} ${job.description}`.toLowerCase();
-          if (!hay.includes(keyword)) return false;
-        }
-        return true;
-      });
-    }
-
-    return Response.json(jobs, {
+    return Response.json({ jobs, total }, {
       headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' },
     });
   } catch (err) {
