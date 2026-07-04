@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Building2, User, Briefcase, ChevronRight, CheckCircle2, Loader2, FileText, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const schema = z.object({
   // Company
@@ -47,6 +48,7 @@ const inputCls =
 const errorCls = 'mt-1 text-xs text-red-500';
 
 export function HireForm() {
+  const { t } = useLanguage();
   const [submitted,   setSubmitted]  = useState(false);
   const [serverError, setServerError] = useState('');
   const [reqTab,      setReqTab]     = useState<'requirements' | 'jobDescription' | 'benefits'>('requirements');
@@ -79,9 +81,20 @@ export function HireForm() {
     }
   }
 
+  const header = (
+    <div className="mb-7">
+      <h2 className="text-xl font-extrabold text-foreground">{t('hire_form_title')}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {t('hire_form_sub')}
+      </p>
+    </div>
+  );
+
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16 text-center">
+      <>
+        {header}
+        <div className="flex flex-col items-center justify-center gap-6 py-16 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
           <CheckCircle2 size={36} className="text-emerald-600 dark:text-emerald-400" />
         </div>
@@ -99,12 +112,15 @@ export function HireForm() {
             ✓ Team Notified via Telegram
           </div>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <>
+      {header}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 
       {/* ── Section 1: Company Info ─────────────────────────────── */}
       <div className="space-y-4">
@@ -113,19 +129,19 @@ export function HireForm() {
             <Building2 size={16} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-foreground">Company Information</h3>
-            <p className="text-xs text-muted-foreground">Tell us about your organisation</p>
+            <h3 className="text-sm font-bold text-foreground">{t('hire_form_company_info_title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('hire_form_company_info_sub')}</p>
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Company Name <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_company_name')} <span className="text-red-500">*</span></label>
             <input {...register('companyName')} placeholder="e.g. Acme Corp Ltd" className={inputCls} />
             {errors.companyName && <p className={errorCls}>{errors.companyName.message}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Industry <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_industry')} <span className="text-red-500">*</span></label>
             <select {...register('industry')} className={inputCls}>
               <option value="">Select industry…</option>
               {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
@@ -133,12 +149,12 @@ export function HireForm() {
             {errors.industry && <p className={errorCls}>{errors.industry.message}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Location / City <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_location')} <span className="text-red-500">*</span></label>
             <input {...register('location')} placeholder="e.g. Yangon, Myanmar" className={inputCls} />
             {errors.location && <p className={errorCls}>{errors.location.message}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Company Website</label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_website')}</label>
             <input {...register('website')} placeholder="https://yourcompany.com" className={inputCls} />
           </div>
         </div>
@@ -153,28 +169,28 @@ export function HireForm() {
             <User size={16} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-foreground">Contact Person</h3>
-            <p className="text-xs text-muted-foreground">Who should we reach out to?</p>
+            <h3 className="text-sm font-bold text-foreground">{t('hire_form_contact_title')}</h3>
+            <p className="text-xs text-muted-foreground">{t('hire_form_contact_sub')}</p>
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Full Name <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_full_name')} <span className="text-red-500">*</span></label>
             <input {...register('contactName')} placeholder="e.g. Daw Aye Myat" className={inputCls} />
             {errors.contactName && <p className={errorCls}>{errors.contactName.message}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Job Title / HR Title</label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_job_title')}</label>
             <input {...register('contactTitle')} placeholder="e.g. HR Manager" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Work Email <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_work_email')} <span className="text-red-500">*</span></label>
             <input {...register('workEmail')} type="email" placeholder="hr@company.com" className={inputCls} />
             {errors.workEmail && <p className={errorCls}>{errors.workEmail.message}</p>}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Phone / WhatsApp <span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">{t('hire_form_phone')} <span className="text-red-500">*</span></label>
             <input {...register('phone')} placeholder="09428954289" className={inputCls} />
             {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
           </div>
@@ -230,19 +246,19 @@ export function HireForm() {
                 { key: 'requirements',   label: 'Key Requirements', icon: <FileText size={13} /> },
                 { key: 'jobDescription', label: 'Job Description',  icon: <Briefcase size={13} /> },
                 { key: 'benefits',       label: 'Benefits & Perks', icon: <Gift size={13} /> },
-              ] as const).map((t) => (
+              ] as const).map((tab) => (
                 <button
-                  key={t.key}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setReqTab(t.key)}
+                  onClick={() => setReqTab(tab.key)}
                   className={cn(
                     'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap',
-                    reqTab === t.key
+                    reqTab === tab.key
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t.icon} {t.label}
+                  {tab.icon} {tab.label}
                 </button>
               ))}
             </div>
@@ -307,6 +323,7 @@ export function HireForm() {
         🔒 Your information is secure and will only be used to match you with suitable candidates.
         Our team will contact you within 1 business day.
       </p>
-    </form>
+      </form>
+    </>
   );
 }
