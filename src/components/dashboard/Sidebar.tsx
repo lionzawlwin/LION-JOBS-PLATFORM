@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, X, Search, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Search, Building2, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { TabDomain } from '@/lib/permissions';
 
 const STORAGE_KEY = 'lion_dashboard_sidebar_collapsed';
@@ -29,6 +30,7 @@ interface Props {
 export function Sidebar({ tabs, activeTab, onSelect, variant = 'rail', onClose }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const isDrawer = variant === 'drawer';
+  const { t, toggleLang } = useLanguage();
 
   // Same pattern as LanguageContext's persisted toggle: default first,
   // then read localStorage in an effect (avoids SSR/client hydration
@@ -116,11 +118,20 @@ export function Sidebar({ tabs, activeTab, onSelect, variant = 'rail', onClose }
         </div>
       )}
 
+      <button
+        onClick={toggleLang}
+        aria-label="Switch language"
+        title={collapsedRail ? t('nav_lang_toggle') : undefined}
+        className="mt-2 flex items-center justify-center gap-2 rounded-lg border-t border-border/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+      >
+        {collapsedRail ? <Languages size={14} /> : t('nav_lang_toggle')}
+      </button>
+
       {!isDrawer && (
         <button
           onClick={toggle}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="mt-2 flex items-center justify-center gap-2 rounded-lg border-t border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           {collapsed ? <ChevronRight size={14} /> : (
             <>

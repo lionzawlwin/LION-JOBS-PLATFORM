@@ -715,3 +715,30 @@ Branch: `feat/company-page-localization`
 - 2026-07-04: Verification — `npx tsc --noEmit` clean. `npm test`: 58/58 passing (no test touches these files; confirms nothing else broke). `npm run lint`: same 28 pre-existing problems as `main`'s baseline (17 errors, 11 warnings). Of the 4 touched/created files, `src/lib/i18n.ts`, `src/components/hire/WhySection.tsx`, and `src/app/company/page.tsx` are fully clean. `src/components/hire/HireForm.tsx` has one pre-existing `react/no-unescaped-entities` error at "Tell us what you need — we'll handle the rest" — confirmed byte-identical to `main`'s version via `git show main:...`, inside the explicitly out-of-scope Hiring Requisition section, already part of the 28-problem baseline, not introduced by this branch. Left unfixed per this task's own scope ("Files: none for verification steps"), rather than silently expanding this pass into an unrelated drive-by fix.
 - 2026-07-04: Live-verified both languages via the `browse` skill against a local dev server (not just a static read of the JSX). **English**: `/company` renders "Why Partner With Us?" with its 6 cards, and "Submit Your Hiring Request" still appears as the form header (survived the move into `HireForm.tsx` intact). **Burmese** (clicked the navbar's `မြန်မာ` toggle): all 28 wired strings switched correctly, confirmed by reading the rendered page text — "Why Partner With Us?" → "ကျွန်ုပ်တို့နှင့် ဘာကြောင့် လက်တွဲသင့်သလဲ။", all 6 card titles translated (e.g. "ကြိုတင်စိစစ်ထားသော အလုပ်လျှောက်ထားသူများ" / Pre-Screened Candidates, "အရည်အသွေး အာမခံချက်" / Quality Guarantee), "Submit Your Hiring Request" → "ဝန်ထမ်းခေါ်ယူရန် ဖောင်ဖြည့်ပါ", "Company Information" → "ကုမ္ပဏီ အချက်အလက်", "Contact Person" → "ဆက်သွယ်ရန်ပုဂ္ဂိုလ်", and field labels including Company Name, Industry, Location/City, Full Name, Work Email, Phone/WhatsApp all switched. Confirmed the required non-translated strings correctly stayed English in Burmese mode: the Hero headline ("Find the Right Talent for Your Team"), all 4 stat labels (Placements Made, Partner Companies, Days to Shortlist, Client Satisfaction), the testimonial quote, "Our Simple Process" and its 4 step titles, and the Hiring Requisition section including "Job Title / Role" and "Tell us what you need — we'll handle the rest". No console errors on either language render.
 - 2026-07-04: Dev server started for verification and explicitly stopped afterward (killed the listener on port 3000) so it doesn't linger past this session.
+
+---
+
+# Feature: Dashboard Language Toggle
+
+Spec: `docs/superpowers/specs/2026-07-04-dashboard-language-toggle-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-dashboard-language-toggle.md`
+Branch: `feat/dashboard-language-toggle`
+
+Adds a language-toggle button to the admin dashboard's `Sidebar.tsx`, reusing the existing `nav_lang_toggle` translation key and the `useLanguage()` context/toggle already established elsewhere in the app — no new translation infrastructure, just wiring the sidebar into what already exists.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Add language toggle button to `Sidebar.tsx` | ✅ Done |
+| 2 | Verification | ✅ Done |
+
+## Scope
+
+This is **only** the toggle button itself — clicking it flips the active language via the existing `toggleLang()` from `LanguageContext`. It does **not** translate the content of any of the 13 dashboard tabs (Overview, Candidates, Post Job, Manage Jobs, Companies, Enterprise, B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access, System Health) — that's a separate, much larger, deliberately deferred project that needs real Burmese copy not yet supplied, not something to improvise inline.
+
+## Log
+
+- 2026-07-04: In the `rail` variant, the button renders `t('nav_lang_toggle')` as visible text when expanded (`collapsed=false` → `collapsedRail=false`), and swaps to the `Languages` icon with a `title={t('nav_lang_toggle')}` tooltip when collapsed (`collapsed=true` → `collapsedRail=true`) — confirmed by tracing `collapsedRail = !isDrawer && collapsed` and the button's `{collapsedRail ? <Languages size={14} /> : t('nav_lang_toggle')}` JSX directly, not assumed. In the `drawer` variant, `isDrawer=true` forces `collapsedRail` to always be `false`, so the visible text always renders, never the icon-only form.
+- 2026-07-04: `npx tsc --noEmit` clean.
+- 2026-07-04: `npm test` — 58/58 passing (no test touches `Sidebar.tsx`).
+- 2026-07-04: `npm run lint` — 28 problems (17 errors, 11 warnings), matching `main`'s baseline count exactly. One pre-existing finding does land in `Sidebar.tsx` (line 42, `react-hooks/set-state-in-effect`, on the collapse-state hydration effect) — confirmed by diffing this branch's own commit (`aeb2dcc`) against its parent that this exact `useEffect` was already present, unchanged, before this branch touched the file (which only added the language-toggle button plus its imports/hook call, never the collapse effect). The same `set-state-in-effect` pattern already fires in `useProfile.ts`, `useRecentlyViewed.ts`, and `useSavedJobs.ts`'s lint output, so this is a known, pre-existing, unrelated class of finding across the codebase, not something introduced by this change.
+- 2026-07-04: Could not live-verify in a real browser — `/dashboard` is OAuth-gated behind a real Google login restricted to the `staff` table / `ADMIN_EMAIL`, which cannot be automated from this environment (same limitation documented in Phases 4/5/10/11 and Sprint 2's own log above). No Storybook config or `*.stories.tsx` files exist anywhere in this repo (confirmed by search) to provide an isolated rendering harness, and building one from scratch for a single button was out of scope. Verification is therefore limited to a manual line-by-line trace of the JSX/conditional logic above, plus `tsc`/lint/test passing — which proves the code is structurally sound and type-correct, not that it visually renders correctly in a real browser session.
