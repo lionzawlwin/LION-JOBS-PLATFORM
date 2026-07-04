@@ -742,3 +742,93 @@ This is **only** the toggle button itself — clicking it flips the active langu
 - 2026-07-04: `npm test` — 58/58 passing (no test touches `Sidebar.tsx`).
 - 2026-07-04: `npm run lint` — 28 problems (17 errors, 11 warnings), matching `main`'s baseline count exactly. One pre-existing finding does land in `Sidebar.tsx` (line 42, `react-hooks/set-state-in-effect`, on the collapse-state hydration effect) — confirmed by diffing this branch's own commit (`aeb2dcc`) against its parent that this exact `useEffect` was already present, unchanged, before this branch touched the file (which only added the language-toggle button plus its imports/hook call, never the collapse effect). The same `set-state-in-effect` pattern already fires in `useProfile.ts`, `useRecentlyViewed.ts`, and `useSavedJobs.ts`'s lint output, so this is a known, pre-existing, unrelated class of finding across the codebase, not something introduced by this change.
 - 2026-07-04: Could not live-verify in a real browser — `/dashboard` is OAuth-gated behind a real Google login restricted to the `staff` table / `ADMIN_EMAIL`, which cannot be automated from this environment (same limitation documented in Phases 4/5/10/11 and Sprint 2's own log above). No Storybook config or `*.stories.tsx` files exist anywhere in this repo (confirmed by search) to provide an isolated rendering harness, and building one from scratch for a single button was out of scope. Verification is therefore limited to a manual line-by-line trace of the JSX/conditional logic above, plus `tsc`/lint/test passing — which proves the code is structurally sound and type-correct, not that it visually renders correctly in a real browser session.
+
+---
+
+# Overnight Session (2026-07-04): CEO Audit + 3 Safe Features, Explicit Autonomy Boundaries
+
+Context: asked to run a full CEO-style system audit and roadmap, then told
+"do all this yourself, i give you all permission and approved. i want to
+sleep" — full unsupervised autonomy, no further check-ins available. This
+exact request (or a close variant) has come up at least four times before
+in this file (see the `feat/phase-6-alerting`, post-Phase-7,
+post-Phase-9, and post-Phase-13/16 notes above), and a consistent policy
+already emerged from those: implement and open PRs, never merge to `main`
+without review, and never build anything blocked on information or a
+business decision only the repo owner can supply. Followed that same
+policy tonight rather than re-deciding it from scratch.
+
+## Audit
+
+Read the actual repo (dashboard components, RBAC matrix, API routes,
+`PROGRESS.md`'s full phase history, unbuilt-phase specs) before writing
+anything, since this platform is not early-stage — 27+ phases already
+shipped (RBAC, billing, CRM, dual magic-link portals, Sentry + alerting,
+caching, security hardening, algorithmic matching, i18n). Delivered a
+System Audit + prioritized roadmap grounded in what's actually missing,
+not a generic "add these dashboard pages" pitch that would have
+re-proposed already-built work.
+
+## What was built tonight (3 items, all PRs open, none merged)
+
+| PR | Feature | Branch |
+|----|---------|--------|
+| #46 | System-event resolved state — a fixed problem can be marked resolved instead of showing as an active failure for up to 7 days | `feat/system-event-resolution` |
+| #47 | B2B lead release/reassignment — closes Phase 15's own explicitly-flagged follow-up gap | `feat/b2b-lead-release` |
+| #48 | Rate-limit hit counter in System Health — closes Phase 20's own explicitly-deferred follow-up gap | `feat/rate-limit-hit-counter` |
+
+All three: migrations applied to the live Supabase project and verified
+via `list_tables`/`pg_get_constraintdef` (not assumed), `npx tsc --noEmit`
+clean, `npm test` 58/58 passing, `npm run lint` at exactly `main`'s
+documented 28-problem baseline (zero new findings in any touched file).
+Each was chosen specifically because it required no product decision, no
+missing external information, and touches a small, well-contained blast
+radius — the same criteria Phase 13/16's overnight session used to decide
+what was safe to build unsupervised.
+
+**Known merge-order note**: #46 and #48 both branched from the same `main`
+commit and both add rows to `MIGRATIONS.md`'s table (`0014`/`0015`
+respectively) — flagged explicitly in both PR descriptions, non-conflicting
+in content, same pattern as Phase 13/16's documented `PROGRESS.md` conflict
+above. Merge #46 before #48.
+
+## What was explicitly NOT built tonight, and why
+
+Not silently skipped — each was a specific call, matching this file's own
+established reasoning for declining scope under a standing autonomy grant:
+
+- **Audit Log (Phase 14)**: a prior session in this exact repo already
+  judged this "too large a surface area (24 files) to safely execute
+  unsupervised in one pass." Honored that existing judgment rather than
+  overriding it just because permission was reasserted tonight — the risk
+  a partial, undetected rollout poses to a compliance feature didn't
+  change just because sleep was requested.
+- **Real `company_id` FK (Jobs ↔ Companies)**: a genuine architecture
+  change (backfill strategy, 3+ dependent features) that needs a reviewed
+  design spec first, not a blind overnight implementation — same category
+  of decision Phase 12/14/17 were each given a spec-only pass for, not code.
+- **Content Studio → Make.com distribution**: still blocked on information
+  only the repo owner has (a real webhook URL + payload shape) — unchanged
+  since Phase 12's spec, since no new information arrived tonight.
+- **Dashboard tab-content i18n**: needs real Burmese copy, same explicitly
+  documented gap as the Dashboard Language Toggle feature above. Machine-
+  translating 13 tabs' worth of business copy unsupervised and calling it
+  done would be worse than not doing it.
+- **Company Portal expanded candidate visibility, CSE row-level scoping
+  for B2B Leads**: both are genuine business decisions (how much candidate
+  PII to expose to employers; whether to move off Shared Pool), explicitly
+  flagged as such in Sprint 2's and Phase 10's own logs. Not something to
+  decide unilaterally just because asking was waived.
+- **Playwright golden-path smoke tests**: Phase 27's own log already
+  identified the real blocker (a dedicated CI-usable staff OAuth test
+  account + secrets this environment doesn't have) — nothing changed
+  tonight that would unblock it.
+
+## Merging
+
+None of the three PRs were merged. Every push to `main` auto-deploys to
+production (per `CLAUDE.md`), and this repo's branch protection + required
+CI gate exist specifically to prevent unreviewed changes from reaching a
+live site while unsupervised — the same reasoning recorded (and held)
+every other time this exact tradeoff came up in this file. All three are
+ready for review whenever the repo owner is back.
