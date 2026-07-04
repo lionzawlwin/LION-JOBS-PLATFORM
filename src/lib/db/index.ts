@@ -13,3 +13,4 @@ export * from './consents';
 export * from './invoices';
 export * from './staff';
 export * from './systemEvents';
+export * from './statsHistory';
