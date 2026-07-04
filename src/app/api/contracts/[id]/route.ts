@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { updateContract, deleteContract } from '@/lib/db';
 import type { NextRequest } from 'next/server';
@@ -22,6 +23,7 @@ export async function PATCH(
       cseId:        body.cseId        !== undefined ? String(body.cseId) : undefined,
       notes:        body.notes        !== undefined ? String(body.notes) : undefined,
     });
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
@@ -38,6 +40,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteContract(id);
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
