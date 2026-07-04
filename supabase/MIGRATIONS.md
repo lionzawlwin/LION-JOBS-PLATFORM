@@ -45,6 +45,7 @@ production, not the order they'd ideally have been designed:
 | `0010_fix_system_events_level_index.sql` | 2026-07-04 | Replace non-matching `system_events` index with one covering `listSystemEvents()`'s actual `level`-filtered query shape (Phase 8 follow-up) |
 | `0011_add_staff_cse_rep_link.sql` | 2026-07-04 | `staff.cse_rep_id` link (Phase 10 CSE row-level scoping) |
 | `0012_add_lead_claiming.sql` | 2026-07-04 | `b2b_leads.claimed_by_cse_rep_id` / `claimed_at` (Phase 15, Shared Pool option) — applied via Supabase MCP `apply_migration`, verified live via `list_tables` (new FK `b2b_leads_claimed_by_cse_rep_id_fkey` confirmed present) |
+| `0013_add_portal_login_tokens.sql` | 2026-07-04 | `portal_login_tokens` table — shared magic-link login tokens for the new Company Portal + Candidate Portal (Sprint 2, Phases 23/24). Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (RLS enabled, `subject_type` check constraint present). |
 
 > Note (2026-07-03): `0009`'s row previously read `2026-07-03`, one day
 > earlier than `0008`'s `2026-07-04` directly above it, even though `0009`

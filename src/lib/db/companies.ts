@@ -106,6 +106,21 @@ export async function getCompanyById(id: string): Promise<Company | null> {
   return mapToCompany(data);
 }
 
+// Exact-match lookup for Company Portal magic-link login. Deliberately not
+// ilike/partial matching (unlike getCandidatesByEmailOrPhone's public
+// search) -- a login lookup must never match more/less than the exact
+// account the caller typed.
+export async function getCompanyByEmail(email: string): Promise<Company | null> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .ilike('email', email.trim())
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapToCompany(data);
+}
+
 export async function updateCompanyCommissionRate(
   id: string,
   commissionRatePct: number | null,

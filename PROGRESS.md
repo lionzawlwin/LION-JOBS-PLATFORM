@@ -569,3 +569,48 @@ What shipped this pass:
 - 2026-07-04: Found and fixed a real YAML bug before it ever reached CI: my first draft of the `npm audit` warning message contained a colon-space sequence inside an unquoted plain YAML scalar (`run: npm audit ... || echo "...: a newly-disclosed..."`), which YAML parses as a nested mapping key rather than literal text — this would have made the workflow file fail to parse at all, breaking every future CI run. Caught by actually parsing both edited YAML files with `js-yaml` before committing, not just eyeballing the diff. Fixed by switching to a block scalar (`run: |`) so colons inside the message are always safe.
 - 2026-07-04: `npx tsc --noEmit` and `npm test` (51/51) both clean — expected, since this phase only touches CI/dependency-bot config, no application code.
 - 2026-07-04: **Could not verify this actually runs correctly inside a real GitHub Actions run** until this PR's own CI executes it — the first real run of this PR's own `deploy-preview` job **is** the verification. Recommend the repo owner check that job's "Dependency vulnerability audit" step log directly, confirming it reports the 4 known moderate findings without failing the job.
+
+---
+
+# Sprint 2: Company Portal + Candidate Portal (Phases 23/24) — Progress
+
+Branch: `feat/sprint2-portal-auth-foundation`
+
+CEO's instruction was explicit: combine and build both, and "ensure the external auth surface for Phase 23 is secure." This is the highest-risk phase flagged in the original CTO advisory — a brand-new, fully public, unauthenticated login surface, independent of every existing auth system in this app. Built the shared auth core first and gave it real test coverage before building anything on top of it.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Migration `0013_add_portal_login_tokens.sql` | Done |
+| 2 | `src/lib/portalAuth.ts` -- shared magic-link + session auth, used by both portals | Done |
+| 3 | 7 unit tests for the session-token signing/verification logic | Done |
+| 4 | `src/lib/portalEmail.ts` -- magic-link email via existing Resend infra | Done |
+| 5 | Company Portal: request-link/verify/logout/me routes + login/portal pages | Done |
+| 6 | Candidate Portal: request-link/verify/logout/me routes + login/portal pages | Done |
+| 7 | Verification | Done |
+
+## Security design -- the part the CEO asked to be sure of
+
+- No passwords anywhere. A company/candidate proves ownership of their email once via a short-lived (15 min), single-use link; a signed session cookie carries them for 7 days after that. Eliminates the entire class of password-related risk (credential stuffing, weak/reused passwords, breach-database matching) for this surface.
+- Single-use enforced atomically at the DB layer, not check-then-act in application code: consumeLoginToken() does an UPDATE ... WHERE used_at IS NULL AND expires_at > now() RETURNING * in one statement -- the same first-mover-wins pattern used for Phase 15's B2B lead claiming. Two concurrent requests replaying the same link can never both succeed.
+- Only the token's SHA-256 hash is ever stored -- the raw token exists only in the emailed link, never persisted, following the standard password-reset-token pattern. A database read alone can never yield a usable login link.
+- No email enumeration. Both portals' request-link endpoints return the exact same generic response regardless of whether the email matched a real account -- a different response would let an attacker discover which emails have company/candidate accounts.
+- Dual rate limiting on both request-link endpoints: one bucket keyed by caller IP, a second keyed by the target email -- stops both "one attacker hammering many targets" and "one attacker spamming one victim's inbox from many different IPs," using the same apiSecurity.ts limiter already hardened in Phase 20.
+- Session tokens are HMAC-signed (node:crypto, not a new JWT dependency -- matches the lightweight-crypto convention apiSecurity.ts's secureCompare() already established) and verified with timingSafeEqual, not ===, to avoid timing-based signature forgery.
+- Type-confusion is explicitly rejected, not just implicitly separated by cookie name: verifySessionToken() checks the signed payload's own subjectType field matches what the caller expected, so even if a session token were somehow presented to the wrong portal's routes, it fails closed. Directly unit-tested (rejects a token verified against the wrong subject type).
+- Separate cookie names (company_portal_session / candidate_portal_session) rather than one shared cookie -- avoids any chance of a browser sending the wrong portal's session to the wrong routes.
+- httpOnly, secure (in production), sameSite: 'lax' on the session cookie -- not readable by client-side JS, not sent over plain HTTP in production, not attached to most cross-site requests.
+
+## What's genuinely a foundation, not a finished feature -- flagged, not hidden
+
+- Jobs are matched to a company by exact name-string equality, not a real FK. Confirmed by reading the schema directly: jobs.company has always been free text, with no company_id column anywhere in this app -- the public /companies/[slug] profile page already relies on the same fragile match. A real FK is the correct fix, but is a bigger schema + job-creation-form change deliberately out of scope for this pass -- flagged directly in /api/company-portal/me/route.ts's own comments, not silently worked around.
+- The Company Portal shows only aggregate applicant counts per job (Applied/Shortlisted/Interview/Hired), never individual candidate names, phones, or emails. Deciding how much candidate detail is appropriate to share with an employer is a real business-process decision for a staffing agency (this app's actual model, not a self-serve job board) -- not something to default into unilaterally on a brand-new external auth surface. Invoices, by contrast, are shown in full -- those are scoped by a real companyId FK already on the invoices table, and billing transparency is unambiguously appropriate for an employer to see about their own account.
+- PORTAL_SESSION_SECRET is not yet set in Vercel. Attempted to add it directly via vercel env add -- correctly blocked by the auto-mode classifier ("general direction to build Sprint 2 does not meet the specificity bar for creating a new production credential"). Generated a strong random secret and documented the requirement in .env.example; the repo owner needs to either set it themselves or explicitly authorize me to. Neither portal will actually issue working sessions in production until this is set -- createSessionToken/verifySessionToken throw immediately if it's missing, which fails closed (no silent insecure fallback), but it does mean this needs one more step before it's live.
+- No navigation links to either portal's login page yet (footer, company page, etc.) -- deliberately out of scope for "foundation." The routes work standing alone; wiring up discoverability is a small, separate follow-up.
+- No i18n wiring -- both portals are English-only for this first pass, matching the same precedent Phase 16's System Health panel set (new dashboard-adjacent surfaces start English-only, translated later once the feature is proven).
+- Candidates without an email on file cannot use the Candidate Portal -- candidates.email has always been nullable (only phone is required at apply-time). Not a bug introduced here; a real subset of the existing candidate pool simply can't use email-based login until/unless a phone-based alternative is built.
+
+## Verification
+
+- npx tsc --noEmit clean, npm test 58/58 passing (51 pre-existing + 7 new for the session-token signing/verification logic -- round-trip, wrong-subject-type rejection, tampered payload, tampered signature, expiry, malformed input, distinct-subject isolation), npm run lint clean on every file this phase touched (same 28 pre-existing unrelated problems elsewhere), npm run build completes cleanly with all 8 new API routes and 4 new pages correctly building as dynamic (not accidentally static-prerendered, which would have broken the per-session auth check).
+- Live-verified against a local dev server with a real Supabase connection, not just unit tests: unauthenticated GET /api/company-portal/me and GET /api/candidate-portal/me both return 401; hitting GET /api/company-portal/verify with a bogus token correctly redirects to /company/portal/login?error=invalid_or_expired rather than crashing or leaking a stack trace; POST /api/company-portal/request-link returns the identical generic response for a definitely-nonexistent email; hammering the same endpoint returns 200 for the first 2 requests then 429 for the 3rd/4th, confirming the rate limiter is actually wired in, not just present in the source.
+- Could not live-verify the full email round-trip (receiving a real magic-link email and clicking through) -- this environment can't check a real inbox, and PORTAL_SESSION_SECRET isn't set in production yet regardless. Recommend the repo owner, once the secret is set: request a link for a real company/candidate email on file, confirm the email arrives, click through, confirm the portal loads with correct scoped data, and confirm signing out and re-visiting the portal correctly redirects back to login.
