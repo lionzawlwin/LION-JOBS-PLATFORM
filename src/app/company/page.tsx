@@ -42,9 +42,14 @@ export default function CompanyPage() {
         {/* ── Hero ──────────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 py-16 text-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <Link href="/candidate" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-200 hover:text-white transition-colors">
-              <ArrowLeft size={14} /> Back to Job Board
-            </Link>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <Link href="/candidate" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-200 hover:text-white transition-colors">
+                <ArrowLeft size={14} /> Back to Job Board
+              </Link>
+              <Link href="/company/portal/login" className="text-sm font-medium text-brand-200 hover:text-white transition-colors">
+                Already a client? Log in
+              </Link>
+            </div>
             <div className="max-w-3xl">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-sm font-semibold">
                 🦁 Lion Jobs Agency — Employer Services
