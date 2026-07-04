@@ -626,6 +626,7 @@ export const translations = {
     bl_benefits_perks:    'Benefits & Perks',
     bl_message_to_agency: 'Message to Agency',
     bl_website:           'Website',
+    bl_claimed_by:        'Claimed by',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'Job Announcement',
@@ -1339,6 +1340,7 @@ export const translations = {
     bl_benefits_perks:    'အကျိုးခံစားခွင့်များ',
     bl_message_to_agency: 'အေဂျင်စီသို့ မက်ဆေ့ချ်',
     bl_website:           'ဝက်ဘ်ဆိုက်',
+    bl_claimed_by:        'တာဝန်ယူသူ',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'အလုပ် ကြေညာချက်',

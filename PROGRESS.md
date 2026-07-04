@@ -424,6 +424,33 @@ Context: same overnight autonomous-execution session as Phase 13 (see that phase
 - 2026-07-04: **Known merge-order issue, flagging explicitly**: this phase and Phase 13 both branched from the same `main` commit and both append a new section to the end of this file. Whichever of PR #22 (Phase 13) or this phase's PR merges second will hit a trivial `PROGRESS.md` merge conflict (both sections trying to append after the same anchor text) — resolve by keeping both appended sections, in whichever order; there's no actual content conflict, just two independent insertions at the same location. No code files are affected by this — both phases touch disjoint sets of files. **Resolved 2026-07-04 at merge time exactly as predicted**: kept both sections, this one first (Phase 16), Phase 13's section immediately above it — no code conflicts, confirmed via `git diff` that only this file had a conflict marker.
 ---
 
+# Phase 15: B2B Leads Assignment (Shared Pool) — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-15-leads-assignment-decision.md`
+Branch: `feat/phase-15-leads-shared-pool`
+
+Context: the prior overnight session's spec laid out two options (Shared Pool vs. per-lead assignment) and explicitly deferred the choice to the repo owner. The repo owner chose **Option A, Shared Pool**, same morning, and asked to start building it.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Migration `0012_add_lead_claiming.sql` — `b2b_leads.claimed_by_cse_rep_id`/`claimed_at` | ✅ Done |
+| 2 | `claimB2bLeadIfUnclaimed()` in `src/lib/db/leads.ts` | ✅ Done |
+| 3 | Auto-claim wired into `PATCH /api/leads/[id]/status` | ✅ Done |
+| 4 | "Claimed by" badge in `B2bLeadsTable.tsx` | ✅ Done |
+| 5 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Re-read the Phase 15 decision spec before writing any code: Option A says "no schema change, minimal code — the derivation logic already exists as a pattern to reuse." That description assumed a lead eventually converts into a `Company`/`Contract`, which then inherits Phase 10's existing CSE scoping automatically. Checked the actual codebase and found **no lead→company conversion feature exists at all** — `b2b_leads` has no link to `companies` anywhere. So the literal "no schema change" reading would mean doing nothing, which isn't a real Shared Pool implementation, just a description of the status quo.
+- 2026-07-04: Built the actually-useful piece of Shared Pool instead: **first-mover claiming**. `GET /api/leads` stays completely unscoped (every `cse` still sees every lead, unchanged) — but any `cse` who changes a lead's status now atomically claims it (`claimed_by_cse_rep_id` set only `WHERE claimed_by_cse_rep_id IS NULL`, so a race between two CSEs resolves to whoever's update lands first at the DB layer, no read-then-write check-then-act gap in application code). Other CSEs still see the lead and can still act on it (shared pool, not access-restricted) but now see who's already working it, preventing duplicate outreach — which is the actual problem Shared Pool exists to solve.
+- 2026-07-04: `owner`/`admin` status changes do **not** trigger a claim (checked `scope.role === 'cse'` specifically) — they aren't frontline account owners in this model, and claiming on their behalf would misattribute leads to whichever admin happened to touch the status last.
+- 2026-07-04: Migration applied and verified live via the Supabase MCP (`apply_migration` then `list_tables`), not assumed — confirmed the new `b2b_leads_claimed_by_cse_rep_id_fkey` foreign key exists in the actual "Lion Jobs Agency" project before writing any code against it.
+- 2026-07-04: `npx tsc --noEmit`, `npm test` (36/36 passing, unchanged), and `npm run lint` all clean on every file this phase touched — the lint run does show pre-existing errors in `useRecentlyViewed.ts`, `useSavedJobs.ts`, and `cvAnalyzer.ts`, confirmed via `git diff` to be untouched by this branch, not introduced here.
+- 2026-07-04: **Not built, flagged as a natural follow-up, not silently dropped**: no "release claim" or manual reassignment UI. If a CSE claims a lead and then can't follow up (leaves, reassigned, etc.), there's currently no way to hand it back to the pool short of an owner/admin editing the database directly. Small, well-scoped addition for a future pass if this becomes a real workflow need — didn't build it speculatively since the repo owner didn't ask for it and Shared Pool's core value (visibility into who's working what) works without it.
+- 2026-07-04: **Could not verify the claimed-by badge's authenticated rendering** — same OAuth-gated dashboard limitation as every other UI phase this session. Recommend the repo owner spot-check post-merge: log in as a `cse`, change a lead's status, confirm the badge appears for other viewers of that same lead.
+
+---
+
 # Phase 17 (revised): Free Algorithmic Match Scoring — Progress
 
 Spec: `docs/superpowers/specs/2026-07-04-phase-17-ai-match-scoring-design.md` (superseded — repo owner rejected the LLM-based design entirely the next morning)

@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
-import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2, Trash2, AlertTriangle, UserCheck } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCseReps } from '@/hooks/useCseReps';
 import type { TranslationKey } from '@/lib/i18n';
 import type { B2bLead } from '@/types';
 
@@ -176,7 +177,9 @@ export function B2bLeadsTable() {
   const [search,   setSearch]   = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const { t } = useLanguage();
+  const { cseReps } = useCseReps();
 
+  const cseNameById = useMemo(() => new Map(cseReps.map((c) => [c.id, c.name])), [cseReps]);
   const leads = data ?? [];
 
   const filtered = useMemo(() => {
@@ -276,6 +279,12 @@ export function B2bLeadsTable() {
                           {lead.headcount && ` · ${lead.headcount} ${lead.headcount !== '1' ? t('bl_hire_plural') : t('bl_hire_singular')}`}
                           {lead.workSetup && ` · ${lead.workSetup}`}
                         </p>
+                        {lead.claimedByCseRepId && (
+                          <p className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                            <UserCheck size={10} />
+                            {t('bl_claimed_by')}: {cseNameById.get(lead.claimedByCseRepId) ?? lead.claimedByCseRepId}
+                          </p>
+                        )}
                         {/* Mobile: status + time */}
                         <div className="lg:hidden flex items-center gap-2 mt-1 flex-wrap">
                           <StatusCell lead={lead} />
