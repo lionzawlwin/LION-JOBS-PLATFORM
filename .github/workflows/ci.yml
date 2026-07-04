@@ -28,3 +28,6 @@ jobs:
 
       - name: Type-check
         run: npx tsc --noEmit
+
+      - name: Route-protection check
+        run: node scripts/check-route-protection.mjs
