@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getCompanies, appendCompany, getContracts } from '@/lib/db';
 import { filterCompaniesForCse } from '@/lib/cseScope';
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       tier:          body.tier ?? 'smb',
       notes:         String(body.notes ?? ''),
     });
+    revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

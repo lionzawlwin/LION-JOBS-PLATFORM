@@ -513,6 +513,35 @@ The strategic advisory that proposed this phase claimed "zero rate limiting anyw
 
 ---
 
+# Phase 21: Dashboard Query Caching Layer — Progress
+
+Branch: `feat/phase-21-dashboard-caching`
+
+## Deliberate deviation from the advisory: `unstable_cache`, not `use cache`
+
+Before writing any code, per `CLAUDE.md`'s standing instruction to check `node_modules/next/dist/docs/` before writing Next.js-specific code (this app runs 16.2.9, newer than most training data), I read the caching docs — and they change the right answer here.
+
+Next 16's new `"use cache"` directive (the API `unstable_cache`'s own doc now says it's "replaced by") requires opting the whole app into Cache Components (`cacheComponents: true` in `next.config.ts`) — an app-wide rendering-model change, not something to flip on for one aggregate-stats query. Worse: its own docs state the default runtime cache is an **in-memory LRU that "typically doesn't persist across requests" on serverless platforms** like this app's Vercel deployment — reliable cross-request persistence there needs `"use cache: remote"`, which requires a paid external cache handler (Redis/KV). That's real new infrastructure cost for a problem this app doesn't have budget or need for yet.
+
+`unstable_cache` (deprecated, but not removed, and still fully supported in 16.2.9) persists via Vercel's actual built-in Data Cache — which does work reliably across serverless invocations today, with zero new infrastructure. Used it deliberately instead of the "recommended" newer API, since the recommended path doesn't actually deliver reliable caching on this app's deployment target without paying for it. Documented this reasoning directly in `enterpriseStats.ts` so a future session doesn't "fix" this into the objectively worse-for-this-app option.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Wrap `getEnterpriseStats()` in `unstable_cache` (30s revalidate, tagged) | ✅ Done |
+| 2 | `revalidateTag('enterprise-stats', { expire: 0 })` wired into all 8 mutation handlers across contracts/companies/cse routes | ✅ Done |
+| 3 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Scoped this to `getEnterpriseStats()` specifically, not a blanket caching pass — it's 3 parallel aggregate Supabase queries (active-contract sums, enterprise-tier company count, CSE name lookup) recomputed from scratch on every Enterprise tab load, the clearest genuine "expensive, rarely-changing, read far more than written" candidate in the dashboard. `DashboardStats`/`AnalyticsOverview` were checked and found to be presentational components fed by already-fetched hook data (`useCandidates`/`useJobs`), not making their own redundant aggregate queries — no caching win available there without changing what data those hooks fetch, out of scope for this pass.
+- 2026-07-04: `revalidateTag` in this Next version requires the two-argument form (`tag, profile`) — the one-argument form is deprecated and `tsc` correctly rejected it. Used `{ expire: 0 }` (immediate expiration) rather than the newer `'max'` stale-while-revalidate profile, since this is small-scale internal CRM data where a staff member editing a contract should see the corrected stats on their very next request, not eventually.
+- 2026-07-04: Wired `revalidateTag` into all 8 mutation handlers that can actually change the underlying numbers: contracts POST/PATCH/DELETE, companies POST/PATCH(tier only)/DELETE, cse-reps POST/PATCH/DELETE. Companies PATCH only revalidates inside the `tier` branch specifically, since status/commission-rate changes don't affect any of the three cached aggregates.
+- 2026-07-04: The two auth-gated stats routes (`/api/enterprise/stats`, and every route touched here) keep their existing `Cache-Control: no-store` headers unchanged — this phase's caching happens server-side inside the DB accessor function, not at the HTTP layer, so authenticated PII/CRM data is never at risk of being served across sessions by a shared browser/CDN cache. `no-store` was already a deliberate choice in this codebase before this phase; not touched.
+- 2026-07-04: `npx tsc --noEmit` clean, `npm test` 51/51 passing (no regressions — `unstable_cache` isn't meaningfully unit-testable in isolation, it depends on Next's own runtime cache implementation unavailable in a plain Vitest environment; verified instead via a full `npm run build`, which completed cleanly with `/api/enterprise/stats` correctly building as a dynamic route), `npm run lint` clean on every file this phase touched (same 28 pre-existing unrelated problems elsewhere).
+- 2026-07-04: **Could not verify the actual cache-hit behavior against live traffic** — that requires production request volume this environment can't simulate. Recommend the repo owner spot-check post-merge: open the Enterprise tab twice in quick succession and confirm via Vercel's function logs that the second load doesn't re-run all 3 Supabase queries within the 30s window, then edit a contract and confirm the stats update immediately (not after a 30s delay) on the next load.
+
+---
+
 # Phase 27: CI/CD Reliability Hardening — Progress (partial, scoped down)
 
 Branch: `feat/phase-27-ci-reliability-hardening`
