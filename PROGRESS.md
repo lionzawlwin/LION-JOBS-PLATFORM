@@ -614,3 +614,28 @@ CEO's instruction was explicit: combine and build both, and "ensure the external
 - npx tsc --noEmit clean, npm test 58/58 passing (51 pre-existing + 7 new for the session-token signing/verification logic -- round-trip, wrong-subject-type rejection, tampered payload, tampered signature, expiry, malformed input, distinct-subject isolation), npm run lint clean on every file this phase touched (same 28 pre-existing unrelated problems elsewhere), npm run build completes cleanly with all 8 new API routes and 4 new pages correctly building as dynamic (not accidentally static-prerendered, which would have broken the per-session auth check).
 - Live-verified against a local dev server with a real Supabase connection, not just unit tests: unauthenticated GET /api/company-portal/me and GET /api/candidate-portal/me both return 401; hitting GET /api/company-portal/verify with a bogus token correctly redirects to /company/portal/login?error=invalid_or_expired rather than crashing or leaking a stack trace; POST /api/company-portal/request-link returns the identical generic response for a definitely-nonexistent email; hammering the same endpoint returns 200 for the first 2 requests then 429 for the 3rd/4th, confirming the rate limiter is actually wired in, not just present in the source.
 - Could not live-verify the full email round-trip (receiving a real magic-link email and clicking through) -- this environment can't check a real inbox, and PORTAL_SESSION_SECRET isn't set in production yet regardless. Recommend the repo owner, once the secret is set: request a link for a real company/candidate email on file, confirm the email arrives, click through, confirm the portal loads with correct scoped data, and confirm signing out and re-visiting the portal correctly redirects back to login.
+
+---
+
+# Chore: Trim Redundant Vercel CLI Deploy from CI
+
+Branch: `chore/trim-redundant-cli-deploy`
+
+## What triggered this
+
+Merging PR #24 (docs-only) surfaced a real finding: `.github/workflows/deploy.yml`'s `deploy-preview`/`deploy-production` jobs both failed at the `vercel deploy --prebuilt` step with `Error: Too many requests - try again in 24 hours (more than 5000, code: "api-upload-free")` -- Vercel's free-tier CLI upload-API quota, exhausted by the sheer deployment volume from this session's own work (every phase PR, every Dependabot PR, each producing its own preview + eventual production deploy).
+
+Investigated whether this actually blocked anything before treating it as urgent: checked the live production deployment directly via the Vercel API. It was fully `READY`, aliased to the real domain, and matched the exact merge commit that had just gone in -- meaning **Vercel's own native GitHub git integration had already deployed the same commit independently**, through a path that doesn't share the CLI's upload quota. The custom GitHub Actions `vercel build && vercel deploy --prebuilt` step this whole time had been a fully redundant second deployment of the same commit as Vercel's own integration, not the thing actually keeping production current.
+
+## What changed
+
+- Removed the `vercel build`, `vercel deploy --prebuilt`, `Install Vercel CLI`, `Verify secrets are present`, `Verify Vercel auth`, `Pull Vercel environment`, and `Comment preview URL on PR` steps from both jobs, along with the now-unused `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` env block and the `pull-requests: write` permission that step needed.
+- Kept `npm ci` / `npm test` / `npm audit --audit-level=high` (advisory) in both jobs -- this is the part that was ever actually doing real work: gating merges on tests passing via required status checks.
+- Renamed the workflow's display name from "Deploy to Vercel" to "CI", since it no longer deploys anything -- but deliberately **kept the job names** (`deploy-preview`/`deploy-production`) unchanged, since branch protection's required-status-checks match on job name, and renaming those would have silently broken merge gating until manually re-configured in GitHub's settings -- a bigger, separate, administrative change not requested here.
+- Updated `CLAUDE.md`'s "## Deployment" section, which previously stated (incorrectly, as of this finding) that this workflow was what deployed production.
+
+## Verification
+
+- Both edited/new content parses cleanly (`js-yaml` used to check the workflow YAML directly, same discipline established in Phase 27 after that phase's own real YAML bug).
+- `npx tsc --noEmit` / `npm test` (58/58) both clean -- expected no-op, this change touches only CI config and one doc file.
+- **Could not verify this workflow's own next real run** until it executes on the next PR/push -- but the change removes the exact steps that were failing, and doesn't touch the test/audit steps that were already passing, so the only real open question is confirming branch protection's required checks still match by name (verified by reading, not assumed: job names `deploy-preview`/`deploy-production` are unchanged).

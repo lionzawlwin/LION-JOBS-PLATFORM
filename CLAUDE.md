@@ -102,9 +102,9 @@ Copy `.env.example` to `.env.local` for local development.
 
 ## Deployment
 
-Production deploys automatically on push to `main` via `.github/workflows/deploy.yml` using `vercel build --prod && vercel deploy --prebuilt --prod`. Pull requests get a preview deployment with the URL posted as a PR comment.
+Vercel's own native GitHub git integration deploys automatically on every push (preview for PRs, production for `main`) — this is dashboard-configured on Vercel's side, not driven by any file in this repo. `.github/workflows/deploy.yml` used to *also* run `vercel build && vercel deploy --prebuilt` itself; that was discovered to be a fully redundant second deployment of the same commit (confirmed directly: when that CLI step failed on Vercel's free-tier upload-API quota, production was still fully live and current, because the native git integration had already deployed the same commit through an unrelated path) and was removed 2026-07-04. `.github/workflows/deploy.yml`'s real job now is the quality gate — `npm test` + `npm audit` run as required status checks on every PR, which is what actually keeps bad code out of what Vercel deploys.
 
-Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+`VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` are no longer required by this workflow specifically (nothing in it calls the Vercel CLI anymore) — left as GitHub Secrets in case a future CLI-driven step is ever reintroduced, not deleted as part of this cleanup.
 
 ## Known but deliberately not installed: agent-tooling skill repos
 
