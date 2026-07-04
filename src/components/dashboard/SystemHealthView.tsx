@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash } from 'lucide-react';
+import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash, Gauge, Check } from 'lucide-react';
 import type { SystemEvent, CronStatus, FailureCategory } from '@/types';
+
+type ResolvedFilter = 'unresolved' | 'resolved' | 'all';
 
 interface IntegrationStatus {
   name: string;
@@ -19,6 +21,10 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   invoicing:  'Invoicing',
   cron:       'Cron',
   other:      'Other',
+  // Not in CATEGORIES/the filter dropdown (see VALID_CATEGORIES's comment
+  // in the API route) -- kept here only so this Record<FailureCategory,
+  // string> stays exhaustive against the type.
+  rate_limit: 'Rate Limit',
 };
 
 function fmtDateTime(iso: string) {
@@ -34,13 +40,16 @@ export function SystemHealthView() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<FailureCategory | ''>('');
+  const [resolvedFilter, setResolvedFilter] = useState<ResolvedFilter>('unresolved');
   const [days, setDays]             = useState(7);
+  const [rateLimitHits24h, setRateLimitHits24h] = useState<number | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const params = new URLSearchParams({ days: String(days) });
+      const params = new URLSearchParams({ days: String(days), resolved: resolvedFilter });
       if (categoryFilter) params.set('category', categoryFilter);
       const [eventsRes, integrationsRes] = await Promise.all([
         fetch(`/api/system-events?${params.toString()}`),
@@ -53,6 +62,7 @@ export function SystemHealthView() {
       const data = await eventsRes.json();
       setEvents(data.events ?? []);
       setCronStatus(data.cronStatus ?? []);
+      setRateLimitHits24h(typeof data.rateLimitHits24h === 'number' ? data.rateLimitHits24h : null);
       if (integrationsRes.ok) {
         const integrationsData = await integrationsRes.json();
         setIntegrations(integrationsData.integrations ?? []);
@@ -62,9 +72,21 @@ export function SystemHealthView() {
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, days]);
+  }, [categoryFilter, resolvedFilter, days]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function handleResolve(id: string) {
+    setResolvingId(id);
+    try {
+      const res = await fetch(`/api/system-events/${id}/resolve`, { method: 'PATCH' });
+      if (res.ok) await load();
+    } catch (err) {
+      console.error('[SystemHealthView] resolve error:', err);
+    } finally {
+      setResolvingId(null);
+    }
+  }
 
   if (loading) {
     return <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-muted-foreground" /></div>;
@@ -107,12 +129,23 @@ export function SystemHealthView() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">Cron Job Status</h3>
-        <button
-          onClick={() => load()}
-          className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-        >
-          <RefreshCw size={12} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {rateLimitHits24h !== null && (
+            <div
+              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
+              title="Requests blocked by the rate limiter in the last 24 hours, across every protected public route"
+            >
+              <Gauge size={12} />
+              Rate-limit hits (24h): <span className="font-semibold text-foreground">{rateLimitHits24h}</span>
+            </div>
+          )}
+          <button
+            onClick={() => load()}
+            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+          >
+            <RefreshCw size={12} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -137,6 +170,15 @@ export function SystemHealthView() {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">Recent Failures</h3>
         <div className="flex gap-2">
+          <select
+            value={resolvedFilter}
+            onChange={(e) => setResolvedFilter(e.target.value as ResolvedFilter)}
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+          >
+            <option value="unresolved">Unresolved</option>
+            <option value="resolved">Resolved</option>
+            <option value="all">All</option>
+          </select>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as FailureCategory | '')}
@@ -182,6 +224,7 @@ export function SystemHealthView() {
                 <th className="p-3">Route</th>
                 <th className="p-3">Message</th>
                 <th className="p-3">When</th>
+                <th className="p-3">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -195,6 +238,24 @@ export function SystemHealthView() {
                   <td className="p-3 font-mono text-xs text-muted-foreground">{ev.route}</td>
                   <td className="p-3 text-muted-foreground">{ev.message}</td>
                   <td className="p-3 text-muted-foreground">{fmtDateTime(ev.createdAt)}</td>
+                  <td className="p-3">
+                    {ev.resolvedAt ? (
+                      <span className="text-xs text-muted-foreground" title={ev.resolvedBy ?? undefined}>
+                        Resolved {fmtDateTime(ev.resolvedAt)}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleResolve(ev.id)}
+                        disabled={resolvingId === ev.id}
+                        className="flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                      >
+                        {resolvingId === ev.id
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Check size={12} />}
+                        Resolve
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

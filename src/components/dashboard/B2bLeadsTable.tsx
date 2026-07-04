@@ -172,6 +172,35 @@ function DeleteLeadButton({ lead }: { lead: B2bLead }) {
   );
 }
 
+function ReleaseLeadButton({ lead }: { lead: B2bLead }) {
+  const [releasing, setReleasing] = useState(false);
+  const { t } = useLanguage();
+
+  async function handleRelease(e: React.MouseEvent) {
+    e.stopPropagation();
+    setReleasing(true);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/release`, { method: 'PATCH' });
+      if (res.ok) mutate('/api/leads');
+    } catch (err) {
+      console.error('[B2bLeadsTable] release error:', err);
+    } finally {
+      setReleasing(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleRelease}
+      disabled={releasing}
+      title={t('bl_release_claim_title')}
+      className="rounded-lg border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-600 hover:bg-violet-50 disabled:opacity-50 transition-colors dark:border-violet-700/40 dark:text-violet-400 dark:hover:bg-violet-900/20"
+    >
+      {releasing ? <Loader2 size={10} className="animate-spin" /> : t('bl_release_claim')}
+    </button>
+  );
+}
+
 export function B2bLeadsTable() {
   const { data, isLoading, error } = useSWR<B2bLead[]>('/api/leads', fetcher);
   const [search,   setSearch]   = useState('');
@@ -280,9 +309,12 @@ export function B2bLeadsTable() {
                           {lead.workSetup && ` · ${lead.workSetup}`}
                         </p>
                         {lead.claimedByCseRepId && (
-                          <p className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                          <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
                             <UserCheck size={10} />
                             {t('bl_claimed_by')}: {cseNameById.get(lead.claimedByCseRepId) ?? lead.claimedByCseRepId}
+                            <span onClick={(e) => e.stopPropagation()}>
+                              <ReleaseLeadButton lead={lead} />
+                            </span>
                           </p>
                         )}
                         {/* Mobile: status + time */}

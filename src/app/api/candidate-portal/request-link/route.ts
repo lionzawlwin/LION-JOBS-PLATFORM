@@ -4,7 +4,7 @@ import { getCandidateRecordByEmail } from '@/lib/db';
 import { issueLoginToken } from '@/lib/portalAuth';
 import { sendPortalLoginEmail } from '@/lib/portalEmail';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
-import { logFailure } from '@/lib/observability';
+import { logFailure, logRateLimitHit } from '@/lib/observability';
 
 const RATE_LIMIT_WINDOW_S = 600;
 const RATE_LIMIT_MAX = 3;
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const ipLimit = checkRateLimit(`candidate-portal-request-link:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!ipLimit.allowed) {
+    await logRateLimitHit('/api/candidate-portal/request-link');
     return NextResponse.json(
       { error: 'Too many requests. Please wait a few minutes and try again.' },
       { status: 429, headers: { 'Retry-After': String(ipLimit.resetIn) } },
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
 
   const emailLimit = checkRateLimit(`candidate-portal-request-link-email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!emailLimit.allowed) {
+    await logRateLimitHit('/api/candidate-portal/request-link');
     return NextResponse.json(GENERIC_RESPONSE);
   }
 

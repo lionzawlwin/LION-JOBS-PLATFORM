@@ -237,7 +237,7 @@ export interface Invoice {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {
@@ -248,6 +248,8 @@ export interface SystemEvent {
   message: string;
   context: Record<string, string | number | boolean | null> | null;
   createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
 }
 
 export interface CronStatus {
