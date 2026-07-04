@@ -47,6 +47,16 @@ production, not the order they'd ideally have been designed:
 | `0012_add_lead_claiming.sql` | 2026-07-04 | `b2b_leads.claimed_by_cse_rep_id` / `claimed_at` (Phase 15, Shared Pool option) — applied via Supabase MCP `apply_migration`, verified live via `list_tables` (new FK `b2b_leads_claimed_by_cse_rep_id_fkey` confirmed present) |
 | `0013_add_portal_login_tokens.sql` | 2026-07-04 | `portal_login_tokens` table — shared magic-link login tokens for the new Company Portal + Candidate Portal (Sprint 2, Phases 23/24). Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (RLS enabled, `subject_type` check constraint present). |
 | `0014_add_system_event_resolution.sql` | 2026-07-04 | `system_events.resolved_at`/`resolved_by` — lets a fixed problem be marked resolved instead of showing as an active failure for up to 7 days. Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (both nullable columns present, index `system_events_resolved_at_idx` created). |
+| `0015_add_rate_limit_category.sql` | 2026-07-04 | Adds `'rate_limit'` to `system_events.category`'s CHECK constraint (drop + recreate `system_events_category_check`, name confirmed via `pg_constraint` before writing the migration). Applied via Supabase MCP `apply_migration`, verified live via `pg_get_constraintdef`. |
+
+> **Merge-order note (2026-07-04), resolved as predicted**: `0014` (PR #46)
+> and `0015` (this branch) were branched and applied live independently
+> and in parallel. Both migrations were already live and idempotent
+> (guarded) before either PR merged, so DB state was correct regardless of
+> merge order. PR #46 merged first as planned; this table's conflict on
+> merging this branch was exactly the anticipated, no-real-content
+> conflict (both rows kept, same resolution Phase 13/16 used for their own
+> documented `PROGRESS.md` conflict).
 
 > Note (2026-07-03): `0009`'s row previously read `2026-07-03`, one day
 > earlier than `0008`'s `2026-07-04` directly above it, even though `0009`

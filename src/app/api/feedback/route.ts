@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { NextResponse, type NextRequest } from 'next/server';
 import { appendFeedback, getCompanyFeedback } from '@/lib/db';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
+import { logRateLimitHit } from '@/lib/observability';
 
 // 5 submissions per IP per 10 minutes — a candidate leaves one review per
 // interview experience; generous while blocking scripted floods against
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`feedback:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
+    await logRateLimitHit('/api/feedback');
     return NextResponse.json(
       { error: 'Too many submissions. Please wait a few minutes and try again.' },
       {

@@ -4,7 +4,7 @@ import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 import { scoreCandidateAgainstJob, extractTextFromBase64 } from '@/lib/ai/cvAnalyzer';
 import { getJobs } from '@/lib/db';
-import { logFailure } from '@/lib/observability';
+import { logFailure, logRateLimitHit } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 // 5 submissions per IP per 10 minutes — generous for real applicants,
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
   const ip  = getClientIp(req);
   const rl  = checkRateLimit(`apply:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
+    await logRateLimitHit('/api/apply');
     return Response.json(
       { error: 'Too many submissions. Please wait a few minutes and try again.' },
       {

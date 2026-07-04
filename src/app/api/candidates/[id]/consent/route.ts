@@ -1,7 +1,7 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getConsentForApplication, getApplicationInterviewLocation, getAgencySettings, recordConsent, getCandidatesByEmailOrPhone } from '@/lib/db';
 import { getClientIp, checkRateLimit } from '@/lib/apiSecurity';
-import { logFailure } from '@/lib/observability';
+import { logFailure, logRateLimitHit } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
 // Staff-only: read consent status for the Candidate Drawer badge.
@@ -26,6 +26,7 @@ export async function POST(
   const ip = getClientIp(req);
   const rl = checkRateLimit(`candidate-consent:${ip}`, 10, 60);
   if (!rl.allowed) {
+    await logRateLimitHit('/api/candidates/[id]/consent');
     return Response.json({ error: 'Too many requests. Please wait a minute.' }, { status: 429 });
   }
 
