@@ -639,3 +639,15 @@ Investigated whether this actually blocked anything before treating it as urgent
 - Both edited/new content parses cleanly (`js-yaml` used to check the workflow YAML directly, same discipline established in Phase 27 after that phase's own real YAML bug).
 - `npx tsc --noEmit` / `npm test` (58/58) both clean -- expected no-op, this change touches only CI config and one doc file.
 - **Could not verify this workflow's own next real run** until it executes on the next PR/push -- but the change removes the exact steps that were failing, and doesn't touch the test/audit steps that were already passing, so the only real open question is confirming branch protection's required checks still match by name (verified by reading, not assumed: job names `deploy-preview`/`deploy-production` are unchanged).
+
+---
+
+# Fix: CI Workflow Display-Name Collision
+
+Branch: `chore/fix-ci-workflow-name-collision`
+
+After merging the CLI-deploy trim above, `gh workflow list` surfaced a real, self-introduced problem: renaming `deploy.yml`'s display name to "CI" collided with a separate, pre-existing `.github/workflows/ci.yml` (job `verify` -- `next build` + `tsc --noEmit`, the "verify" check that's been passing in every PR check list all session) that was already named "CI". Never checked `.github/workflows/` for an existing name before picking one.
+
+Fixed same day: renamed `deploy.yml`'s display name to "Test & Audit" (matching what it actually runs), and documented both workflow files' distinct roles directly in `CLAUDE.md` so a future rename doesn't repeat the same mistake. Job names (`deploy-preview`/`deploy-production`) were never touched by either change, so branch protection's required-checks matching was never actually at risk -- only the Actions UI's display was confusing, not the CI gating itself.
+
+Verified: workflow YAML parses cleanly via `js-yaml`; confirmed via a direct listing that `auto-post-job.yml` ("Auto Post Job to Telegram & Facebook") has no similar collision.

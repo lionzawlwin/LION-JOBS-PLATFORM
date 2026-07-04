@@ -1,4 +1,4 @@
-name: CI
+name: Test & Audit
 
 # Vercel's own native GitHub git integration handles all actual deploys
 # (preview on PRs, production on push to main) independently of this
