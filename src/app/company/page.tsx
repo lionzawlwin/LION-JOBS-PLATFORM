@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Briefcase, Users, Clock, Shield, Star, TrendingUp, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HireForm } from '@/components/hire/HireForm';
+import { WhySection } from '@/components/hire/WhySection';
 
 export const metadata: Metadata = {
   title: 'Hire Talent | Lion Jobs Agency — Myanmar\'s Premier Recruitment Partner',
@@ -16,15 +17,6 @@ export const metadata: Metadata = {
     type: 'website',
   },
 };
-
-const WHY_US = [
-  { icon: Users,      color: 'bg-brand-600',   title: 'Pre-Screened Candidates',  desc: 'Every candidate is assessed before you ever see their CV. No wasted interviews.' },
-  { icon: Clock,      color: 'bg-amber-500',   title: 'Fast Turnaround',           desc: 'Receive your shortlist within 3–5 business days of submission.' },
-  { icon: Shield,     color: 'bg-violet-600',  title: 'Quality Guarantee',         desc: '30-day replacement guarantee if a placed candidate leaves within the period.' },
-  { icon: TrendingUp, color: 'bg-emerald-600', title: 'Industry Expertise',        desc: 'Deep networks across Tech, Finance, Manufacturing, FMCG, and more.' },
-  { icon: Star,       color: 'bg-rose-500',    title: 'Zero Upfront Cost',         desc: 'No retainer. You only pay on successful placement.' },
-  { icon: Briefcase,  color: 'bg-sky-600',     title: 'End-to-End Recruitment',    desc: 'We handle sourcing, screening, scheduling, and offer negotiation.' },
-];
 
 const STATS = [
   { value: '500+', label: 'Placements Made' },
@@ -82,27 +74,7 @@ export default function CompanyPage() {
 
             {/* Left: Why Us ─────────────────────────────────────── */}
             <div className="space-y-8">
-              <div>
-                <h2 className="text-2xl font-extrabold text-foreground">Why Partner With Us?</h2>
-                <p className="mt-2 text-muted-foreground">
-                  We take the pain out of hiring. From sourcing to offer — we handle everything,
-                  so your team can stay focused on what matters.
-                </p>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                {WHY_US.map(({ icon: Icon, color, title, desc }) => (
-                  <div key={title} className="flex gap-3 rounded-2xl border border-border bg-card p-4 hover:shadow-sm transition-shadow">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-md ${color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{title}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <WhySection />
 
               {/* Testimonial */}
               <div className="rounded-2xl border border-brand-200 bg-brand-50 dark:border-brand-700/30 dark:bg-brand-600/5 p-6">
@@ -136,12 +108,6 @@ export default function CompanyPage() {
             {/* Right: Form ─────────────────────────────────────── */}
             <div>
               <div className="rounded-3xl border border-border bg-card p-8 shadow-lg shadow-black/5">
-                <div className="mb-7">
-                  <h2 className="text-xl font-extrabold text-foreground">Submit Your Hiring Request</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Complete the form and our team will contact you within 1 business day.
-                  </p>
-                </div>
                 <HireForm />
               </div>
             </div>
