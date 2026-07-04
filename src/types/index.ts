@@ -237,7 +237,7 @@ export interface Invoice {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {

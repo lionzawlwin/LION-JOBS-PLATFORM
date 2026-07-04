@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendEmailSubscriber } from '@/lib/db';
-import { logFailure } from '@/lib/observability';
+import { logFailure, logRateLimitHit } from '@/lib/observability';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 
 // 3 submissions per IP per minute — was previously a private in-memory
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const rl = checkRateLimit(`subscribe:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
 
   if (!rl.allowed) {
+    await logRateLimitHit('/api/subscribe');
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
       {

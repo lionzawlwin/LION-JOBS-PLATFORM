@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { appendB2bLead } from '@/lib/db';
-import { logFailure } from '@/lib/observability';
+import { logFailure, logRateLimitHit } from '@/lib/observability';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 
 // 3 submissions per IP per 10 minutes — a real employer submits once,
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`employers-request:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
+    await logRateLimitHit('/api/employers/request');
     return NextResponse.json(
       { error: 'Too many submissions. Please wait a few minutes and try again.' },
       {

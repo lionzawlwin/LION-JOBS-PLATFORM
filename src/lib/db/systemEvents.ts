@@ -59,6 +59,24 @@ export async function listSystemEvents(filters: {
   return (data ?? []).map(mapToSystemEvent);
 }
 
+// Phase 20 follow-up: the in-memory rate limiter (apiSecurity.ts) doesn't
+// survive across serverless invocations, so "how often is this actually
+// engaging" needs a durable count instead of reading the Map directly.
+export async function getRateLimitHitCount(hours: number): Promise<number> {
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+  const { count, error } = await supabase
+    .from('system_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('category', 'rate_limit')
+    .gte('created_at', since);
+
+  if (error) {
+    console.error('[db/systemEvents] getRateLimitHitCount failed:', error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 const CRON_ROUTES = ['/api/cron/job-alerts', '/api/cron/weekly-email'];
 
 export async function getCronStatus(): Promise<CronStatus[]> {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash } from 'lucide-react';
+import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash, Gauge } from 'lucide-react';
 import type { SystemEvent, CronStatus, FailureCategory } from '@/types';
 
 interface IntegrationStatus {
@@ -19,6 +19,10 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   invoicing:  'Invoicing',
   cron:       'Cron',
   other:      'Other',
+  // Not in CATEGORIES/the filter dropdown (see VALID_CATEGORIES's comment
+  // in the API route) -- kept here only so this Record<FailureCategory,
+  // string> stays exhaustive against the type.
+  rate_limit: 'Rate Limit',
 };
 
 function fmtDateTime(iso: string) {
@@ -35,6 +39,7 @@ export function SystemHealthView() {
   const [error, setError]           = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<FailureCategory | ''>('');
   const [days, setDays]             = useState(7);
+  const [rateLimitHits24h, setRateLimitHits24h] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +58,7 @@ export function SystemHealthView() {
       const data = await eventsRes.json();
       setEvents(data.events ?? []);
       setCronStatus(data.cronStatus ?? []);
+      setRateLimitHits24h(typeof data.rateLimitHits24h === 'number' ? data.rateLimitHits24h : null);
       if (integrationsRes.ok) {
         const integrationsData = await integrationsRes.json();
         setIntegrations(integrationsData.integrations ?? []);
@@ -107,12 +113,23 @@ export function SystemHealthView() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">Cron Job Status</h3>
-        <button
-          onClick={() => load()}
-          className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-        >
-          <RefreshCw size={12} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {rateLimitHits24h !== null && (
+            <div
+              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
+              title="Requests blocked by the rate limiter in the last 24 hours, across every protected public route"
+            >
+              <Gauge size={12} />
+              Rate-limit hits (24h): <span className="font-semibold text-foreground">{rateLimitHits24h}</span>
+            </div>
+          )}
+          <button
+            onClick={() => load()}
+            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+          >
+            <RefreshCw size={12} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

@@ -1,8 +1,13 @@
 import { requireTabAccess } from '@/lib/auth';
-import { listSystemEvents, getCronStatus } from '@/lib/db';
+import { listSystemEvents, getCronStatus, getRateLimitHitCount } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { FailureCategory } from '@/types';
 
+// Deliberately excludes 'rate_limit' -- listSystemEvents() only ever
+// queries level='error', but rate-limit hits are logged at level='info'
+// (the limiter engaging is the control working, not an application
+// failure -- see logRateLimitHit()). A 'rate_limit' filter option here
+// would always return zero rows. Its count is exposed separately below.
 const VALID_CATEGORIES: FailureCategory[] = ['webhook', 'ai_scoring', 'invoicing', 'cron', 'other'];
 
 export async function GET(req: NextRequest) {
@@ -23,10 +28,11 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'days must be a positive number' }, { status: 422 });
   }
 
-  const [events, cronStatus] = await Promise.all([
+  const [events, cronStatus, rateLimitHits24h] = await Promise.all([
     listSystemEvents({ category: categoryParam as FailureCategory | undefined, days }),
     getCronStatus(),
+    getRateLimitHitCount(24),
   ]);
 
-  return Response.json({ events, cronStatus }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ events, cronStatus, rateLimitHits24h }, { headers: { 'Cache-Control': 'no-store' } });
 }

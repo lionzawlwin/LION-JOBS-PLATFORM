@@ -41,6 +41,20 @@ export async function logFailure(input: {
   }
 }
 
+// Called when checkRateLimit() blocks a request. 'info', not 'error' —
+// the limiter engaging is the security control working as intended, not
+// an application failure, so this never surfaces in the "Recent
+// Failures" list (which only ever queries level='error'). Never throws,
+// matching logFailure()'s own contract, since a public route calling
+// this must never have the logging itself become a new failure.
+export async function logRateLimitHit(route: string): Promise<void> {
+  try {
+    await appendSystemEvent({ category: 'rate_limit', level: 'info', route, message: 'Request blocked by rate limit' });
+  } catch (err) {
+    console.error('[observability] logRateLimitHit could not persist system_events row:', err);
+  }
+}
+
 // Cron routes call this on every run, success or failure, so "last run
 // time" is always answerable — see getCronStatus() in
 // src/lib/db/systemEvents.ts.
