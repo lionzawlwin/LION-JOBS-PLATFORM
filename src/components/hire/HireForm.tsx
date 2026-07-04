@@ -246,19 +246,19 @@ export function HireForm() {
                 { key: 'requirements',   label: 'Key Requirements', icon: <FileText size={13} /> },
                 { key: 'jobDescription', label: 'Job Description',  icon: <Briefcase size={13} /> },
                 { key: 'benefits',       label: 'Benefits & Perks', icon: <Gift size={13} /> },
-              ] as const).map((t) => (
+              ] as const).map((tab) => (
                 <button
-                  key={t.key}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setReqTab(t.key)}
+                  onClick={() => setReqTab(tab.key)}
                   className={cn(
                     'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap',
-                    reqTab === t.key
+                    reqTab === tab.key
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t.icon} {t.label}
+                  {tab.icon} {tab.label}
                 </button>
               ))}
             </div>
