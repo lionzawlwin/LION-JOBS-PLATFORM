@@ -42,7 +42,10 @@ async function checkCronSilence(): Promise<string[]> {
 }
 
 async function checkFailureSpikes(): Promise<string[]> {
-  const events = await listSystemEvents({ days: 1 });
+  // 'all': a spike is a spike regardless of whether someone has since
+  // marked individual events resolved — listSystemEvents()'s new default
+  // ('unresolved') must not silently change this alert's behavior.
+  const events = await listSystemEvents({ days: 1, resolved: 'all' });
   const counts = new Map<FailureCategory, number>();
   for (const ev of events) {
     counts.set(ev.category, (counts.get(ev.category) ?? 0) + 1);
