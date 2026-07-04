@@ -422,3 +422,31 @@ Context: same overnight autonomous-execution session as Phase 13 (see that phase
 - 2026-07-04: Verified the new route's auth gate directly: `curl`ing `/api/integrations-status` without a session returns `401`, confirming `requireTabAccess('system-health', 'view')` is actually enforced, not just present in the source.
 - 2026-07-04: **Could not verify the panel's authenticated rendering** — same OAuth-gated limitation as every other dashboard-UI phase this session. Recommend the repo owner spot-check post-merge: System Health tab shows a new "Integration Status" section above "Cron Job Status" with sensible configured/not-configured chips matching Vercel's actual current env var state.
 - 2026-07-04: **Known merge-order issue, flagging explicitly**: this phase and Phase 13 both branched from the same `main` commit and both append a new section to the end of this file. Whichever of PR #22 (Phase 13) or this phase's PR merges second will hit a trivial `PROGRESS.md` merge conflict (both sections trying to append after the same anchor text) — resolve by keeping both appended sections, in whichever order; there's no actual content conflict, just two independent insertions at the same location. No code files are affected by this — both phases touch disjoint sets of files. **Resolved 2026-07-04 at merge time exactly as predicted**: kept both sections, this one first (Phase 16), Phase 13's section immediately above it — no code conflicts, confirmed via `git diff` that only this file had a conflict marker.
+---
+
+# Phase 17 (revised): Free Algorithmic Match Scoring — Progress
+
+Spec: `docs/superpowers/specs/2026-07-04-phase-17-ai-match-scoring-design.md` (superseded — repo owner rejected the LLM-based design entirely the next morning)
+Branch: `feat/phase-17-free-algorithmic-matching`
+
+Context: the overnight spec proposed a *cost-capped* design that still called the paid Anthropic API for single-pair detail views. The repo owner's morning instruction explicitly discarded that: **zero external API calls, pure in-house algorithmic scoring**, built on keyword matching, skill overlap, location, and experience comparison against data already in Supabase.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | `src/lib/matching/algorithmicMatch.ts` — pure scoring function, 0 external calls | ✅ Done |
+| 2 | Unit tests (`algorithmicMatch.test.ts`) | ✅ Done |
+| 3 | `getJobById()` in `src/lib/db/jobs.ts` | ✅ Done |
+| 4 | `GET /api/jobs/[id]/suggested-candidates` | ✅ Done |
+| 5 | "Suggested Candidates" panel in `JobsPanel.tsx` | ✅ Done |
+| 6 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Checked `src/lib/ai/cvAnalyzer.ts` before writing anything new — it already has a free `ruleBasedScore()` fallback, but it lives in a file whose whole purpose is "call Claude, fall back to rules," and is wired only into the single apply-time scoring flow. Rather than risk any ambiguity about "is this free," built a **wholly separate module** (`src/lib/matching/algorithmicMatch.ts`) that never imports `@anthropic-ai/sdk` and never will — auditable at a glance via `grep -L anthropic` against the file.
+- 2026-07-04: Scoring breakdown, 100 pts total, matching exactly the four factors the repo owner named: **skill overlap** (35 pts, candidate.skills vs job.requirements — the most structured fields either side has), **keyword match** (25 pts, broader free-text overlap between candidate profile and job title/description), **location match** (20 pts, normalized exact/substring match; remote jobs get full credit regardless of candidate location; missing data on either side gets partial credit rather than zero, matching `ruleBasedScore()`'s existing completeness-over-penalty philosophy), **experience comparison** (20 pts, candidate years vs years inferred from job requirements/description, proportional credit below the target).
+- 2026-07-04: Wrote 6 unit tests covering: a realistic strong-match case (hand-traced to a score of 64, not assumed — keyword match is deliberately a noisier signal and shouldn't dominate), a no-overlap case, remote-job location handling, missing-location partial credit, proportional experience credit, and a stress case confirming the score never exceeds 100 even with heavily duplicated skill tokens.
+- 2026-07-04: **Found and fixed a real correctness bug before shipping, not after**: `getCandidates()` returns one row *per application* (a candidate who applied to 3 jobs appears 3 times), because that shape is what the Kanban/table view needs. A naive "rank every row" implementation for "Suggested Candidates" would have shown the same person 2-3 times in one job's suggestion list. Fixed by deduping on `phone` (a required field on every candidate row, unlike email) before ranking — verified this doesn't lose real people since duplicate rows for the same person share identical bio fields (skills/location/experience come from the same underlying `candidates` table row).
+- 2026-07-04: New `GET /api/jobs/[id]/suggested-candidates` route gated by `requireTabAccess('candidates', 'view')` (the domain governing candidate PII), capped at 50 results even if a caller requests more.
+- 2026-07-04: UI is manual-trigger per job (a "Suggested Candidates" toggle button in Manage Jobs, not an eager compute-on-load for every job row) — kept this from the original cost-conscious design even though there's no longer an API cost to worry about, since scanning the full candidate pool per job is still real server work that shouldn't run un-requested for every row on every page load.
+- 2026-07-04: `npx tsc --noEmit` clean, `npm test` 42/42 passing (36 pre-existing + 6 new), `npm run lint` clean on every file this phase touched (same pre-existing unrelated errors as every prior phase this session, confirmed via `git diff` untouched).
+- 2026-07-04: **Could not verify the panel's authenticated rendering** — same OAuth-gated dashboard limitation as every other UI phase this session. Recommend the repo owner spot-check post-merge: Manage Jobs → click "Suggested Candidates" on a job with applicants in the pool, confirm ranked results with sensible scores and location/experience details render.

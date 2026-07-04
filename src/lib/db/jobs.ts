@@ -36,6 +36,38 @@ export async function getJobs(): Promise<Job[]> {
   }
 }
 
+export async function getJobById(id: string): Promise<Job | null> {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[db/jobs] getJobById error:', error.message);
+    return null;
+  }
+  if (!data) return null;
+
+  return {
+    id:           data.id,
+    title:        data.title,
+    company:      data.company,
+    location:     data.location,
+    category:     data.category as JobCategory,
+    type:         data.type as JobType,
+    salaryMin:    data.salary_min,
+    salaryMax:    data.salary_max,
+    currency:     data.currency,
+    description:  data.description,
+    requirements: data.requirements ?? [],
+    benefits:     data.benefits ?? [],
+    postedAt:     data.posted_at,
+    isUrgent:     data.is_urgent ?? false,
+    isFeatured:   data.is_featured ?? false,
+  };
+}
+
 export interface GetJobsPaginatedOptions {
   keyword?: string;
   category?: string;
