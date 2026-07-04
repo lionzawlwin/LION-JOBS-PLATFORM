@@ -16,20 +16,20 @@ export async function GET() {
     return NextResponse.json({ error: 'Company not found.' }, { status: 404 });
   }
 
-  // Jobs are matched by company name, not a real company_id FK -- jobs.company
-  // has always been a free-text string in this schema (confirmed: no jobs.company_id
-  // column exists anywhere). Exact-string match, same as the public
-  // companies/[slug] profile page already relies on. A real company_id FK on
-  // jobs would be the correct fix, but is a bigger schema change deliberately
-  // out of scope for this foundation pass -- flagged, not silently worked
-  // around.
+  // Layer 1 fix (2026-07-05): jobs now carry a real company_id FK,
+  // backfilled by exact name match (migration 0016) and auto-populated on
+  // every new job going forward (appendJob). Match on company_id first;
+  // fall back to the legacy name-string match only for a job that somehow
+  // has no company_id (e.g. its company name never matched a CRM row at
+  // creation time) so this never regresses visibility for an edge case
+  // the backfill didn't cover.
   const [allJobs, allCandidates, invoices] = await Promise.all([
     getJobs(),
     getCandidates(),
     getInvoices({ companyId }),
   ]);
 
-  const companyJobs = allJobs.filter((j) => j.company === company.name);
+  const companyJobs = allJobs.filter((j) => j.companyId === companyId || (!j.companyId && j.company === company.name));
   const companyJobIds = new Set(companyJobs.map((j) => j.id));
 
   // Aggregate applicant counts only -- never expose individual candidate

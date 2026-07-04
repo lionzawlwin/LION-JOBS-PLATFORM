@@ -121,6 +121,21 @@ export async function getCompanyByEmail(email: string): Promise<Company | null> 
   return mapToCompany(data);
 }
 
+// Exact-match lookup used to auto-resolve jobs.company_id at job-creation
+// time from the free-text company name the Post Job form still collects.
+// Case-insensitive but not partial (ilike with no wildcards) -- a job
+// should only ever link to the one CRM company row with that exact name.
+export async function getCompanyByName(name: string): Promise<Company | null> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .ilike('name', name.trim())
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapToCompany(data);
+}
+
 export async function updateCompanyCommissionRate(
   id: string,
   commissionRatePct: number | null,

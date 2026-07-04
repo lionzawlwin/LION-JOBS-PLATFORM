@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Job, JobCategory, JobType } from '@/types';
+import { getCompanyByName } from './companies';
 
 export async function getJobs(): Promise<Job[]> {
   try {
@@ -17,6 +18,7 @@ export async function getJobs(): Promise<Job[]> {
     id:           row.id,
     title:        row.title,
     company:      row.company,
+    companyId:    row.company_id ?? null,
     location:     row.location,
     category:     row.category as JobCategory,
     type:         row.type as JobType,
@@ -53,6 +55,7 @@ export async function getJobById(id: string): Promise<Job | null> {
     id:           data.id,
     title:        data.title,
     company:      data.company,
+    companyId:    data.company_id ?? null,
     location:     data.location,
     category:     data.category as JobCategory,
     type:         data.type as JobType,
@@ -127,6 +130,7 @@ export async function getJobsPaginated(
       id:           row.id,
       title:        row.title,
       company:      row.company,
+      companyId:    row.company_id ?? null,
       location:     row.location,
       category:     row.category as JobCategory,
       type:         row.type as JobType,
@@ -151,6 +155,7 @@ export async function getJobsPaginated(
 export async function appendJob(data: {
   title:        string;
   company:      string;
+  companyId?:   string | null;
   location:     string;
   category:     string;
   type:         string;
@@ -165,10 +170,23 @@ export async function appendJob(data: {
 }): Promise<string> {
   const id = `jb-${Date.now()}`;
 
+  // Auto-resolve company_id by exact name match when the caller doesn't
+  // already know it (e.g. the existing free-text Post Job form) -- keeps
+  // new jobs correctly linked to the CRM `companies` row going forward
+  // without requiring every call site to be rewritten. A job whose
+  // company name has no matching CRM row simply gets a null company_id,
+  // same as it would have before this column existed.
+  let companyId = data.companyId ?? null;
+  if (!companyId) {
+    const match = await getCompanyByName(data.company);
+    companyId = match?.id ?? null;
+  }
+
   const { error } = await supabase.from('jobs').insert({
     id,
     title:        data.title,
     company:      data.company,
+    company_id:   companyId,
     location:     data.location,
     category:     data.category,
     type:         data.type,
