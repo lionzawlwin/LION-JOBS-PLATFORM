@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { DashboardClient } from '@/components/dashboard/DashboardClient';
 import { LayoutDashboard, LogOut, Shield } from 'lucide-react';
 import Link from 'next/link';
+import { ALL_TAB_DOMAINS, getAccessLevel, type TabDomain } from '@/lib/permissions';
 
 export const metadata: Metadata = {
   title: 'Dashboard | Lion Jobs Agency',
@@ -28,6 +29,16 @@ export default async function DashboardPage() {
   // is attached to every session that passed authOptions.ts's signIn gate.
   const role = session.user?.role;
   const isAdmin = !!role;
+
+  // RBAC Step 2 (Layer 6, Dynamic RBAC): compute the visible-tab list
+  // server-side, since getAccessLevel is now async and DB-backed —
+  // DashboardClient (a client component) can no longer call it directly.
+  // See docs/superpowers/specs/2026-07-06-layer6-dynamic-rbac-design.md.
+  let visibleTabs: TabDomain[] = [];
+  if (role) {
+    const levels = await Promise.all(ALL_TAB_DOMAINS.map((domain) => getAccessLevel(role, domain)));
+    visibleTabs = ALL_TAB_DOMAINS.filter((_, i) => levels[i] !== 'none');
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -74,7 +85,7 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <DashboardClient isAdmin={isAdmin} role={role} />
+          <DashboardClient isAdmin={isAdmin} role={role} visibleTabs={visibleTabs} />
         </div>
       </main>
     </div>
