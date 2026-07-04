@@ -18,6 +18,7 @@ export interface Job {
   id: string;
   title: string;
   company: string;
+  companyId?: string | null;
   location: string;
   category: JobCategory;
   type: JobType;
