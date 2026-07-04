@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendEmailSubscriber } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
+import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 
-// In-memory sliding-window rate limit: 3 requests per IP per minute
-const ipLog = new Map<string, number[]>();
-
-function isRateLimited(ip: string): boolean {
-  const now    = Date.now();
-  const window = 60_000;
-  const limit  = 3;
-  const times  = (ipLog.get(ip) ?? []).filter((t) => now - t < window);
-  if (times.length >= limit) return true;
-  times.push(now);
-  ipLog.set(ip, times);
-  return false;
-}
+// 3 submissions per IP per minute — was previously a private in-memory
+// Map duplicating apiSecurity.ts's shared rate limiter; consolidated onto
+// the shared implementation instead of maintaining two copies of the
+// same logic.
+const RATE_LIMIT_WINDOW_S = 60;
+const RATE_LIMIT_MAX      = 3;
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`subscribe:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
 
-  if (isRateLimited(ip)) {
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
-      { status: 429 },
+      {
+        status: 429,
+        headers: {
+          'Retry-After':           String(rl.resetIn),
+          'X-RateLimit-Limit':     String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
     );
   }
 
