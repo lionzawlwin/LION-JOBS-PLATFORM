@@ -677,3 +677,30 @@ Sprint 2 (PR #38) shipped a fully working Company Portal and Candidate Portal (m
 - 2026-07-04: Explicitly out of scope, confirmed still deferred: i18n for either portal, and the `jobs.company` name-string-match → real `company_id` FK fix — both remain separate, already-documented follow-ups from Sprint 2's own log, not silently rolled into this pass.
 - 2026-07-04: `npx tsc --noEmit` clean after each of the three edits. `npm run lint` shows the same 28 pre-existing problems (17 errors, 11 warnings) as `main`'s baseline — confirmed none are in the three edited files.
 - 2026-07-04: Live-verified via the `browse` skill against a local dev server (not just a static read of the JSX): footer's "Employer Login"/"Candidate Login" resolve to `/company/portal/login`/`/candidate/portal/login`, both returning 200 and rendering their real login forms (not 404/500); `/candidate`'s new "Already applied? Track your status" link resolves to `/candidate/portal/login`; the "Hire Talent" CTA now resolves directly to `/company` with no redirect hop; `/company`'s "Back to Job Board" and "Already a client? Log in" both resolve correctly side by side.
+
+---
+
+# Feature: Dashboard Language Toggle
+
+Spec: `docs/superpowers/specs/2026-07-04-dashboard-language-toggle-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-dashboard-language-toggle.md`
+Branch: `feat/dashboard-language-toggle`
+
+Adds a language-toggle button to the admin dashboard's `Sidebar.tsx`, reusing the existing `nav_lang_toggle` translation key and the `useLanguage()` context/toggle already established elsewhere in the app — no new translation infrastructure, just wiring the sidebar into what already exists.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Add language toggle button to `Sidebar.tsx` | ✅ Done |
+| 2 | Verification | ✅ Done |
+
+## Scope
+
+This is **only** the toggle button itself — clicking it flips the active language via the existing `toggleLang()` from `LanguageContext`. It does **not** translate the content of any of the 13 dashboard tabs (Overview, Candidates, Post Job, Manage Jobs, Companies, Enterprise, B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access, System Health) — that's a separate, much larger, deliberately deferred project that needs real Burmese copy not yet supplied, not something to improvise inline.
+
+## Log
+
+- 2026-07-04: In the `rail` variant, the button renders `t('nav_lang_toggle')` as visible text when expanded (`collapsed=false` → `collapsedRail=false`), and swaps to the `Languages` icon with a `title={t('nav_lang_toggle')}` tooltip when collapsed (`collapsed=true` → `collapsedRail=true`) — confirmed by tracing `collapsedRail = !isDrawer && collapsed` and the button's `{collapsedRail ? <Languages size={14} /> : t('nav_lang_toggle')}` JSX directly, not assumed. In the `drawer` variant, `isDrawer=true` forces `collapsedRail` to always be `false`, so the visible text always renders, never the icon-only form.
+- 2026-07-04: `npx tsc --noEmit` clean.
+- 2026-07-04: `npm test` — 58/58 passing (no test touches `Sidebar.tsx`).
+- 2026-07-04: `npm run lint` — 28 problems (17 errors, 11 warnings), matching `main`'s baseline count exactly. One pre-existing finding does land in `Sidebar.tsx` (line 42, `react-hooks/set-state-in-effect`, on the collapse-state hydration effect) — confirmed by diffing this branch's own commit (`aeb2dcc`) against its parent that this exact `useEffect` was already present, unchanged, before this branch touched the file (which only added the language-toggle button plus its imports/hook call, never the collapse effect). The same `set-state-in-effect` pattern already fires in `useProfile.ts`, `useRecentlyViewed.ts`, and `useSavedJobs.ts`'s lint output, so this is a known, pre-existing, unrelated class of finding across the codebase, not something introduced by this change.
+- 2026-07-04: Could not live-verify in a real browser — `/dashboard` is OAuth-gated behind a real Google login restricted to the `staff` table / `ADMIN_EMAIL`, which cannot be automated from this environment (same limitation documented in Phases 4/5/10/11 and Sprint 2's own log above). No Storybook config or `*.stories.tsx` files exist anywhere in this repo (confirmed by search) to provide an isolated rendering harness, and building one from scratch for a single button was out of scope. Verification is therefore limited to a manual line-by-line trace of the JSX/conditional logic above, plus `tsc`/lint/test passing — which proves the code is structurally sound and type-correct, not that it visually renders correctly in a real browser session.
