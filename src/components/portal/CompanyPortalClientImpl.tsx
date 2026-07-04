@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Building2, Briefcase, FileText, LogOut, MapPin } from 'lucide-react';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -24,10 +24,21 @@ interface InvoiceSummary {
   issuedAt: string;
 }
 
+interface ContractSummary {
+  id: string;
+  contractType: string;
+  status: string;
+  value: number;
+  currency: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
 interface MeResponse {
   company: { id: string; name: string; industry: string; city: string; tier: string };
   jobs: JobSummary[];
   invoices: InvoiceSummary[];
+  contracts: ContractSummary[];
 }
 
 export function CompanyPortalClientImpl() {
@@ -154,6 +165,36 @@ export function CompanyPortalClientImpl() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+            <FileSignature size={16} /> Contracts ({data.contracts.length})
+          </h2>
+          {data.contracts.length === 0 ? (
+            <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              No contracts on file yet.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {data.contracts.map((c) => (
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card p-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{c.contractType}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {c.startDate ? new Date(c.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                      {' – '}
+                      {c.endDate ? new Date(c.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ongoing'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-foreground">{c.value.toLocaleString()} {c.currency}</p>
+                    <p className="text-xs text-muted-foreground">{c.status}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>

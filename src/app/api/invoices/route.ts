@@ -1,6 +1,7 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
+import { sendInvoiceIssuedEmail } from '@/lib/portalEmail';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
 
@@ -77,6 +78,30 @@ export async function POST(req: NextRequest) {
       agreedSalary,
       commissionRatePct,
     });
+
+    // Best-effort notification -- a failed send must never fail the
+    // invoice creation itself (same posture as every other optional
+    // integration in this repo; see CLAUDE.md).
+    if (company.email) {
+      try {
+        await sendInvoiceIssuedEmail({
+          to: company.email,
+          companyName: company.name,
+          invoiceNumber: invoice.invoiceNumber,
+          position: invoice.position,
+          commissionFeeMmk: invoice.commissionFeeMmk,
+        });
+      } catch (err) {
+        await logFailure({
+          category: 'invoicing',
+          route:    '/api/invoices',
+          message:  'Invoice created but notification email failed to send',
+          error:    err,
+          context:  { invoiceId: invoice.id, companyId },
+        });
+      }
+    }
+
     return Response.json(invoice, { status: 201 });
   } catch (err) {
     await logFailure({

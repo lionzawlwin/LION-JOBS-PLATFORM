@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
-import { getCompanyById, getJobs, getCandidates, getInvoices } from '@/lib/db';
+import { getCompanyById, getJobs, getCandidates, getInvoices, getContracts } from '@/lib/db';
 import type { ApplicationStatus } from '@/types';
 
 const STAGES: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hired'];
@@ -23,10 +23,11 @@ export async function GET() {
   // has no company_id (e.g. its company name never matched a CRM row at
   // creation time) so this never regresses visibility for an edge case
   // the backfill didn't cover.
-  const [allJobs, allCandidates, invoices] = await Promise.all([
+  const [allJobs, allCandidates, invoices, contracts] = await Promise.all([
     getJobs(),
     getCandidates(),
     getInvoices({ companyId }),
+    getContracts(companyId),
   ]);
 
   const companyJobs = allJobs.filter((j) => j.companyId === companyId || (!j.companyId && j.company === company.name));
@@ -74,6 +75,19 @@ export async function GET() {
       commissionFeeMmk: inv.commissionFeeMmk,
       status: inv.status,
       issuedAt: inv.issuedAt,
+    })),
+    // Layer 3: read-only document/contract center. Contracts are already
+    // scoped by companyId (getContracts), same commercial-transparency
+    // reasoning Sprint 2 used for invoices -- an employer seeing the
+    // terms of their own agreement is unambiguously appropriate.
+    contracts: contracts.map((c) => ({
+      id: c.id,
+      contractType: c.contractType,
+      status: c.status,
+      value: c.value,
+      currency: c.currency,
+      startDate: c.startDate,
+      endDate: c.endDate,
     })),
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
