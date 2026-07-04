@@ -1,5 +1,5 @@
-import { requireTabAccess } from '@/lib/auth';
-import { updateB2bLeadStatus } from '@/lib/db';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
+import { updateB2bLeadStatus, claimB2bLeadIfUnclaimed } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
@@ -34,6 +34,19 @@ export async function PATCH(
 
   try {
     await updateB2bLeadStatus(id, status);
+
+    // Shared Pool assignment (Phase 15): any cse acting on a lead claims
+    // it, first-mover-wins. Non-critical to the status update itself, so
+    // a claim failure is logged but never fails this request.
+    const scope = await getSessionScope();
+    if (scope?.role === 'cse' && scope.cseRepId) {
+      try {
+        await claimB2bLeadIfUnclaimed(id, scope.cseRepId);
+      } catch (claimErr) {
+        await logFailure({ category: 'other', route: '/api/leads/[id]/status', message: 'Could not claim lead', error: claimErr, context: { leadId: id, cseRepId: scope.cseRepId } });
+      }
+    }
+
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/leads/[id]/status', message: 'Could not update lead status', error: err, context: { leadId: id } });
