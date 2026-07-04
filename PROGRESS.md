@@ -651,3 +651,29 @@ After merging the CLI-deploy trim above, `gh workflow list` surfaced a real, sel
 Fixed same day: renamed `deploy.yml`'s display name to "Test & Audit" (matching what it actually runs), and documented both workflow files' distinct roles directly in `CLAUDE.md` so a future rename doesn't repeat the same mistake. Job names (`deploy-preview`/`deploy-production`) were never touched by either change, so branch protection's required-checks matching was never actually at risk -- only the Actions UI's display was confusing, not the CI gating itself.
 
 Verified: workflow YAML parses cleanly via `js-yaml`; confirmed via a direct listing that `auto-post-job.yml` ("Auto Post Job to Telegram & Facebook") has no similar collision.
+
+---
+
+# Follow-up: Portal Nav Discoverability
+
+Spec: `docs/superpowers/specs/2026-07-04-portal-nav-discoverability-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-portal-nav-discoverability.md`
+Branch: `feat/portal-nav-discoverability`
+
+Sprint 2 (PR #38) shipped a fully working Company Portal and Candidate Portal (magic-link auth, sessions, dashboards) but explicitly flagged that neither portal's login page was linked from anywhere public. This closes that specific gap.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Footer: "Employer Login" / "Candidate Login" links | ✅ Done |
+| 2 | `/company` hero: "Already a client? Log in" link | ✅ Done |
+| 3 | `/candidate` hero: "Already applied? Track your status" link + stale `/hire-with-us` fix | ✅ Done |
+| 4 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Added `Employer Login` / `Candidate Login` as plain-text links in `Footer.tsx`'s existing bottom bar (not a new grid column) — hardcoded English strings, not wired through `t()`/`TranslationKey`, consistent with both portals being English-only for this first pass.
+- 2026-07-04: Added "Already a client? Log in" next to the existing "Back to Job Board" link at the top of `/company`'s hero, and "Already applied? Track your status" near the trust strip at the bottom of `/candidate`'s hero (`HeroSection.tsx`).
+- 2026-07-04: Incidental fix, same file already being edited: `HeroSection.tsx`'s "Hire Talent" CTA card still linked to the pre-Phase-11 `/hire-with-us` URL (working only via the redirect that phase added) — changed to link straight to `/company`, and converted from a plain `<a>` to `next/link`'s `Link`, matching the "Drop CV" CTA card directly above it.
+- 2026-07-04: Explicitly out of scope, confirmed still deferred: i18n for either portal, and the `jobs.company` name-string-match → real `company_id` FK fix — both remain separate, already-documented follow-ups from Sprint 2's own log, not silently rolled into this pass.
+- 2026-07-04: `npx tsc --noEmit` clean after each of the three edits. `npm run lint` shows the same 28 pre-existing problems (17 errors, 11 warnings) as `main`'s baseline — confirmed none are in the three edited files.
+- 2026-07-04: Live-verified via the `browse` skill against a local dev server (not just a static read of the JSX): footer's "Employer Login"/"Candidate Login" resolve to `/company/portal/login`/`/candidate/portal/login`, both returning 200 and rendering their real login forms (not 404/500); `/candidate`'s new "Already applied? Track your status" link resolves to `/candidate/portal/login`; the "Hire Talent" CTA now resolves directly to `/company` with no redirect hop; `/company`'s "Back to Job Board" and "Already a client? Log in" both resolve correctly side by side.

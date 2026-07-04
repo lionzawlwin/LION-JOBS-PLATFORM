@@ -128,6 +128,15 @@ export function Footer() {
         {/* ── Bottom bar ── */}
         <div className="mt-12 border-t border-white/8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30">
           <p>© {new Date().getFullYear()} Lion Jobs Agency · Yangon, Myanmar</p>
+          <p className="flex items-center gap-3">
+            <Link href="/company/portal/login" className="hover:text-white/60 transition-colors">
+              Employer Login
+            </Link>
+            <span aria-hidden>·</span>
+            <Link href="/candidate/portal/login" className="hover:text-white/60 transition-colors">
+              Candidate Login
+            </Link>
+          </p>
           <p className="text-white/20">{t('footer_tagline')}</p>
         </div>
       </div>
