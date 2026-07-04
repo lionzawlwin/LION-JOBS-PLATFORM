@@ -24,6 +24,8 @@ function mapToLead(row: Record<string, unknown>): B2bLead {
     submittedAt:    row.submitted_at as string,
     statusUpdatedAt: row.status_updated_at as string,
     status:         (row.status as string) ?? 'New',
+    claimedByCseRepId: (row.claimed_by_cse_rep_id as string) ?? null,
+    claimedAt:      (row.claimed_at as string) ?? null,
   };
 }
 
@@ -97,6 +99,21 @@ export async function updateB2bLeadStatus(
     .update({ status, status_updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw new Error(`Failed to update lead status: ${error.message}`);
+}
+
+// Shared Pool assignment (Phase 15): every cse sees every lead — this
+// only records who acted on it first, so a second cse can see it's
+// already being worked instead of duplicating outreach. The `.is(...,
+// null)` guard makes first-mover-wins atomic at the DB layer: if another
+// request already claimed it, this update matches zero rows and silently
+// no-ops rather than racing a read-then-write in application code.
+export async function claimB2bLeadIfUnclaimed(id: string, cseRepId: string): Promise<void> {
+  const { error } = await supabase
+    .from('b2b_leads')
+    .update({ claimed_by_cse_rep_id: cseRepId, claimed_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('claimed_by_cse_rep_id', null);
+  if (error) throw new Error(`Failed to claim lead: ${error.message}`);
 }
 
 export async function deleteB2bLead(id: string): Promise<void> {
