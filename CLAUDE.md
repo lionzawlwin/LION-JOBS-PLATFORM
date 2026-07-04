@@ -106,6 +106,8 @@ Vercel's own native GitHub git integration deploys automatically on every push (
 
 `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` are no longer required by this workflow specifically (nothing in it calls the Vercel CLI anymore) — left as GitHub Secrets in case a future CLI-driven step is ever reintroduced, not deleted as part of this cleanup.
 
+There are two separate GitHub Actions workflow files that both run on PRs — check `.github/workflows/` directly before adding or renaming a third: `ci.yml` (job `verify`: `next build` + `tsc --noEmit`) and `deploy.yml` (jobs `deploy-preview`/`deploy-production`, display name "Test & Audit": `npm test` + `npm audit`). They were briefly both named "CI" in the Actions UI after a 2026-07-04 cleanup renamed `deploy.yml`'s display name without checking for an existing collision — fixed same day. The job names (`deploy-preview`/`deploy-production`) in `deploy.yml` are historical from when it also deployed and are kept as-is so branch protection's required-status-checks (which match by job name, not workflow display name) don't silently break.
+
 ## Known but deliberately not installed: agent-tooling skill repos
 
 Two Claude Code skill repos were evaluated (2026-07-02) and intentionally left uninstalled because they don't fit this project's domain:
