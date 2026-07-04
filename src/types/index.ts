@@ -248,6 +248,8 @@ export interface SystemEvent {
   message: string;
   context: Record<string, string | number | boolean | null> | null;
   createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
 }
 
 export interface CronStatus {

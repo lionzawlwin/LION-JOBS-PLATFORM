@@ -49,16 +49,14 @@ production, not the order they'd ideally have been designed:
 | `0014_add_system_event_resolution.sql` | 2026-07-04 | `system_events.resolved_at`/`resolved_by` — lets a fixed problem be marked resolved instead of showing as an active failure for up to 7 days. Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (both nullable columns present, index `system_events_resolved_at_idx` created). |
 | `0015_add_rate_limit_category.sql` | 2026-07-04 | Adds `'rate_limit'` to `system_events.category`'s CHECK constraint (drop + recreate `system_events_category_check`, name confirmed via `pg_constraint` before writing the migration). Applied via Supabase MCP `apply_migration`, verified live via `pg_get_constraintdef`. |
 
-> **Known merge-order note (2026-07-04)**: `0014` and `0015` were branched
-> and applied live independently and in parallel (PR #46
-> `feat/system-event-resolution` owns `0014`'s file; this branch owns
-> `0015`'s file and this table's rows for both). Both migrations are
-> already live and idempotent (guarded), so DB state is correct
-> regardless of merge order — but merge PR #46 before this one so the
-> `0014` file itself lands in `main` before `0015` references it, and
-> resolve the trivial resulting conflict on this table the same way
-> Phase 13/16 did (keep both inserted rows, no content actually
-> conflicts).
+> **Merge-order note (2026-07-04), resolved as predicted**: `0014` (PR #46)
+> and `0015` (this branch) were branched and applied live independently
+> and in parallel. Both migrations were already live and idempotent
+> (guarded) before either PR merged, so DB state was correct regardless of
+> merge order. PR #46 merged first as planned; this table's conflict on
+> merging this branch was exactly the anticipated, no-real-content
+> conflict (both rows kept, same resolution Phase 13/16 used for their own
+> documented `PROGRESS.md` conflict).
 
 > Note (2026-07-03): `0009`'s row previously read `2026-07-03`, one day
 > earlier than `0008`'s `2026-07-04` directly above it, even though `0009`

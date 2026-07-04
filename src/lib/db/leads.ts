@@ -116,6 +116,17 @@ export async function claimB2bLeadIfUnclaimed(id: string, cseRepId: string): Pro
   if (error) throw new Error(`Failed to claim lead: ${error.message}`);
 }
 
+// Hands a claimed lead back to the shared pool — the counterpart to
+// claimB2bLeadIfUnclaimed(). Unlike claiming, this isn't a race (a human
+// deliberately clicked "Release"), so no first-mover guard is needed here.
+export async function releaseB2bLead(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('b2b_leads')
+    .update({ claimed_by_cse_rep_id: null, claimed_at: null })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to release lead: ${error.message}`);
+}
+
 export async function deleteB2bLead(id: string): Promise<void> {
   const { error } = await supabase.from('b2b_leads').delete().eq('id', id);
   if (error) throw new Error(`Failed to delete lead: ${error.message}`);

@@ -627,6 +627,8 @@ export const translations = {
     bl_message_to_agency: 'Message to Agency',
     bl_website:           'Website',
     bl_claimed_by:        'Claimed by',
+    bl_release_claim:     'Release',
+    bl_release_claim_title: 'Release this lead back to the shared pool',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'Job Announcement',
@@ -1371,6 +1373,8 @@ export const translations = {
     bl_message_to_agency: 'အေဂျင်စီသို့ မက်ဆေ့ချ်',
     bl_website:           'ဝက်ဘ်ဆိုက်',
     bl_claimed_by:        'တာဝန်ယူသူ',
+    bl_release_claim:     'လွှတ်ပေးရန်',
+    bl_release_claim_title: 'ဤတောင်းဆိုချက်ကို မျှဝေထားသော အုပ်စုသို့ ပြန်လွှတ်ပေးရန်',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'အလုပ် ကြေညာချက်',

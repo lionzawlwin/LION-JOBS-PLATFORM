@@ -9,6 +9,8 @@ import type { FailureCategory } from '@/types';
 // failure -- see logRateLimitHit()). A 'rate_limit' filter option here
 // would always return zero rows. Its count is exposed separately below.
 const VALID_CATEGORIES: FailureCategory[] = ['webhook', 'ai_scoring', 'invoicing', 'cron', 'other'];
+const VALID_RESOLVED = ['unresolved', 'resolved', 'all'] as const;
+type ResolvedFilter = typeof VALID_RESOLVED[number];
 
 export async function GET(req: NextRequest) {
   if (!(await requireTabAccess('system-health', 'view'))) {
@@ -18,9 +20,14 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const categoryParam = sp.get('category') ?? undefined;
   const daysParam     = sp.get('days') ?? undefined;
+  const resolvedParam = sp.get('resolved') ?? undefined;
 
   if (categoryParam && !VALID_CATEGORIES.includes(categoryParam as FailureCategory)) {
     return Response.json({ error: `category must be one of: ${VALID_CATEGORIES.join(', ')}` }, { status: 422 });
+  }
+
+  if (resolvedParam && !VALID_RESOLVED.includes(resolvedParam as ResolvedFilter)) {
+    return Response.json({ error: `resolved must be one of: ${VALID_RESOLVED.join(', ')}` }, { status: 422 });
   }
 
   const days = daysParam ? Number(daysParam) : 7;
@@ -29,7 +36,11 @@ export async function GET(req: NextRequest) {
   }
 
   const [events, cronStatus, rateLimitHits24h] = await Promise.all([
-    listSystemEvents({ category: categoryParam as FailureCategory | undefined, days }),
+    listSystemEvents({
+      category: categoryParam as FailureCategory | undefined,
+      days,
+      resolved: resolvedParam as ResolvedFilter | undefined,
+    }),
     getCronStatus(),
     getRateLimitHitCount(24),
   ]);
