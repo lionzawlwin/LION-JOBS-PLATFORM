@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Loader2, UserPlus, AlertTriangle, Info } from 'lucide-react';
 import { useStaff } from '@/hooks/useStaff';
 import { useCseReps } from '@/hooks/useCseReps';
+import { PermissionsGrid } from './PermissionsGrid';
 import type { StaffRole } from '@/types';
 
 const ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
@@ -19,7 +20,7 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export function TeamView() {
+export function TeamView({ role }: { role?: StaffRole }) {
   const { staff, loading, error, addStaff, updateStaffMember } = useStaff();
   const [form, setForm] = useState<{ email: string; name: string; role: StaffRole }>({ email: '', name: '', role: 'viewer' });
   const [adding, setAdding]   = useState(false);
@@ -80,10 +81,8 @@ export function TeamView() {
         <Info size={14} className="mt-0.5 shrink-0" />
         <span>
           Adding an active staff member here lets them sign in to the full dashboard with their
-          Google account. Role currently controls Team &amp; Access management itself (only Owner
-          and Admin can edit this roster) — it does not yet restrict which tabs or actions each
-          role can use beyond that; every signed-in staff member has the same dashboard access
-          today.
+          Google account. Each role&apos;s access to individual tabs is controlled by the
+          permissions grid below — editable by Owner only.
         </span>
       </div>
 
@@ -203,6 +202,11 @@ export function TeamView() {
             </table>
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="mb-4 text-sm font-bold text-foreground">Tab Permissions</h3>
+        <PermissionsGrid role={role} />
       </div>
     </div>
   );

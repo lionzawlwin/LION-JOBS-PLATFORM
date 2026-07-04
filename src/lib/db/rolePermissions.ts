@@ -36,3 +36,61 @@ export const getCachedRolePermissions = unstable_cache(
   ['role-permissions'],
   { revalidate: 30, tags: ['role-permissions'] },
 );
+
+// RBAC Step 3 of 3: write path. Calls the set_role_permission Postgres
+// function (migration 0018) so the upsert and its audit row land in one
+// transaction -- never separately, even if the process crashes between
+// them. Caller (the /api/role-permissions route) is responsible for
+// validating role/tabDomain/accessLevel and the lockout guardrail before
+// calling this -- this function trusts its inputs, matching every other
+// db/*.ts accessor's contract in this app.
+export async function updateRolePermission(params: {
+  role: string;
+  tabDomain: string;
+  accessLevel: string;
+  changedBy: string;
+}): Promise<{ oldAccessLevel: string }> {
+  const changeId = `pc-${Date.now()}`;
+  const { data, error } = await supabase.rpc('set_role_permission', {
+    p_role: params.role,
+    p_tab_domain: params.tabDomain,
+    p_access_level: params.accessLevel,
+    p_changed_by: params.changedBy,
+    p_change_id: changeId,
+  });
+  if (error) throw new Error(`Failed to update role permission: ${error.message}`);
+  return { oldAccessLevel: data as string };
+}
+
+export interface PermissionChangeRow {
+  id: string;
+  role: string;
+  tabDomain: string;
+  oldAccessLevel: string;
+  newAccessLevel: string;
+  changedBy: string;
+  changedAt: string;
+}
+
+export async function listRecentPermissionChanges(limit = 20): Promise<PermissionChangeRow[]> {
+  const { data, error } = await supabase
+    .from('permission_changes')
+    .select('id, role, tab_domain, old_access_level, new_access_level, changed_by, changed_at')
+    .order('changed_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[db/rolePermissions] listRecentPermissionChanges error:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    role: row.role as string,
+    tabDomain: row.tab_domain as string,
+    oldAccessLevel: row.old_access_level as string,
+    newAccessLevel: row.new_access_level as string,
+    changedBy: row.changed_by as string,
+    changedAt: row.changed_at as string,
+  }));
+}

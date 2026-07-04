@@ -203,7 +203,7 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
       {activeTab === 'campaigns'   && <EmailCampaigns />}
       {activeTab === 'legal'       && <LegalView />}
       {activeTab === 'billing'     && <BillingView />}
-      {activeTab === 'team'        && <TeamView />}
+      {activeTab === 'team'        && <TeamView role={role} />}
       {activeTab === 'system-health' && <SystemHealthView />}
         </main>
       </div>
