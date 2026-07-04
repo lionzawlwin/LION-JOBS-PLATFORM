@@ -510,3 +510,33 @@ The strategic advisory that proposed this phase claimed "zero rate limiting anyw
 - 2026-07-04: `/api/feedback`'s existing manual validation was actually reasonable (rating 1–5, experience ≥10 chars) — the zod rewrite formalizes the same rules with added length caps and structured error messages, not a behavior change for legitimate submissions.
 - 2026-07-04: `npx tsc --noEmit` clean, `npm test` 51/51 passing (42 pre-existing + 9 new), `npm run lint` clean on every file this phase touched (same 28 pre-existing, unrelated problems as every prior phase this session, confirmed via `git diff` untouched).
 - 2026-07-04: **Not built, out of scope for this pass**: the System Health "rate-limit hits" counter mentioned in the original advisory. Deferred — it would need either a persistent store for rate-limit rejections (the in-memory limiter doesn't survive across serverless instances/cold starts, so counting rejections reliably needs its own small design) or accepting an approximate, single-instance-only count. Small, well-scoped follow-up, not blocking this phase's actual security value.
+
+---
+
+# Phase 27: CI/CD Reliability Hardening — Progress (partial, scoped down)
+
+Branch: `feat/phase-27-ci-reliability-hardening`
+
+## Scope correction from the advisory
+
+The original advisory bundled three things into "Phase 27": dependency vulnerability scanning, Playwright smoke tests for golden paths, and formalized Sentry alert thresholds. Only the first is genuinely single-session, code-only work. The other two are real but bigger commitments, scoped out explicitly rather than half-built:
+
+- **Playwright smoke tests**: would need a new dev dependency, browser binary setup in CI (real CI runtime cost), and — the harder problem — this app's two real golden paths split awkwardly: the public job-search/apply flow could be smoke-tested without auth, but the dashboard login path fundamentally requires a real Google OAuth session, which isn't something CI can drive without a dedicated test account and secret management this repo doesn't have set up. Worth doing, not worth rushing into this pass.
+- **Sentry alert thresholds/SLOs**: this is dashboard-side Sentry organization configuration (alert rules, thresholds), not a code change in this repo at all — nothing to commit here. Flagging that it still needs doing, but it's a different kind of task (a settings change in Sentry's own UI) than everything else in this roadmap.
+
+What shipped this pass:
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | `npm audit --audit-level=high` added to both CI jobs (advisory, non-blocking) | ✅ Done |
+| 2 | `.github/dependabot.yml` — weekly npm + GitHub Actions update PRs | ✅ Done |
+| 3 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Deliberately made the audit step **advisory, not blocking** (`continue-on-error: true`, plus `::warning::` annotation rather than a hard failure) — a newly-disclosed CVE in a transitive dependency, with zero code changes on our side, showing up between one deploy and the next shouldn't be able to lock out an unrelated, urgent production fix. This mirrors the same "fail open" philosophy already established in this codebase's rate limiter (`apiSecurity.ts`'s doc comments) rather than introducing a new, different failure posture.
+- 2026-07-04: Used `--audit-level=high` specifically, not the default (which flags everything down to `low`). Ran it locally first to check the current real baseline: 4 **moderate**-severity findings, both transitive (`postcss` via `next`'s bundled copy, `uuid` via `next-auth`'s bundled copy), both only fixable via `npm audit fix --force` — which would force-downgrade `next` or `next-auth` to old, breaking-change versions. Confirmed via local exit-code check that `--audit-level=high` correctly reports success (exit 0) against this real, current moderate-only baseline — it won't spam the team with a warning about something that isn't actually actionable today.
+- 2026-07-04: Grouped Dependabot's npm updates into a single weekly PR for minor/patch bumps (`groups: minor-and-patch`) rather than one PR per package — a small team reviewing 15+ individual dependency-bump PRs a week is worse than reviewing one batched PR, and major-version bumps are deliberately left ungrouped (harder to reason about safety, worth their own individual PR + review).
+- 2026-07-04: Found and fixed a real YAML bug before it ever reached CI: my first draft of the `npm audit` warning message contained a colon-space sequence inside an unquoted plain YAML scalar (`run: npm audit ... || echo "...: a newly-disclosed..."`), which YAML parses as a nested mapping key rather than literal text — this would have made the workflow file fail to parse at all, breaking every future CI run. Caught by actually parsing both edited YAML files with `js-yaml` before committing, not just eyeballing the diff. Fixed by switching to a block scalar (`run: |`) so colons inside the message are always safe.
+- 2026-07-04: `npx tsc --noEmit` and `npm test` (51/51) both clean — expected, since this phase only touches CI/dependency-bot config, no application code.
+- 2026-07-04: **Could not verify this actually runs correctly inside a real GitHub Actions run** until this PR's own CI executes it — the first real run of this PR's own `deploy-preview` job **is** the verification. Recommend the repo owner check that job's "Dependency vulnerability audit" step log directly, confirming it reports the 4 known moderate findings without failing the job.
