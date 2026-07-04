@@ -677,3 +677,30 @@ Sprint 2 (PR #38) shipped a fully working Company Portal and Candidate Portal (m
 - 2026-07-04: Explicitly out of scope, confirmed still deferred: i18n for either portal, and the `jobs.company` name-string-match → real `company_id` FK fix — both remain separate, already-documented follow-ups from Sprint 2's own log, not silently rolled into this pass.
 - 2026-07-04: `npx tsc --noEmit` clean after each of the three edits. `npm run lint` shows the same 28 pre-existing problems (17 errors, 11 warnings) as `main`'s baseline — confirmed none are in the three edited files.
 - 2026-07-04: Live-verified via the `browse` skill against a local dev server (not just a static read of the JSX): footer's "Employer Login"/"Candidate Login" resolve to `/company/portal/login`/`/candidate/portal/login`, both returning 200 and rendering their real login forms (not 404/500); `/candidate`'s new "Already applied? Track your status" link resolves to `/candidate/portal/login`; the "Hire Talent" CTA now resolves directly to `/company` with no redirect hop; `/company`'s "Back to Job Board" and "Already a client? Log in" both resolve correctly side by side.
+
+---
+
+# Follow-up: /company Page Localization (WhySection + HireForm)
+
+Spec: `docs/superpowers/specs/2026-07-04-company-page-localization-design.md`
+Plan: `docs/superpowers/plans/2026-07-04-company-page-localization.md`
+Branch: `feat/company-page-localization`
+
+`/company` (Sprint 2 / Phase 11's employer landing page) had a "Why Us" section and a hiring-request form that were still 100% hardcoded English, unlike the rest of the public site. This closes that specific gap for those two sections only.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | Add 28 i18n keys to `src/lib/i18n.ts` (`en`/`my`) | ✅ Done |
+| 2 | Create `WhySection.tsx` as a client component | ✅ Done |
+| 3 | Wire `WhySection` into `src/app/company/page.tsx`, drop the moved-out form header | ✅ Done |
+| 4 | Wire `HireForm.tsx` (header + Company Information + Contact Person sections) | ✅ Done |
+| 5 | Full verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Wired all 28 new keys across two files: `WhySection.tsx` (new — the "Why Partner With Us?" heading, intro copy, and all 6 card title/description pairs) and `HireForm.tsx` (the form's own header — "Submit Your Hiring Request" + subcopy — plus the "Company Information"/"Contact Person" section headers/subheads and their field labels: Company Name, Industry, Location/City, Company Website, Full Name, Job Title/HR Title, Work Email, Phone/WhatsApp).
+- 2026-07-04: Explicit out-of-scope list, per the approved design spec — deliberately left hardcoded English, not silently missed: the Hero badge/headline/stats ("Find the Right Talent for Your Team", the 4 stat labels), the testimonial quote, "Our Simple Process" and its 4 step titles, the entire Hiring Requisition form section (Job Title/Role, Headcount, Work Setup, Salary Budget, Urgency, Key Requirements/Job Description/Benefits tabs, Message to Agency), the success screen, the submit button, validation/error messages, and the security disclaimer footer text.
+- 2026-07-04: Code review during Task 4 caught a real shadowing bug: `HireForm.tsx` already had a `.map((t) => ...)` loop param named `t`, which shadowed the newly-introduced `t()` translation function from `useLanguage()` in the same scope. Fixed by renaming the loop param to `tab` — no behavior change, purely a naming collision avoided before it could cause a silent wrong-value bug.
+- 2026-07-04: Verification — `npx tsc --noEmit` clean. `npm test`: 58/58 passing (no test touches these files; confirms nothing else broke). `npm run lint`: same 28 pre-existing problems as `main`'s baseline (17 errors, 11 warnings). Of the 4 touched/created files, `src/lib/i18n.ts`, `src/components/hire/WhySection.tsx`, and `src/app/company/page.tsx` are fully clean. `src/components/hire/HireForm.tsx` has one pre-existing `react/no-unescaped-entities` error at "Tell us what you need — we'll handle the rest" — confirmed byte-identical to `main`'s version via `git show main:...`, inside the explicitly out-of-scope Hiring Requisition section, already part of the 28-problem baseline, not introduced by this branch. Left unfixed per this task's own scope ("Files: none for verification steps"), rather than silently expanding this pass into an unrelated drive-by fix.
+- 2026-07-04: Live-verified both languages via the `browse` skill against a local dev server (not just a static read of the JSX). **English**: `/company` renders "Why Partner With Us?" with its 6 cards, and "Submit Your Hiring Request" still appears as the form header (survived the move into `HireForm.tsx` intact). **Burmese** (clicked the navbar's `မြန်မာ` toggle): all 28 wired strings switched correctly, confirmed via `$B text` extraction — "Why Partner With Us?" → "ကျွန်ုပ်တို့နှင့် ဘာကြောင့် လက်တွဲသင့်သလဲ။", all 6 card titles translated (e.g. "ကြိုတင်စိစစ်ထားသော အလုပ်လျှောက်ထားသူများ" / Pre-Screened Candidates, "အရည်အသွေး အာမခံချက်" / Quality Guarantee), "Submit Your Hiring Request" → "ဝန်ထမ်းခေါ်ယူရန် ဖောင်ဖြည့်ပါ", "Company Information" → "ကုမ္ပဏီ အချက်အလက်", "Contact Person" → "ဆက်သွယ်ရန်ပုဂ္ဂိုလ်", and field labels including Company Name, Industry, Location/City, Full Name, Work Email, Phone/WhatsApp all switched. Confirmed the required non-translated strings correctly stayed English in Burmese mode: the Hero headline ("Find the Right Talent for Your Team"), all 4 stat labels (Placements Made, Partner Companies, Days to Shortlist, Client Satisfaction), the testimonial quote, "Our Simple Process" and its 4 step titles, and the Hiring Requisition section including "Job Title / Role" and "Tell us what you need — we'll handle the rest". No console errors on either language render.
+- 2026-07-04: Dev server started for verification and explicitly stopped afterward (killed the listener on port 3000) so it doesn't linger past this session.
