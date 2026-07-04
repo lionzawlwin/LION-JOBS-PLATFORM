@@ -477,3 +477,36 @@ Context: the overnight spec proposed a *cost-capped* design that still called th
 - 2026-07-04: UI is manual-trigger per job (a "Suggested Candidates" toggle button in Manage Jobs, not an eager compute-on-load for every job row) — kept this from the original cost-conscious design even though there's no longer an API cost to worry about, since scanning the full candidate pool per job is still real server work that shouldn't run un-requested for every row on every page load.
 - 2026-07-04: `npx tsc --noEmit` clean, `npm test` 42/42 passing (36 pre-existing + 6 new), `npm run lint` clean on every file this phase touched (same pre-existing unrelated errors as every prior phase this session, confirmed via `git diff` untouched).
 - 2026-07-04: **Could not verify the panel's authenticated rendering** — same OAuth-gated dashboard limitation as every other UI phase this session. Recommend the repo owner spot-check post-merge: Manage Jobs → click "Suggested Candidates" on a job with applicants in the pool, confirm ranked results with sensible scores and location/experience details render.
+
+---
+
+# Phase 20: API Validation & Rate-Limiting Hardening — Progress
+
+Spec: none written separately — scope corrected and finalized during investigation, see log below.
+Branch: `feat/phase-20-api-security-hardening`
+
+## Correction to the CTO advisory this phase was based on
+
+The strategic advisory that proposed this phase claimed "zero rate limiting anywhere" and that only 5/46 routes used zod validation. **The first half of that claim was wrong** — a shared, well-designed rate limiter (`src/lib/apiSecurity.ts`, with `checkRateLimit`/`getClientIp`/`secureCompare`) already existed and was already wired into `/api/apply`. My original grep search for it used a case-sensitive pattern (`rateLimit`/`ipLog`) that didn't match `checkRateLimit`'s capitalization, so I missed it and reported a gap that didn't fully exist. Caught this before writing any duplicate infrastructure, by reading the actual import list of `/api/apply/route.ts` rather than trusting my earlier grep. The real, narrower gap once corrected:
+
+- `/api/subscribe` had its **own private, duplicate** in-memory rate limiter (a second `Map`-based implementation) instead of reusing the shared `apiSecurity.ts` module — genuine "deprecated/duplicate code to remove," just not the gap originally described.
+- `/api/employers/request` (the public B2B "Hire With Us" lead form) had **neither** rate limiting **nor** structured validation — only a manual required-field presence check, no email/length/format validation. This was the one real, fully-unguarded public write endpoint.
+- `/api/feedback` POST (public candidate interview-feedback submission) also had **neither** — manual type checks only, no rate limiting.
+- `apiSecurity.ts` itself had **zero test coverage** despite being genuinely security-relevant and being a pure, easily-testable function (in-memory Map, no I/O) — an easy, valuable gap to close.
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1 | 9 unit tests for `apiSecurity.ts` (`checkRateLimit`, `getClientIp`, `secureCompare`) | ✅ Done |
+| 2 | Consolidate `/api/subscribe` onto the shared rate limiter, remove its duplicate `Map` | ✅ Done |
+| 3 | zod validation + rate limiting on `/api/employers/request` | ✅ Done |
+| 4 | zod validation + rate limiting on `/api/feedback` POST | ✅ Done |
+| 5 | Verification | ✅ Done |
+
+## Log
+
+- 2026-07-04: Audited all public (non-`requireTabAccess`-gated) `POST`/`DELETE` routes before deciding what to touch — of the 24 write-capable routes found, most are staff-authenticated (`companies`, `contracts`, `cse`, `invoices`, `staff`, `analyze-cv`, candidate consent, legal consents-status) and were correctly out of scope for *IP-based* rate limiting; an authenticated staff account abusing itself isn't the bot-flood threat model this phase addresses. Only `/api/apply` (already protected), `/api/subscribe` (protected but duplicated), `/api/employers/request`, and `/api/feedback` are genuinely public and unauthenticated.
+- 2026-07-04: `checkRateLimit`'s existing doc comment already says "Reliable on single-instance Vercel deployments (free tier)... for multi-instance scale-out, replace the Map with a Redis/KV store" — a deliberate, already-documented tradeoff for current scale, not an oversight. Did not "fix" this; it's the right call at this app's current traffic level, and a Redis-backed rewrite would be real added infrastructure cost for no present benefit.
+- 2026-07-04: `/api/employers/request` schema caps free-text fields (`requirements`, `agencyMessage`, `jobDescription`, `benefits`) at 5,000 characters and structured fields at 100–200 characters — previously **completely unbounded**, meaning a malicious or malformed submission could have written an arbitrarily large row to `b2b_leads`.
+- 2026-07-04: `/api/feedback`'s existing manual validation was actually reasonable (rating 1–5, experience ≥10 chars) — the zod rewrite formalizes the same rules with added length caps and structured error messages, not a behavior change for legitimate submissions.
+- 2026-07-04: `npx tsc --noEmit` clean, `npm test` 51/51 passing (42 pre-existing + 9 new), `npm run lint` clean on every file this phase touched (same 28 pre-existing, unrelated problems as every prior phase this session, confirmed via `git diff` untouched).
+- 2026-07-04: **Not built, out of scope for this pass**: the System Health "rate-limit hits" counter mentioned in the original advisory. Deferred — it would need either a persistent store for rate-limit rejections (the in-memory limiter doesn't survive across serverless instances/cold starts, so counting rejections reliably needs its own small design) or accepting an approximate, single-instance-only count. Small, well-scoped follow-up, not blocking this phase's actual security value.

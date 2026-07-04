@@ -1,8 +1,25 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { NextResponse, type NextRequest } from 'next/server';
 import { appendFeedback, getCompanyFeedback } from '@/lib/db';
+import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
+
+// 5 submissions per IP per 10 minutes — a candidate leaves one review per
+// interview experience; generous while blocking scripted floods against
+// this fully public, unauthenticated write endpoint.
+const RATE_LIMIT_WINDOW_S = 600;
+const RATE_LIMIT_MAX      = 5;
+
+const feedbackSchema = z.object({
+  candidateId:    z.string().trim().min(1).max(100),
+  company:        z.string().trim().min(1).max(200),
+  jobTitle:       z.string().trim().max(200).optional(),
+  rating:         z.number().int().min(1).max(5),
+  experience:     z.string().trim().min(10).max(5000),
+  wouldRecommend: z.boolean().optional(),
+});
 
 // GET /api/feedback?company=COMPANY_NAME — aggregate rating for company page
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const company = searchParams.get('company')?.trim();
   if (!company) {
@@ -16,37 +33,47 @@ export async function GET(req: Request) {
 }
 
 // POST /api/feedback — submit interview feedback
-export async function POST(req: Request) {
-  let body: unknown;
+export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`feedback:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many submissions. Please wait a few minutes and try again.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After':           String(rl.resetIn),
+          'X-RateLimit-Limit':     String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    );
+  }
+
+  let rawBody: unknown;
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { candidateId, company, jobTitle, rating, experience, wouldRecommend } = body as Record<string, unknown>;
-
-  if (!candidateId || typeof candidateId !== 'string') {
-    return NextResponse.json({ error: 'candidateId required' }, { status: 400 });
-  }
-  if (!company || typeof company !== 'string') {
-    return NextResponse.json({ error: 'company required' }, { status: 400 });
-  }
-  if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
-    return NextResponse.json({ error: 'rating must be 1–5' }, { status: 400 });
-  }
-  if (!experience || typeof experience !== 'string' || experience.trim().length < 10) {
-    return NextResponse.json({ error: 'experience must be at least 10 characters' }, { status: 400 });
+  const parsed = feedbackSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') },
+      { status: 422 },
+    );
   }
 
+  const body = parsed.data;
   try {
     await appendFeedback({
-      candidateId,
-      company,
-      jobTitle: typeof jobTitle === 'string' ? jobTitle : '',
-      rating,
-      experience: experience.trim(),
-      wouldRecommend: wouldRecommend === true,
+      candidateId: body.candidateId,
+      company: body.company,
+      jobTitle: body.jobTitle ?? '',
+      rating: body.rating,
+      experience: body.experience,
+      wouldRecommend: body.wouldRecommend === true,
     });
 
     return NextResponse.json({ ok: true });
