@@ -1353,7 +1353,7 @@ export const translations = {
     jr_reject:                  'ငြင်းပယ်မည်',
     jr_reject_note_placeholder: 'ငြင်းပယ်ရသည့် အကြောင်းရင်း (လိုအပ်သည်)',
     jr_reject_confirm:          'ငြင်းပယ်မှု အတည်ပြုမည်',
-    jr_cancel:                  'ပယ်ဖျက်မည်',
+    jr_cancel:                  'ပယ်ဖျက်ပါ',
     jr_toast_approve_failed: 'ဤအလုပ်တောင်းဆိုမှုကို အတည်မပြုနိုင်ပါ။',
     jr_toast_approved:       'အလုပ်တောင်းဆိုမှုကို အတည်ပြု၍ ထုတ်ပြန်ပြီးပါပြီ။',
     jr_toast_reject_failed:  'ဤအလုပ်တောင်းဆိုမှုကို ငြင်းပယ်၍ မရပါ။',
