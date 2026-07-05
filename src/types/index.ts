@@ -301,3 +301,22 @@ export interface JobRequest {
   reviewedAt: string | null;
   rejectionNote: string | null;
 }
+
+export type NotificationType = 'job_request' | 'system_event' | 'unclaimed_lead' | 'contract_expiring';
+
+// `href` mirrors TabDomain's literal values without importing from
+// `@/lib/permissions` -- that module imports StaffRole from this file, and
+// this file has no imports of its own (avoid a types <-> permissions cycle).
+export type NotificationTargetTab =
+  | 'overview' | 'candidates' | 'post-job' | 'manage-jobs' | 'companies'
+  | 'enterprise' | 'b2b-leads' | 'content' | 'campaigns' | 'legal'
+  | 'billing' | 'team' | 'system-health';
+
+export interface NotificationItem {
+  id: string;
+  type: NotificationType;
+  title: string;
+  detail: string;
+  href: NotificationTargetTab;
+  createdAt: string;
+}

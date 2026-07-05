@@ -592,6 +592,13 @@ export const translations = {
     jr_toast_rejected:       'Job request rejected.',
     jr_toast_load_failed:    'Failed to load job requests.',
 
+    nb_title:                'Notifications',
+    nb_empty:                'No notifications right now.',
+    nb_job_request:          'Job Request',
+    nb_system_alert:         'System Alert',
+    nb_unclaimed_lead:       'Unclaimed Lead',
+    nb_contract_expiring:    'Contract Expiring',
+
     // B2B Companies tab
     cv_total_companies: 'Total Companies',
     cv_active_clients:  'Active Clients',
@@ -1359,6 +1366,13 @@ export const translations = {
     jr_toast_reject_failed:  'ဤအလုပ်တောင်းဆိုမှုကို ငြင်းပယ်၍ မရပါ။',
     jr_toast_rejected:       'အလုပ်တောင်းဆိုမှုကို ငြင်းပယ်လိုက်ပါပြီ။',
     jr_toast_load_failed:    'အလုပ်တောင်းဆိုမှုများကို ဖွင့်၍ မရပါ။',
+
+    nb_title:                'အသိပေးချက်များ',
+    nb_empty:                'ယခုအချိန်တွင် အသိပေးချက် မရှိသေးပါ။',
+    nb_job_request:          'အလုပ်တောင်းဆိုမှု',
+    nb_system_alert:         'စနစ် သတိပေးချက်',
+    nb_unclaimed_lead:       'မပိုင်ဆိုင်သေးသော ဖောက်သည်',
+    nb_contract_expiring:    'စာချုပ် သက်တမ်းကုန်တော့မည်',
 
     // B2B Companies tab
     cv_total_companies: 'ကုမ္ပဏီ စုစုပေါင်း',
