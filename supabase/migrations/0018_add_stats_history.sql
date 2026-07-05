@@ -1,11 +1,9 @@
 -- Run this in Supabase SQL Editor once, or apply via Supabase MCP apply_migration.
 -- Daily aggregate snapshots for dashboard trend charts (CTO advisory Layer 5).
 --
--- NOTE ON NUMBERING: a concurrent branch (dynamic RBAC / role_permissions)
--- also claimed 0017 around the same time this was written. This table has
--- zero overlap with that work (no shared columns/objects), so apply order
--- doesn't matter functionally -- but whichever merges second should renumber
--- to keep the sequence unique, per supabase/MIGRATIONS.md's convention.
+-- Originally numbered 0017; renumbered to 0018 (repo owner's call,
+-- 2026-07-05) after 0017_add_role_permissions.sql merged to main first.
+-- Zero table/column overlap between the two either way.
 
 CREATE TABLE IF NOT EXISTS stats_history (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
