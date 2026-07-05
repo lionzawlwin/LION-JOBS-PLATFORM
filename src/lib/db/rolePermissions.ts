@@ -38,7 +38,7 @@ export const getCachedRolePermissions = unstable_cache(
 );
 
 // RBAC Step 3 of 3: write path. Calls the set_role_permission Postgres
-// function (migration 0018) so the upsert and its audit row land in one
+// function (migration 0019) so the upsert and its audit row land in one
 // transaction -- never separately, even if the process crashes between
 // them. Caller (the /api/role-permissions route) is responsible for
 // validating role/tabDomain/accessLevel and the lockout guardrail before
