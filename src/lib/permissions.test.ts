@@ -15,7 +15,7 @@ vi.mock('@/lib/db/rolePermissions', () => ({
 }));
 
 import { getCachedRolePermissions } from '@/lib/db/rolePermissions';
-import { PERMISSIONS, getAccessLevel, hasAccess, ALL_TAB_DOMAINS } from './permissions';
+import { PERMISSIONS, getAccessLevel, hasAccess, ALL_TAB_DOMAINS, isLockedOutByChange } from './permissions';
 import type { StaffRole } from '@/types';
 
 const ALL_DOMAINS = ALL_TAB_DOMAINS;
@@ -158,5 +158,29 @@ describe('DB-backed matrix (RBAC Step 2)', () => {
     mockedGetCachedRolePermissions.mockResolvedValue([]);
     expect(await getAccessLevel('owner', 'team')).toBe('manage');
     expect(await getAccessLevel('viewer', 'post-job')).toBe('none');
+  });
+});
+
+describe('isLockedOutByChange() — RBAC Step 3 lockout guardrail', () => {
+  it('blocks removing owner/admin manage access on team or system-health', () => {
+    expect(isLockedOutByChange('owner', 'team', 'view')).toBe(true);
+    expect(isLockedOutByChange('owner', 'team', 'none')).toBe(true);
+    expect(isLockedOutByChange('admin', 'system-health', 'view')).toBe(true);
+    expect(isLockedOutByChange('admin', 'system-health', 'none')).toBe(true);
+  });
+
+  it('allows owner/admin to keep manage on team/system-health (a no-op change)', () => {
+    expect(isLockedOutByChange('owner', 'team', 'manage')).toBe(false);
+    expect(isLockedOutByChange('admin', 'system-health', 'manage')).toBe(false);
+  });
+
+  it('does not block owner/admin changes to any other domain', () => {
+    expect(isLockedOutByChange('owner', 'billing', 'none')).toBe(false);
+    expect(isLockedOutByChange('admin', 'candidates', 'view')).toBe(false);
+  });
+
+  it('does not block cse/viewer changes on team or system-health — they have nothing to lose there', () => {
+    expect(isLockedOutByChange('cse', 'team', 'none')).toBe(false);
+    expect(isLockedOutByChange('viewer', 'system-health', 'none')).toBe(false);
   });
 });

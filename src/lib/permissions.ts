@@ -52,7 +52,11 @@ function isStaffRole(value: string): value is StaffRole {
   return value === 'owner' || value === 'admin' || value === 'cse' || value === 'viewer';
 }
 
-async function getEffectiveMatrix(): Promise<Record<StaffRole, Record<TabDomain, AccessLevel>>> {
+// Exported (not just internal) so the Admin UI's GET /api/role-permissions
+// can render the full 13x4 grid in one call instead of 52 sequential
+// getAccessLevel calls, and so it shares the exact same fallback/overlay
+// logic getAccessLevel/hasAccess use -- one implementation, not two.
+export async function getEffectiveMatrix(): Promise<Record<StaffRole, Record<TabDomain, AccessLevel>>> {
   try {
     const rows = await getCachedRolePermissions();
     if (rows.length === 0) throw new Error('role_permissions returned no rows');
@@ -88,4 +92,20 @@ export async function getAccessLevel(role: StaffRole, domain: TabDomain): Promis
 
 export async function hasAccess(role: StaffRole, domain: TabDomain, required: 'view' | 'manage'): Promise<boolean> {
   return LEVEL_RANK[await getAccessLevel(role, domain)] >= LEVEL_RANK[required];
+}
+
+// RBAC Step 3 (Layer 6, Dynamic RBAC): lockout guardrail for the
+// PATCH /api/role-permissions write endpoint. owner/admin must always
+// retain 'manage' on team/system-health -- otherwise a bad edit through
+// this same tool is the only thing that could remove access to the one
+// screen that could fix it, recoverable only via a direct DB edit.
+// Enforced here (called by the route handler), not just hidden in the UI.
+const LOCKED_ROLES: StaffRole[] = ['owner', 'admin'];
+const LOCKED_DOMAINS: TabDomain[] = ['team', 'system-health'];
+
+export const LOCKOUT_GUARDRAIL_MESSAGE =
+  "This would remove all admin access to permissions management. Owner and Admin must always retain 'manage' access to Team & Access.";
+
+export function isLockedOutByChange(role: StaffRole, domain: TabDomain, newLevel: AccessLevel): boolean {
+  return LOCKED_ROLES.includes(role) && LOCKED_DOMAINS.includes(domain) && newLevel !== 'manage';
 }
