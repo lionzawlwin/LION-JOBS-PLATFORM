@@ -1,5 +1,6 @@
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { updateB2bLeadStatus, claimB2bLeadIfUnclaimed } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
@@ -47,6 +48,7 @@ export async function PATCH(
       }
     }
 
+    await logAudit({ action: 'update', domain: 'b2b-leads', entityType: 'lead', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/leads/[id]/status', message: 'Could not update lead status', error: err, context: { leadId: id } });
