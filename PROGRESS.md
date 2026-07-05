@@ -962,6 +962,97 @@ hiring) has less value before 4 ships too.
 
 ---
 
+# Super Ultra CTO Ecosystem Audit — Overnight Autonomous Session (2026-07-05)
+
+Context: separate conversation from the Company Dashboard roadmap above,
+same night, same repo owner, same trigger phrase ("do all this yourself,
+i give you all permission and approved. i want to sleep."). Started from
+a full ecosystem-wide audit (stack, migrations, CI, RBAC, test coverage,
+docs accuracy) rather than a single-surface review, then executed the
+resulting roadmap unattended. **Discovered mid-session that the Company
+Dashboard roadmap above was running concurrently in the same physical
+working directory** (this repo has no isolation between separate Claude
+Code conversations by default) -- switched to an isolated git worktree
+(`.worktrees/cto-roadmap/`) partway through once that became clear, to
+stop colliding on branch checkouts. One earlier commit
+(`chore: gitignore local worktree directory`) landed on the other
+session's `docs/layer6-dynamic-rbac-design` branch by accident, before
+the worktree switch -- harmless (a one-line `.gitignore` addition) but
+noted here for a clean record.
+
+| Item | Status | PR |
+|---|---|---|
+| Fix CLAUDE.md drift (stale "no test suite" / "no server-side pagination" claims) | ✅ Done | #56 |
+| Content Studio "Send to Make.com" button -- was silently failing every time (frontend read `json.error`, the 501 stub returns `message`) | ✅ Done -- replaced with a disabled button + honest explanation | #59 |
+| `stats_history` table + daily cron + 30-day SVG trend chart on Overview | ✅ Built, migration **not applied live** (see note below) | #59 |
+| Match-score breakdown in Suggested Candidates | ✅ Done -- the algorithmic matcher already computed a full breakdown + reasons list that the UI discarded down to one truncated line; surfaced the rest | #60 |
+| CI check for unguarded API routes (`scripts/check-route-protection.mjs`) | ✅ Done -- static analysis only, no runtime behaviour change | #61 |
+| Audit log (Phase 14) | Deliberately **not built** | — |
+| CSE row-level scoping | Already done in an earlier session (`src/lib/cseScope.ts`) -- verified, no new work needed | — |
+
+## Migration numbering collision (real, not hypothetical)
+
+This session's `stats_history` migration and the Company Dashboard
+roadmap's dynamic-RBAC migration both independently claimed `0017`
+around the same time. Zero table/column overlap between the two, so
+apply order doesn't matter functionally, but **whichever of the two
+merges second must renumber** per `supabase/MIGRATIONS.md`'s own
+convention. Neither this session's `0017_add_stats_history.sql` migration
+was applied to the live Supabase project -- left for the repo owner to
+sequence deliberately rather than have two unattended sessions race on
+live schema changes to the same numbered slot.
+
+## Why audit log was deferred
+
+The Company Dashboard roadmap's own Layer 7 entry (above) independently
+judged the same Phase 14 audit-log spec "too large to build unsupervised"
+(it would need to thread through ~30+ mutating routes with real risk of
+inconsistent coverage). That's a same-repo, same-night precedent from
+another session operating under an identical blanket-approval grant --
+deferred to it rather than overriding it. Still spec-only, unchanged.
+
+## Verification per PR
+
+All four: `npx tsc --noEmit` clean, `npm run build` succeeds, `npm run
+lint` shows the same 28 pre-existing baseline problems as `main` (none
+in touched files), `npm test` passing (58-62/62 depending on which
+commit the branch was cut from). PRs #56 and #59 had fully green CI
+(`verify`, `deploy-preview`) at the time of writing; #60 and #61 were
+still running and should be checked in the Actions tab.
+
+**None of these PRs were merged.** An attempt to self-merge PR #56 (the
+purely docs-only, zero-risk one) was explicitly blocked by the harness's
+own auto-mode classifier: "the user's generic 'do it all yourself'
+authorization does not meet the specificity bar required for bypassing
+PR review." Every PR is left open for the repo owner's review.
+
+## Open items for the repo owner on waking
+
+1. Review and merge (or not) PRs #56, #59, #60, #61 -- none are merged.
+2. Decide migration renumbering between this session's `0017_add_stats_history.sql`
+   and the Company Dashboard roadmap's `0017_add_role_permissions.sql`,
+   then apply whichever is approved to the live Supabase project (neither
+   was applied by either session).
+3. Vercel cron note: `vercel.json` in PR #59 adds a third cron entry
+   (`/api/cron/snapshot-stats`, daily). Confirm your Vercel plan tier
+   supports 3 cron jobs before merging -- Hobby-tier historically caps
+   this lower.
+4. Audit log (Phase 14) remains unbuilt, by two independent sessions'
+   agreement tonight -- worth a deliberate, supervised session rather
+   than further autonomous attempts.
+5. Not live-tested in a browser (OAuth-gated dashboard, same limitation
+   every prior session in this file has noted) -- recommend a quick
+   click-through of Content Studio, the Overview trend chart, and an
+   expanded Suggested Candidates row post-merge.
+6. A second migration-numbering note for whoever merges the Layer 6
+   Dynamic RBAC branch below next: its own log mentions applying an
+   `0018` (write function) migration live, which will collide with this
+   session's `0018_add_stats_history.sql` (already merged via PR #59) --
+   same non-overlapping-tables situation as the original 0017 collision,
+   needs the same renumber-whichever-merges-second treatment.
+
+---
+
 # Layer 6: Dynamic RBAC — Brainstormed, Designed, and Built (2026-07-06)
 
 Context: repo owner asked to expand on Layer 6 specifically. Went through
