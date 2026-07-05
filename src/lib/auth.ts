@@ -27,7 +27,7 @@ export async function requireRole(roles: StaffRole[]): Promise<boolean> {
 export async function requireTabAccess(domain: TabDomain, level: 'view' | 'manage'): Promise<boolean> {
   const session = await getServerSession(authOptions);
   const role = session?.user?.role;
-  return !!role && hasAccess(role, domain, level);
+  return !!role && (await hasAccess(role, domain, level));
 }
 
 // Phase 10: row-level scoping. Separate from requireTabAccess() by design —

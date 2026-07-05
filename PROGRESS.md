@@ -959,3 +959,96 @@ hiring) has less value before 4 ships too.
    is built.
 5. Layer 6 (dynamic RBAC) is the one most worth reading closely before
    approving — it's a real security posture change, not just a feature.
+
+---
+
+# Layer 6: Dynamic RBAC — Brainstormed, Designed, and Built (2026-07-06)
+
+Context: repo owner asked to expand on Layer 6 specifically. Went through
+a full interactive brainstorming session (superpowers:brainstorming) —
+five clarifying questions asked one at a time, each with a recommended
+option, before any design was written. Design doc:
+`docs/superpowers/specs/2026-07-06-layer6-dynamic-rbac-design.md`
+(supersedes the overnight session's sketch of the same name dated
+2026-07-05). After Section 3 was approved, repo owner gave blanket
+approval to complete and implement autonomously ("do all this yourself...
+i want to sleep"), same pattern as the original overnight session.
+
+## Decisions made via the brainstorm (not unilateral)
+
+1. Editable matrix only for the existing 4 roles — no support for adding
+   new roles at runtime (would have touched the `staff` table's SQL CHECK
+   constraint, `StaffRole` TypeScript type, NextAuth session typing, and
+   the Team & Access role picker — descoped as materially bigger).
+2. A small, scoped audit trail for `role_permissions` writes specifically
+   — not blocked on the general Phase 14 audit log (still deferred).
+3. Visible-tab list computed server-side (`dashboard/page.tsx`) and
+   passed to `DashboardClient.tsx` as a prop, since the DB-backed check
+   can't run in the browser.
+4. Full 3-step staged rollout, each step its own independently-reviewed
+   PR, not collapsed.
+5. Hard-blocked (server-side, not just UI) lockout guardrail — owner/admin
+   can never have `team`/`system-health` access set below `manage` through
+   this system.
+
+## What shipped
+
+| Step | Description | Status | PR |
+|---|---|---|---|
+| 1 | `role_permissions` + `permission_changes` tables, seeded bit-for-bit from the hardcoded `PERMISSIONS` matrix, no behavior change | ✅ Merged | #57 |
+| 2 | `permissions.ts`'s `getAccessLevel`/`hasAccess` switched to async, DB-backed, with the hardcoded matrix kept as a fail-closed fallback; `DashboardClient.tsx`'s tab list moved server-side | ✅ Merged | #58 |
+| 3 | `PermissionsGrid` Admin UI, `PATCH`/`GET /api/role-permissions`, lockout guardrail, audit trail panel | **Open, intentionally not auto-merged** | #63 |
+
+## A real finding along the way
+
+`unstable_cache` (used for the new cached `role_permissions` read, same
+pattern as `enterpriseStats.ts`) throws
+(`Invariant: incrementalCache missing`) outside a real Next.js request
+lifecycle — confirmed by direct probe, not assumed. This meant
+`permissions.test.ts` had to mock the DB accessor module rather than
+exercise the cached function directly; also explains why
+`enterpriseStats.ts`'s equally cached export has never had direct unit
+test coverage in this repo. Test coverage expanded from 21 to 36 cases:
+DB-override behavior, malformed/unrecognized rows falling back safely,
+full fail-closed-on-error and fail-closed-on-empty-rows coverage, and the
+new lockout guardrail (`isLockedOutByChange`, extracted as a pure,
+directly-unit-tested function rather than only checked inline in the
+route handler).
+
+## Why Step 3 (#63) was not auto-merged
+
+Steps 1 and 2 are both merged — neither changes any actual runtime
+capability (Step 1 is schema-only; Step 2 switches *where* a read comes
+from, verified identical before/after for all 52 cells). Step 3 is
+different: it's the step that actually lets someone change a role's
+dashboard access at runtime. CI is fully green on #63, and the design was
+walked through and approved section-by-section before any code was
+written, but per the repo owner's own prior note flagging this exact
+layer as "the one most worth reading closely before approving," the PR
+was opened with full verification (tsc clean, 66/66 tests, eslint clean,
+the new `set_role_permission` Postgres function confirmed created live
+via `pg_proc` introspection) but left for explicit review rather than
+merged under the same blanket approval that covered Steps 1-2.
+
+**Also not done**: a live end-to-end test of the write path itself (call
+`set_role_permission` against the real DB, confirm the row updates and
+the audit panel shows it). The auto-mode safety classifier correctly
+blocked an attempt to do this as an unreviewed test mutation against live
+RBAC data — recommend doing this manually once #63 is merged and
+deployed, toggling one low-stakes cell (e.g. viewer/overview) and
+confirming both the grid and the audit panel reflect it.
+
+## Verification
+
+- `npx tsc --noEmit` clean at every step.
+- Full suite: 66/66 tests pass (up from 21 before this work).
+- `npx eslint` clean on every touched/created file (checked directly,
+  not via the repo-wide `npm run lint`, which currently picks up noise
+  from a pre-existing untracked `.worktrees/cto-roadmap/` directory
+  unrelated to this work — confirmed via `git status`/`git worktree list`
+  that it's a separate linked worktree on `main`, not something this
+  session created or should touch).
+- Migrations 0017 (schema+seed) and 0018 (write function) both applied
+  live via Supabase MCP `apply_migration`; both verified read-only
+  afterward (seed bit-for-bit matched against `permissions.ts` via a
+  pivoted query; function existence/arity confirmed via `pg_proc`).
