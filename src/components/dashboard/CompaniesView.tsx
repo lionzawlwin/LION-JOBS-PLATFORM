@@ -68,6 +68,7 @@ export function CompaniesView() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
+        if (form.isInternal) setShowInternal(true);
         setForm({ name: '', contactPerson: '', email: '', phone: '', industry: 'Technology', city: 'Yangon', status: 'Lead', notes: '', isInternal: false });
         setShowForm(false);
         await load();
@@ -246,7 +247,7 @@ export function CompaniesView() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Building2 size={36} className="text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">{search || statusFilter ? t('cv_no_match') : t('cv_no_companies')}</p>
+          <p className="text-sm text-muted-foreground">{companies.length > 0 ? t('cv_no_match') : t('cv_no_companies')}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
