@@ -7,7 +7,7 @@ import type { StatsHistoryEntry } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-interface Series {
+export interface Series {
   label: string;
   color: string;
   values: number[];
@@ -15,7 +15,8 @@ interface Series {
 
 // Hand-rolled SVG sparkline -- this repo has no charting library and one
 // wasn't worth adding for two trend lines (see CTO advisory Layer 5).
-function Sparkline({ series, width = 560, height = 120 }: { series: Series[]; width?: number; height?: number }) {
+// Exported for reuse by SystemHealthView's daily-error-count chart.
+export function Sparkline({ series, width = 560, height = 120 }: { series: Series[]; width?: number; height?: number }) {
   const allValues = series.flatMap((s) => s.values);
   const max = Math.max(1, ...allValues);
   const points = series[0]?.values.length ?? 0;
