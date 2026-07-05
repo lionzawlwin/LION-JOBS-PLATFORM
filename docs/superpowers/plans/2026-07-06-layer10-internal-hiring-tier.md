@@ -72,10 +72,10 @@ export interface Company {
 }
 ```
 
-- [ ] **Step 3: Verify the type-check fails (expected — `mapToCompany` doesn't populate it yet)**
+- [ ] **Step 3: Verify the type-check**
 
 Run: `npx tsc --noEmit`
-Expected: no error yet, since `isInternal` isn't read anywhere. This step exists to confirm the baseline is clean before Task 2 changes `companies.ts` — skip straight to Task 2 if this passes cleanly.
+Expected: **this may fail**, not pass — making `isInternal` required on `Company` breaks any existing object literal typed as `Company` that doesn't populate it (e.g. `mapToCompany` in `src/lib/db/companies.ts`, and any test file with a `Company`-shaped factory). If it fails, fix every resulting error now, in this task, before committing — don't defer them to Task 2, which only covers `appendCompany`/`updateCompanyIsInternal`, not fallout from this task's own type change. Search for other call sites with `grep -rn ": Company\b\|as Company\b" src/ --include="*.ts" --include="*.tsx"` to make sure none are missed.
 
 - [ ] **Step 4: Commit**
 
@@ -93,7 +93,17 @@ git commit -m "feat: add companies.is_internal column and Company type field"
 - Modify: `src/lib/db/companies.ts:38-68` (`appendCompany`)
 - Modify: `src/lib/db/companies.ts:85-91` (add `updateCompanyIsInternal` after `updateCompanyTier`)
 
-- [ ] **Step 1: Update `mapToCompany` to read the new column**
+> **Note added after Task 1 landed:** Task 1's implementer had to add the
+> `mapToCompany` line below (Step 1) early, to keep `tsc --noEmit` clean
+> once `Company.isInternal` became a required field — verified as
+> unavoidable by an independent spec-compliance review (reverting the
+> line reproduced the exact compile error). **Step 1 is already done as
+> of commit `83da616`.** Whoever executes this task should verify the
+> current file matches Step 1's "Replace with" block below (it should,
+> byte for byte) rather than re-applying it, and focus their actual work
+> on Steps 2–3 (`appendCompany`, `updateCompanyIsInternal`).
+
+- [x] **Step 1: Update `mapToCompany` to read the new column** *(already done in Task 1's commit `83da616` — verify only, per the note above)*
 
 Current (`src/lib/db/companies.ts:4-22`):
 
