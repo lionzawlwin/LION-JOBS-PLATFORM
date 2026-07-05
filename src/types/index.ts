@@ -259,3 +259,11 @@ export interface CronStatus {
   ok: boolean;
   message: string;
 }
+
+export interface StatsHistoryEntry {
+  snapshotDate: string;
+  jobsCount: number;
+  candidatesCount: number;
+  companiesCount: number;
+  hiredCount: number;
+}

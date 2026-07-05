@@ -391,6 +391,9 @@ export const translations = {
     ov_kpi_companies:    'Companies',
     ov_kpi_clients:      'Clients',
     ov_kpi_leads:        'Leads',
+    ov_trend_title:      '30-Day Trend',
+    ov_trend_sub:        'Candidates, active jobs, and hires over the last 30 days',
+    ov_trend_empty:      'Not enough history yet -- check back after a few daily snapshots have run.',
     ov_kpi_sub_pipeline: 'Total pipeline',
     ov_kpi_sub_in_crm:   'In CRM',
     ov_kpi_sub_paying:   'Paying clients',
@@ -676,6 +679,8 @@ export const translations = {
     cs_msg_dev_mode:     'Dev mode: MAKE_PUBLISH_WEBHOOK_URL not set in Vercel — post not sent.',
     cs_msg_sent:         'Sent to Make.com! It will distribute to your channels.',
     cs_msg_network_error: 'Network error — could not reach server.',
+    cs_send_not_configured_tooltip: 'Direct distribution isn\'t wired up yet — copy the text above and post it manually, or use "Copy" and paste into Make.com yourself. New job posts still auto-publish via the separate publish-job webhook.',
+    cs_send_to_make_soon: 'Send to Make.com (coming soon)',
 
     // Email Campaigns tab
     ec_label_welcome:  'Welcome Email',
@@ -1137,6 +1142,9 @@ export const translations = {
     ov_kpi_companies:    'ကုမ္ပဏီများ',
     ov_kpi_clients:      'ဖောက်သည်များ',
     ov_kpi_leads:        'အလားအလာများ',
+    ov_trend_title:      '၃၀ ရက် လမ်းကြောင်း',
+    ov_trend_sub:        'လွန်ခဲ့သော ရက် ၃၀ အတွင်း လျှောက်ထားသူများ၊ အလုပ်များနှင့် ခန့်အပ်မှုများ',
+    ov_trend_empty:      'မှတ်တမ်း လုံလောက်မှု မရှိသေးပါ — နေ့စဉ် စနက်ပ်ရှော့များ အနည်းငယ် ပြေးပြီးနောက် ပြန်စစ်ကြည့်ပါ။',
     ov_kpi_sub_pipeline: 'စုစုပေါင်း',
     ov_kpi_sub_in_crm:   'CRM တွင်',
     ov_kpi_sub_paying:   'ငွေပေးဆောင်နေသော ဖောက်သည်',
@@ -1422,6 +1430,8 @@ export const translations = {
     cs_msg_dev_mode:     'Dev mode: MAKE_PUBLISH_WEBHOOK_URL ကို Vercel တွင် သတ်မှတ်မထားပါ — ပို့စ် မပို့ရသေးပါ။',
     cs_msg_sent:         'Make.com သို့ ပို့ပြီးပါပြီ! သင်၏ ချန်နယ်များသို့ ဖြန့်ချိပါမည်။',
     cs_msg_network_error: 'ကွန်ရက် အမှား — ဆာဗာသို့ ချိတ်ဆက်၍ မရပါ။',
+    cs_send_not_configured_tooltip: 'တိုက်ရိုက် ဖြန့်ချိခြင်း စနစ် မသတ်မှတ်ရသေးပါ — အထက်ပါ စာသားကို ကူးယူပြီး ကိုယ်တိုင် ပို့စ်တင်ပါ၊ သို့မဟုတ် "Copy" ကိုသုံးပြီး Make.com သို့ ကိုယ်တိုင် ကူးထည့်ပါ။ အလုပ်အသစ် ကြေညာချက်များမူ သီးခြား publish-job webhook မှတစ်ဆင့် အလိုအလျောက် ဖြန့်ချိနေဆဲဖြစ်သည်။',
+    cs_send_to_make_soon: 'Make.com သို့ ပို့ရန် (မကြာမီ)',
 
     // Email Campaigns tab
     ec_label_welcome:  'ကြိုဆိုစာ အီးမေးလ်',
