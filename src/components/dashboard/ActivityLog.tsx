@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, AlertTriangle, History } from 'lucide-react';
+import { Loader2, AlertTriangle, History, Download } from 'lucide-react';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import type { TabDomain } from '@/lib/permissions';
+import type { AuditAction } from '@/types';
 
 const DOMAIN_OPTIONS: Array<TabDomain | 'staff' | 'role-permissions'> = [
   'candidates', 'companies', 'enterprise', 'b2b-leads', 'legal',
   'billing', 'campaigns', 'post-job', 'manage-jobs', 'system-health',
   'staff', 'role-permissions',
 ];
+
+const ACTION_OPTIONS: AuditAction[] = ['create', 'update', 'delete'];
 
 const ACTION_STYLES: Record<string, string> = {
   create: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
@@ -23,14 +26,36 @@ function fmtDateTime(iso: string) {
 
 export function ActivityLog() {
   const [domainFilter, setDomainFilter] = useState('');
-  const { entries, loading, error } = useAuditLog(domainFilter || undefined);
+  const [actionFilter, setActionFilter] = useState('');
+  const [actorFilter, setActorFilter] = useState('');
+  const [q, setQ] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
+  const { entries, loading, error, hasMore, loadMore, exportCsvUrl } = useAuditLog({
+    domain: domainFilter || undefined,
+    action: (actionFilter || undefined) as AuditAction | undefined,
+    actorEmail: actorFilter || undefined,
+    q: q || undefined,
+    from: from || undefined,
+    to: to || undefined,
+  });
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <History size={15} /> Activity
+          <History size={15} /> Audit Log
         </h3>
+        <a
+          href={exportCsvUrl()}
+          className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+        >
+          <Download size={12} /> Export CSV
+        </a>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
         <select
           value={domainFilter}
           onChange={(e) => setDomainFilter(e.target.value)}
@@ -39,9 +64,43 @@ export function ActivityLog() {
           <option value="">All domains</option>
           {DOMAIN_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
+        <select
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
+          className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          <option value="">All actions</option>
+          {ACTION_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <input
+          type="text"
+          value={actorFilter}
+          onChange={(e) => setActorFilter(e.target.value)}
+          placeholder="Actor email"
+          className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        />
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search entity type/id"
+          className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        />
+        <input
+          type="date"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        />
+        <input
+          type="date"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        />
       </div>
 
-      {loading ? (
+      {loading && entries.length === 0 ? (
         <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>
       ) : error ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">
@@ -78,6 +137,19 @@ export function ActivityLog() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="mt-3 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+          >
+            {loading && <Loader2 size={12} className="animate-spin" />}
+            Load more
+          </button>
         </div>
       )}
     </div>
