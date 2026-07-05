@@ -320,3 +320,13 @@ export interface NotificationItem {
   href: NotificationTargetTab;
   createdAt: string;
 }
+
+export type SearchEntityType = 'candidate' | 'company' | 'job' | 'lead' | 'job_request';
+
+export interface SearchResult {
+  id: string;
+  type: SearchEntityType;
+  title: string;
+  subtitle: string;
+  href: NotificationTargetTab;
+}
