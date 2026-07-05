@@ -18,7 +18,7 @@ async function computeEnterpriseStats(): Promise<EnterpriseStats> {
   // don't provide. If contracts/companies schema changes, check this file too.
   const [contractsRes, companiesRes, cseRes] = await Promise.all([
     supabase.from('contracts').select('value, cse_id').eq('status', 'Active').order('cse_id'),
-    supabase.from('companies').select('id', { count: 'exact', head: true }).eq('tier', 'enterprise'),
+    supabase.from('companies').select('id', { count: 'exact', head: true }).eq('tier', 'enterprise').eq('is_internal', false),
     supabase.from('cse_reps').select('id, name'),
   ]);
 

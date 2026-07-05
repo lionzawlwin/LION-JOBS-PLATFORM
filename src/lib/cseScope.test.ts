@@ -15,7 +15,7 @@ function makeCompany(overrides: Partial<Company>): Company {
   return {
     id: 'co1', name: 'Acme', contactPerson: '', email: '', phone: '',
     industry: '', city: '', status: 'Active', tier: 'smb', notes: '',
-    lastContacted: '', createdAt: '2026-01-01T00:00:00Z',
+    lastContacted: '', createdAt: '2026-01-01T00:00:00Z', isInternal: false,
     ...overrides,
   };
 }

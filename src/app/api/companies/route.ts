@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       status:        body.status ?? 'Lead',
       tier:          body.tier ?? 'smb',
       notes:         String(body.notes ?? ''),
+      isInternal:    body.isInternal === true,
     });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });

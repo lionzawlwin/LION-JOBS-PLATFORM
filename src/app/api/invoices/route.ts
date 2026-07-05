@@ -2,6 +2,7 @@ import { requireTabAccess } from '@/lib/auth';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
 import { sendInvoiceIssuedEmail } from '@/lib/portalEmail';
+import { isInvoiceableCompany } from '@/lib/companyRules';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
 
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest) {
   const company = await getCompanyById(companyId);
   if (!company) {
     return Response.json({ error: 'Company not found.' }, { status: 404 });
+  }
+  if (!isInvoiceableCompany(company)) {
+    return Response.json({ error: 'Cannot create an invoice for an internal company.' }, { status: 422 });
   }
 
   const settings = await getAgencySettings();

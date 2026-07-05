@@ -13,6 +13,7 @@ import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Candidate, ApplicationStatus, Job, Company, Invoice } from '@/types';
+import { isInvoiceableCompany } from '@/lib/companyRules';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -124,7 +125,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   useEffect(() => {
     if (candidate?.company && companiesForInvoice.length > 0 && !invoiceCompanyId) {
       const match = companiesForInvoice.find(
-        (c) => c.name.toLowerCase() === candidate.company?.toLowerCase(),
+        (c) => c.name.toLowerCase() === candidate.company?.toLowerCase() && isInvoiceableCompany(c),
       );
       if (match) setInvoiceCompanyId(match.id);
     }
@@ -661,7 +662,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
                         className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
                       >
                         <option value="">{t('cdw_select_company')}</option>
-                        {companiesForInvoice.map((co) => (
+                        {companiesForInvoice.filter(isInvoiceableCompany).map((co) => (
                           <option key={co.id} value={co.id}>{co.name}</option>
                         ))}
                       </select>

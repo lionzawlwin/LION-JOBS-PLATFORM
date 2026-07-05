@@ -33,6 +33,7 @@ export function CompaniesView() {
   const [saving, setSaving]           = useState(false);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
+  const [showInternal, setShowInternal]       = useState(false);
   const [emailSending, setEmailSending]       = useState<string | null>(null);
   const [emailType, setEmailType]             = useState<'welcome' | 'outreach'>('welcome');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -42,6 +43,7 @@ export function CompaniesView() {
   const [form, setForm] = useState({
     name: '', contactPerson: '', email: '', phone: '',
     industry: 'Technology', city: 'Yangon', status: 'Lead' as CompanyStatus, notes: '',
+    isInternal: false,
   });
 
   const load = useCallback(async () => {
@@ -66,7 +68,8 @@ export function CompaniesView() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        setForm({ name: '', contactPerson: '', email: '', phone: '', industry: 'Technology', city: 'Yangon', status: 'Lead', notes: '' });
+        if (form.isInternal) setShowInternal(true);
+        setForm({ name: '', contactPerson: '', email: '', phone: '', industry: 'Technology', city: 'Yangon', status: 'Lead', notes: '', isInternal: false });
         setShowForm(false);
         await load();
       }
@@ -82,6 +85,15 @@ export function CompaniesView() {
       body: JSON.stringify({ status }),
     });
     setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, status } : c));
+  }
+
+  async function toggleInternal(id: string, isInternal: boolean) {
+    await fetch(`/api/companies/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isInternal }),
+    });
+    setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, isInternal } : c));
   }
 
   async function handleDelete(id: string) {
@@ -121,7 +133,8 @@ export function CompaniesView() {
   const filtered = companies.filter((c) => {
     const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || c.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchInternal = showInternal || !c.isInternal;
+    return matchSearch && matchStatus && matchInternal;
   });
 
   const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Active' || c.status === 'In-Contract').length };
@@ -161,6 +174,15 @@ export function CompaniesView() {
             <option value="">{t('ent_filter_all_status')}</option>
             {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_KEYS[s])}</option>)}
           </select>
+          <label className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showInternal}
+              onChange={(e) => setShowInternal(e.target.checked)}
+              className="rounded border-border"
+            />
+            Show internal
+          </label>
         </div>
         <div className="flex gap-2 items-center">
           <select
@@ -200,6 +222,15 @@ export function CompaniesView() {
             </select>
             <input placeholder={t('ent_form_city')} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
             <input placeholder={t('ent_form_notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={form.isInternal}
+                onChange={(e) => setForm({ ...form, isInternal: e.target.checked })}
+                className="rounded border-border"
+              />
+              Internal (group brand) — no invoicing, hidden from the pipeline view by default
+            </label>
             <div className="sm:col-span-2 flex justify-end gap-2">
               <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent">{t('ent_form_cancel')}</button>
               <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
@@ -216,7 +247,7 @@ export function CompaniesView() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Building2 size={36} className="text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">{search || statusFilter ? t('cv_no_match') : t('cv_no_companies')}</p>
+          <p className="text-sm text-muted-foreground">{companies.length > 0 ? t('cv_no_match') : t('cv_no_companies')}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -246,6 +277,19 @@ export function CompaniesView() {
                       ))}
                     </div>
                   </div>
+                  {/* Internal toggle */}
+                  <button
+                    onClick={() => toggleInternal(co.id, !co.isInternal)}
+                    title={co.isInternal ? 'Mark as external client' : 'Mark as internal (group brand)'}
+                    className={cn(
+                      'rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
+                      co.isInternal
+                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700/30 dark:bg-amber-900/20 dark:text-amber-300'
+                        : 'border-border text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    {co.isInternal ? 'Internal' : 'Mark internal'}
+                  </button>
                   {/* Delete button */}
                   {confirmDeleteId === co.id ? (
                     <div className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1">

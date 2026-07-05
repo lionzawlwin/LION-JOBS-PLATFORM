@@ -15,7 +15,12 @@ export function useEnterpriseAccounts() {
   );
   const { t } = useLanguage();
 
-  const accounts = (data ?? []).filter((c) => c.tier === 'enterprise');
+  // Layer 10: internal companies (the repo owner's own F&B brands) never
+  // have a real contract -- excluded unconditionally, no toggle, unlike
+  // the Companies tab's opt-in "Show internal" filter. Enterprise is
+  // specifically the B2B sales/contract pipeline; there's nothing here
+  // for a toggle to ever reveal.
+  const accounts = (data ?? []).filter((c) => c.tier === 'enterprise' && !c.isInternal);
 
   async function updateStatus(id: string, status: CompanyStatus) {
     const prev = data ?? [];
