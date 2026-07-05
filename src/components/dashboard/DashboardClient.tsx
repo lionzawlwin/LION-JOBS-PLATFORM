@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import type { TabDomain } from '@/lib/permissions';
 import { Sidebar } from './Sidebar';
 import { NotificationBell } from './NotificationBell';
+import { CommandPalette } from './CommandPalette';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffRole } from '@/types';
@@ -142,9 +143,11 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
         </AnimatePresence>
 
         <main className="min-w-0 flex-1">
-      {/* Notification bell — right-aligned above the context banner, visible
-          on both mobile and desktop since <main> is shared markup. */}
-      <div className="mb-3 flex justify-end">
+      {/* Command palette + notification bell — right-aligned above the
+          context banner, visible on both mobile and desktop since <main>
+          is shared markup. */}
+      <div className="mb-3 flex justify-end gap-2">
+        <CommandPalette onNavigate={(tab) => setActiveTab(tab)} />
         <NotificationBell onNavigate={(tab) => setActiveTab(tab)} />
       </div>
 
