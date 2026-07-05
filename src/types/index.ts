@@ -280,3 +280,24 @@ export interface AuditLogEntry {
   entityId: string;
   createdAt: string;
 }
+
+export type JobRequestStatus = 'Pending' | 'Approved' | 'Rejected';
+
+export interface JobRequest {
+  id: string;
+  companyId: string;
+  title: string;
+  location: string;
+  category: JobCategory;
+  type: JobType;
+  salaryMin: number;
+  salaryMax: number;
+  currency: string;
+  description: string;
+  requirements: string[];
+  status: JobRequestStatus;
+  submittedAt: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  rejectionNote: string | null;
+}
