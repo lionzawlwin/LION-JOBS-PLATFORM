@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCandidatesByEmailOrPhone, getAgencySettings, getConsentedApplicationIds } from '@/lib/db';
 
+// PUBLIC ROUTE: candidates check their own application status by
+// email/phone, unauthenticated by design (no account system for
+// candidates on this flow). Protected by its own local rate limiter
+// below, not the shared src/lib/apiSecurity.ts one -- pre-existing,
+// not changed here.
 // In-memory rate limiter: 5 requests per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 5;
