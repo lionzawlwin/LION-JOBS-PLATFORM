@@ -1,6 +1,6 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
-import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, deleteCompany } from '@/lib/db';
+import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, deleteCompany } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus, CompanyTier } from '@/types';
 
@@ -17,9 +17,10 @@ export async function PATCH(
     notes?:             string;
     tier?:              CompanyTier;
     commissionRatePct?: number | null;
+    isInternal?:        boolean;
   };
-  if (!body.status && !body.tier && body.commissionRatePct === undefined) {
-    return Response.json({ error: 'status, tier, or commissionRatePct is required.' }, { status: 422 });
+  if (!body.status && !body.tier && body.commissionRatePct === undefined && body.isInternal === undefined) {
+    return Response.json({ error: 'status, tier, commissionRatePct, or isInternal is required.' }, { status: 422 });
   }
   if (
     body.commissionRatePct !== undefined && body.commissionRatePct !== null &&
@@ -32,6 +33,7 @@ export async function PATCH(
     if (body.status) await updateCompanyStatus(id, body.status, body.notes);
     if (body.tier)   { await updateCompanyTier(id, body.tier); revalidateTag('enterprise-stats', { expire: 0 }); }
     if (body.commissionRatePct !== undefined) await updateCompanyCommissionRate(id, body.commissionRatePct);
+    if (body.isInternal !== undefined) await updateCompanyIsInternal(id, body.isInternal);
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
