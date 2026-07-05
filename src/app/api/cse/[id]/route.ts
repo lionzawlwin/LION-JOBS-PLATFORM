@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { updateCseRep, deleteCseRep } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(
@@ -19,6 +20,7 @@ export async function PATCH(
       email:  body.email  !== undefined ? String(body.email) : undefined,
       active: body.active !== undefined ? Boolean(body.active) : undefined,
     });
+    await logAudit({ action: 'update', domain: 'enterprise', entityType: 'cse_rep', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
@@ -36,6 +38,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteCseRep(id);
+    await logAudit({ action: 'delete', domain: 'enterprise', entityType: 'cse_rep', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {

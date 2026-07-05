@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { deleteInteraction } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function DELETE(
@@ -12,6 +13,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteInteraction(id);
+    await logAudit({ action: 'delete', domain: 'enterprise', entityType: 'interaction', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

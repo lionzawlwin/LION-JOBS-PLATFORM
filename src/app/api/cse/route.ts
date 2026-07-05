@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { getCseReps, appendCseRep } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function GET() {
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone !== undefined ? String(body.phone) : undefined,
       email: body.email !== undefined ? String(body.email) : undefined,
     });
+    await logAudit({ action: 'create', domain: 'enterprise', entityType: 'cse_rep', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {

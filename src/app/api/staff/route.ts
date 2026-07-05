@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth';
 import { listStaff, createStaff } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { StaffRole } from '@/types';
 import type { NextRequest } from 'next/server';
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
       name:  String(body.name),
       role:  role as StaffRole,
     });
+    await logAudit({ action: 'create', domain: 'staff', entityType: 'staff', entityId: id });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

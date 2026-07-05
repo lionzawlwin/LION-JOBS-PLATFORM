@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { updateCandidateStage } from '@/lib/db';
 import { requireTabAccess } from '@/lib/auth';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 import type { ApplicationStatus } from '@/types';
 
@@ -33,6 +34,7 @@ export async function PATCH(
 
   try {
     await updateCandidateStage(id, parsed.data.stage as ApplicationStatus);
+    await logAudit({ action: 'update', domain: 'candidates', entityType: 'candidate', entityId: id });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/candidates/[id]/stage', message: 'Could not update stage', error: err, context: { applicationId: id } });
     if (process.env.NODE_ENV !== 'production') {

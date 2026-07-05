@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { requireTabAccess } from '@/lib/auth';
 import { getAgencySettings, updateAgencySettings } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 // Business/legal terms — keep loose but sane so a fat-fingered admin edit
@@ -39,6 +40,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     await updateAgencySettings(parsed.data);
+    await logAudit({ action: 'update', domain: 'legal', entityType: 'agency_settings', entityId: 'default' });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/legal/settings', message: 'Could not update agency settings', error: err });

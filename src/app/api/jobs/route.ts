@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
 import { requireTabAccess } from '@/lib/auth';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 
 // ── GET /api/jobs ─────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -99,6 +100,8 @@ export async function POST(req: NextRequest) {
       { status: 502 },
     );
   }
+
+  await logAudit({ action: 'create', domain: 'post-job', entityType: 'job', entityId: jobId });
 
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
   const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';

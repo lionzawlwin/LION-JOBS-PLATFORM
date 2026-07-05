@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { deleteB2bLead } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
@@ -14,6 +15,7 @@ export async function DELETE(
   const { id } = await context.params;
   try {
     await deleteB2bLead(id);
+    await logAudit({ action: 'delete', domain: 'b2b-leads', entityType: 'lead', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/leads/[id]', message: 'Could not delete lead', error: err, context: { leadId: id } });

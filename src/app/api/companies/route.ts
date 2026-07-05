@@ -2,6 +2,7 @@ import { revalidateTag } from 'next/cache';
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getCompanies, appendCompany, getContracts } from '@/lib/db';
 import { filterCompaniesForCse } from '@/lib/cseScope';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function GET() {
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       notes:         String(body.notes ?? ''),
       isInternal:    body.isInternal === true,
     });
+    await logAudit({ action: 'create', domain: 'companies', entityType: 'company', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {

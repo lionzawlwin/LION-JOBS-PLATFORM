@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth';
 import { updateStaff } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { StaffRole } from '@/types';
 import type { NextRequest } from 'next/server';
 
@@ -26,6 +27,7 @@ export async function PATCH(
       active:   body.active   !== undefined ? Boolean(body.active) : undefined,
       cseRepId: body.cseRepId !== undefined ? (body.cseRepId === null ? null : String(body.cseRepId)) : undefined,
     });
+    await logAudit({ action: 'update', domain: 'staff', entityType: 'staff', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

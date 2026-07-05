@@ -3,6 +3,7 @@ import { getCandidates, saveAiScore } from '@/lib/db';
 import { getJobs } from '@/lib/db';
 import { scoreCandidateAgainstJob } from '@/lib/ai/cvAnalyzer';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 /**
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
 
       if (result) {
         await saveAiScore(candidate.id, result.score, result.summary, result.reasoning);
+        await logAudit({ action: 'update', domain: 'candidates', entityType: 'candidate', entityId: candidate.id });
         processed++;
       }
     } catch (err) {

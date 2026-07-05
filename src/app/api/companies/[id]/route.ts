@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, deleteCompany } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus, CompanyTier } from '@/types';
 
@@ -34,6 +35,7 @@ export async function PATCH(
     if (body.tier)   { await updateCompanyTier(id, body.tier); revalidateTag('enterprise-stats', { expire: 0 }); }
     if (body.commissionRatePct !== undefined) await updateCompanyCommissionRate(id, body.commissionRatePct);
     if (body.isInternal !== undefined) await updateCompanyIsInternal(id, body.isInternal);
+    await logAudit({ action: 'update', domain: 'companies', entityType: 'company', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
@@ -50,6 +52,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await deleteCompany(id);
+    await logAudit({ action: 'delete', domain: 'companies', entityType: 'company', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {

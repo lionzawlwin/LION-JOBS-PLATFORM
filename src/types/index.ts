@@ -268,3 +268,15 @@ export interface StatsHistoryEntry {
   companiesCount: number;
   hiredCount: number;
 }
+
+export type AuditAction = 'create' | 'update' | 'delete';
+
+export interface AuditLogEntry {
+  id: string;
+  actorEmail: string;
+  action: AuditAction;
+  domain: string;
+  entityType: string;
+  entityId: string;
+  createdAt: string;
+}

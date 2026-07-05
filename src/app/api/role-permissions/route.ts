@@ -13,6 +13,7 @@ import {
   type AccessLevel,
 } from '@/lib/permissions';
 import { updateRolePermission, listRecentPermissionChanges } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { StaffRole } from '@/types';
 
 const ALL_ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
@@ -73,6 +74,12 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const { oldAccessLevel } = await updateRolePermission({ role, tabDomain, accessLevel, changedBy });
+    await logAudit({
+      action: 'update',
+      domain: 'role-permissions',
+      entityType: 'role_permission',
+      entityId: `${role}:${tabDomain}`,
+    });
     revalidateTag('role-permissions', { expire: 0 });
     return NextResponse.json({ role, tabDomain, accessLevel, oldAccessLevel });
   } catch {

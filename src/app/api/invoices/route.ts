@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getInvoices, getInvoiceByApplicationId, createInvoice, getCompanyById, getAgencySettings } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import { sendInvoiceIssuedEmail } from '@/lib/portalEmail';
 import { isInvoiceableCompany } from '@/lib/companyRules';
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await logAudit({ action: 'create', domain: 'billing', entityType: 'invoice', entityId: invoice.id });
     return Response.json(invoice, { status: 201 });
   } catch (err) {
     await logFailure({

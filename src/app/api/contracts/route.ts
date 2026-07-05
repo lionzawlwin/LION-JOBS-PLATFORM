@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getContracts, appendContract } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
       cseId:        body.cseId        !== undefined ? String(body.cseId) : undefined,
       notes:        body.notes        !== undefined ? String(body.notes) : undefined,
     });
+    await logAudit({ action: 'create', domain: 'enterprise', entityType: 'contract', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {

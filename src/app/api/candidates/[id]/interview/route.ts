@@ -1,6 +1,7 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateInterviewDetails } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function PATCH(
@@ -21,6 +22,7 @@ export async function PATCH(
 
   try {
     await updateCandidateInterviewDetails(id, body.interviewLocation ?? '', body.interviewerContact ?? '');
+    await logAudit({ action: 'update', domain: 'candidates', entityType: 'candidate', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/candidates/[id]/interview', message: 'Could not update interview details', error: err, context: { applicationId: id } });

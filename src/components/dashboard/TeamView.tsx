@@ -5,6 +5,7 @@ import { Loader2, UserPlus, AlertTriangle, Info } from 'lucide-react';
 import { useStaff } from '@/hooks/useStaff';
 import { useCseReps } from '@/hooks/useCseReps';
 import { PermissionsGrid } from './PermissionsGrid';
+import { ActivityLog } from './ActivityLog';
 import type { StaffRole } from '@/types';
 
 const ROLES: StaffRole[] = ['owner', 'admin', 'cse', 'viewer'];
@@ -208,6 +209,8 @@ export function TeamView({ role }: { role?: StaffRole }) {
         <h3 className="mb-4 text-sm font-bold text-foreground">Tab Permissions</h3>
         <PermissionsGrid role={role} />
       </div>
+
+      <ActivityLog />
     </div>
   );
 }
