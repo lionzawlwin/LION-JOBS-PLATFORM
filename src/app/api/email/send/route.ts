@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 import { Resend } from 'resend';
 import {
   buildWelcomeEmail,
@@ -100,6 +101,12 @@ export async function POST(req: NextRequest) {
       to:      Array.isArray(to) ? to : [to],
       subject: email.subject,
       html:    email.html,
+    });
+    await logAudit({
+      action: 'create',
+      domain: 'campaigns',
+      entityType: 'email',
+      entityId: Array.isArray(to) ? to[0] : to,
     });
     return Response.json({ ok: true, id: result.data?.id });
   } catch (err) {
