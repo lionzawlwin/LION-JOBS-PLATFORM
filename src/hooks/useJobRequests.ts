@@ -3,12 +3,12 @@
 import useSWR from 'swr';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { JobRequest } from '@/types';
+import type { JobRequestWithCompany } from '@/lib/jobRequestsView';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useJobRequests() {
-  const { data, error, isLoading, mutate } = useSWR<JobRequest[]>(
+  const { data, error, isLoading, mutate } = useSWR<JobRequestWithCompany[]>(
     '/api/job-requests',
     fetcher,
     { revalidateOnFocus: false },

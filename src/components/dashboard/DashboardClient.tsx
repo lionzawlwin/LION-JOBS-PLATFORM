@@ -5,6 +5,7 @@ import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGri
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
+import { JobRequestsPanel } from './JobRequestsPanel';
 import { CompaniesView } from './CompaniesView';
 import { EnterpriseView } from './EnterpriseView';
 import { B2bLeadsTable } from './B2bLeadsTable';
@@ -202,7 +203,12 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
       )}
 
       {activeTab === 'post-job'    && <PostJobForm />}
-      {activeTab === 'manage-jobs' && <JobsPanel />}
+      {activeTab === 'manage-jobs' && (
+        <>
+          <JobRequestsPanel />
+          <JobsPanel />
+        </>
+      )}
       {activeTab === 'companies'   && <CompaniesView />}
       {activeTab === 'enterprise'  && <EnterpriseView />}
       {activeTab === 'b2b-leads'   && <B2bLeadsTable />}
