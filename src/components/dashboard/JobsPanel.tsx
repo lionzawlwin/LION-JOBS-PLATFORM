@@ -30,10 +30,60 @@ function scoreColor(score: number): string {
   return 'bg-muted text-muted-foreground';
 }
 
+// Max points each breakdown factor can contribute -- mirrors the comments
+// on MatchBreakdown in src/lib/matching/algorithmicMatch.ts. Kept here
+// (not imported) since that file is a pure scoring module with no UI
+// dependency, and this is display-only metadata.
+const BREAKDOWN_MAX = {
+  skillOverlap:    35,
+  keywordMatch:    25,
+  locationMatch:   20,
+  experienceMatch: 20,
+} as const;
+
+function MatchBreakdownDetail({ r }: { r: SuggestedCandidate }) {
+  const { t } = useLanguage();
+  const factors: Array<[keyof SuggestedCandidate['breakdown'], string]> = [
+    ['skillOverlap',    t('mj_match_skill_overlap')],
+    ['keywordMatch',    t('mj_match_keyword_match')],
+    ['locationMatch',   t('mj_match_location_match')],
+    ['experienceMatch', t('mj_match_experience_match')],
+  ];
+
+  return (
+    <div className="space-y-3 border-t border-border/60 bg-muted/10 px-3 py-3">
+      <div className="space-y-2">
+        {factors.map(([key, label]) => {
+          const max = BREAKDOWN_MAX[key];
+          const value = r.breakdown[key];
+          const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <span className="w-28 shrink-0 text-[10px] font-medium text-muted-foreground">{label}</span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="w-10 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">{value}/{max}</span>
+            </div>
+          );
+        })}
+      </div>
+      {r.reasons.length > 0 && (
+        <ul className="space-y-1">
+          {r.reasons.map((reason, i) => (
+            <li key={i} className="text-[10px] text-muted-foreground">• {reason}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function SuggestedCandidatesPanel({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [results, setResults] = useState<SuggestedCandidate[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -71,22 +121,34 @@ function SuggestedCandidatesPanel({ jobId }: { jobId: string }) {
 
   return (
     <div className="space-y-1.5 py-2">
-      {results.map((r) => (
-        <div key={r.candidateId} className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-          <span className={cn('flex h-8 w-11 shrink-0 items-center justify-center rounded-lg text-xs font-bold', scoreColor(r.score))}>
-            {r.score}%
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-foreground">{r.name}</p>
-            <p className="truncate text-[10px] text-muted-foreground">
-              {r.cityLocation || '—'}{r.experienceYears ? ` · ${r.experienceYears} yr` : ''}
-            </p>
+      {results.map((r) => {
+        const expanded = expandedId === r.candidateId;
+        return (
+          <div key={r.candidateId} className="overflow-hidden rounded-lg border border-border/60 bg-muted/20">
+            <button
+              type="button"
+              onClick={() => setExpandedId(expanded ? null : r.candidateId)}
+              className="flex w-full items-center gap-3 px-3 py-2 text-left"
+              aria-expanded={expanded}
+            >
+              <span className={cn('flex h-8 w-11 shrink-0 items-center justify-center rounded-lg text-xs font-bold', scoreColor(r.score))}>
+                {r.score}%
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-foreground">{r.name}</p>
+                <p className="truncate text-[10px] text-muted-foreground">
+                  {r.cityLocation || '—'}{r.experienceYears ? ` · ${r.experienceYears} yr` : ''}
+                </p>
+              </div>
+              <p className="hidden max-w-[35%] truncate text-[10px] text-muted-foreground sm:block" title={r.reasons.join(' ')}>
+                {r.reasons[0]}
+              </p>
+              {expanded ? <ChevronUp size={14} className="shrink-0 text-muted-foreground" /> : <ChevronDown size={14} className="shrink-0 text-muted-foreground" />}
+            </button>
+            {expanded && <MatchBreakdownDetail r={r} />}
           </div>
-          <p className="hidden max-w-[45%] truncate text-[10px] text-muted-foreground sm:block" title={r.reasons.join(' ')}>
-            {r.reasons[0]}
-          </p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
