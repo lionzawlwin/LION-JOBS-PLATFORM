@@ -16,3 +16,4 @@ export * from './systemEvents';
 export * from './statsHistory';
 export * from './rolePermissions';
 export * from './auditLog';
+export * from './jobRequests';
