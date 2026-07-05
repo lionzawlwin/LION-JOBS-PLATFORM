@@ -84,6 +84,19 @@ export async function listPendingJobRequests(): Promise<JobRequest[]> {
   return (data ?? []).map(mapToJobRequest);
 }
 
+export async function listAllJobRequests(): Promise<JobRequest[]> {
+  const { data, error } = await supabase
+    .from('job_requests')
+    .select('*')
+    .order('submitted_at', { ascending: false });
+
+  if (error) {
+    console.error('[db/jobRequests] listAllJobRequests error:', error.message);
+    return [];
+  }
+  return (data ?? []).map(mapToJobRequest);
+}
+
 export async function getJobRequestById(id: string): Promise<JobRequest | null> {
   const { data, error } = await supabase
     .from('job_requests')
