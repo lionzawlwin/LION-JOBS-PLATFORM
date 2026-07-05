@@ -48,6 +48,17 @@ production, not the order they'd ideally have been designed:
 | `0013_add_portal_login_tokens.sql` | 2026-07-04 | `portal_login_tokens` table — shared magic-link login tokens for the new Company Portal + Candidate Portal (Sprint 2, Phases 23/24). Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (RLS enabled, `subject_type` check constraint present). |
 | `0014_add_system_event_resolution.sql` | 2026-07-04 | `system_events.resolved_at`/`resolved_by` — lets a fixed problem be marked resolved instead of showing as an active failure for up to 7 days. Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (both nullable columns present, index `system_events_resolved_at_idx` created). |
 | `0015_add_rate_limit_category.sql` | 2026-07-04 | Adds `'rate_limit'` to `system_events.category`'s CHECK constraint (drop + recreate `system_events_category_check`, name confirmed via `pg_constraint` before writing the migration). Applied via Supabase MCP `apply_migration`, verified live via `pg_get_constraintdef`. |
+| `0016_add_jobs_company_id.sql` | 2026-07-05 | Real `company_id` FK on `jobs`, backfilled by exact name match against `companies` (Layer 1 of the Company Dashboard roadmap). Applied via Supabase MCP `apply_migration` (per that session's PROGRESS.md entry); backfilled into this table on 2026-07-05 by a separate session, verified live via `pg_indexes` (`jobs_company_id_idx` present). |
+| `0017_add_role_permissions.sql` | 2026-07-05 | `role_permissions` + `permission_changes` tables, seeded with the exact 52 `(role, tab_domain)` rows from `permissions.ts`'s hardcoded matrix (Layer 6 Dynamic RBAC, Step 1/3 -- schema + seed only, no behavior change yet). Applied via Supabase MCP `apply_migration` (per that session's PROGRESS.md entry); backfilled into this table on 2026-07-05 by a separate session, verified live via `list_tables` (both tables present, RLS enabled, `role_permissions` has exactly 52 rows) and `pg_indexes` (`role_permissions_pkey`, `permission_changes_pkey`, `permission_changes_changed_at_idx` all present). |
+| `0018_add_stats_history.sql` | 2026-07-05 | `stats_history` table (daily aggregate snapshots for dashboard trend charts). Applied via Supabase MCP `apply_migration`, verified live via `list_tables` (RLS enabled, columns match exactly) and `pg_indexes` (primary key, `snapshot_date` unique constraint, and `stats_history_snapshot_date_idx` all present). |
+
+> **Merge-order note (2026-07-05)**: this migration was originally numbered
+> `0017_add_stats_history.sql`, written concurrently with
+> `0017_add_role_permissions.sql` in a separate autonomous session against
+> the same repo. Renumbered to `0018` (repo owner's explicit call) after
+> the role_permissions migration merged to `main` first. Zero table/column
+> overlap between the two, so this had no live-schema consequence either
+> way — purely a filename/sequencing fix.
 
 > **Merge-order note (2026-07-04), resolved as predicted**: `0014` (PR #46)
 > and `0015` (this branch) were branched and applied live independently
