@@ -25,9 +25,9 @@ A Vitest suite exists (`npm test`) but coverage is thin and targeted, not compre
 All persistent data lives in Supabase Postgres (project "Lion Jobs Agency"), with Row Level Security enabled on every table. There is no ORM — routes call thin per-domain accessor modules directly.
 
 - **`src/lib/supabase.ts`** — the Supabase client, initialised with `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (server-side only; the service role key bypasses RLS, so it must never reach the client bundle).
-- **`src/lib/db/*.ts`** — one accessor module per domain (`jobs`, `candidates`, `companies`, `leads`, `subscribers`, `feedback`, `contracts`, `interactions`, `cse`, `enterpriseStats`, `legalSettings`, `consents`, `invoices`), re-exported from **`src/lib/db/index.ts`**. API routes import from `@/lib/db`, never from an individual accessor file.
+- **`src/lib/db/*.ts`** — one accessor module per domain (`jobs`, `candidates`, `companies`, `leads`, `subscribers`, `feedback`, `contracts`, `interactions`, `cse`, `enterpriseStats`, `legalSettings`, `consents`, `invoices`, `staff`, `systemEvents`, `statsHistory`, `rolePermissions`), re-exported from **`src/lib/db/index.ts`**. API routes import from `@/lib/db`, never from an individual accessor file.
 - **`src/lib/drive.ts`** — a separate, still-active integration: uploads candidate CVs to Google Drive via a Google service account (`GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_PRIVATE_KEY` / `GOOGLE_DRIVE_PARENT_FOLDER_ID`). This is unrelated to the old Sheets-based data layer — Drive only ever stored files, not structured data.
-- **`src/lib/authOptions.ts`** — NextAuth Google OAuth login gate for `/dashboard`, restricted to a single `ADMIN_EMAIL`.
+- **`src/lib/authOptions.ts`** — NextAuth Google OAuth login gate for `/dashboard`. Accepts anyone with an active row in the `staff` table; `ADMIN_EMAIL` is a permanent fallback that always works regardless of staff table state (see Access control section below).
 
 The private key (`GOOGLE_PRIVATE_KEY`) is sanitised through `parsePrivateKey()` in `drive.ts`, which strips accidental surrounding quotes, converts `\n` escape sequences, and trims whitespace — handle it there, not in callers.
 
@@ -55,8 +55,17 @@ The public job board (homepage `/` and `/jobs`) uses real server-side query-push
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Public job board — hero, search, job grid |
+| `/` | Homepage chooser — routes visitors to candidate or employer flow (Phase 11) |
+| `/candidate` | Candidate-facing public job board (search, filter, apply) |
+| `/company` | Employer-facing landing page / portal entry |
+| `/candidate/portal` | Candidate magic-link portal — application tracking, status, documents (Sprint 2) |
+| `/company/portal` | Company magic-link portal — job posting status, candidate shortlists (Sprint 2) |
 | `/apply/[jobId]` | Candidate application form |
+| `/jobs/[slug]` | Individual job listing page |
+| `/companies/[slug]` | Public company profile page |
+| `/drop-cv` | Drop CV / speculative application form |
+| `/my-applications` | Candidate application tracker |
+| `/resume-builder` | Resume builder tool |
 | `/dashboard` | Internal admin console — 13 tabs: Overview, Candidates (Kanban + table), Post Job, Manage Jobs, Companies, Enterprise (CRM), B2B Leads, Content Studio, Email Campaigns, Legal, Billing, Team & Access, System Health |
 
 ### Access control — staff table, per-tab/per-action RBAC
@@ -65,7 +74,7 @@ The public job board (homepage `/` and `/jobs`) uses real server-side query-push
 
 Role is attached to the session/JWT at sign-in (`authOptions.ts`'s `jwt` callback) and does **not** update until that staff member's next login — changing someone's role in the Team & Access tab takes effect on their next sign-in, not immediately.
 
-**Enforcement is per-tab/per-action RBAC, since Phase 4**: `requireTabAccess(domain, level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level (`none`/`view`/`manage`) matrix in `src/lib/permissions.ts`, covering all 4 roles across all 13 dashboard tabs. `owner`/`admin` have full access everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus view-only on Legal/Billing/Overview and no access to recruitment or marketing tabs; `viewer` is read-only everywhere except Post Job/Team. System Health (added Phase 5, after this RBAC model was built) follows the same row as Team & Access — `owner`/`admin` only, `cse` and `viewer` have no access. `/api/staff/*` still additionally requires `requireRole(['owner', 'admin'])` for managing the roster itself. Known gap, deliberately deferred: no row-level scoping exists for `cse` — a `cse` role sees every company/lead, not just their own assigned accounts (would need a `Staff` ↔ `CseRep` link that doesn't exist yet).
+**Enforcement is per-tab/per-action RBAC, since Phase 4**: `requireTabAccess(domain, level)` in `src/lib/auth.ts` checks a hard-coded (role × tab) → access-level (`none`/`view`/`manage`) matrix in `src/lib/permissions.ts`, covering all 4 roles across all 13 dashboard tabs. `owner`/`admin` have full access everywhere; `cse` gets full access to Companies/Enterprise/B2B Leads plus view-only on Legal/Billing/Overview and no access to recruitment or marketing tabs; `viewer` is read-only everywhere except Post Job/Team. System Health (added Phase 5, after this RBAC model was built) follows the same row as Team & Access — `owner`/`admin` only, `cse` and `viewer` have no access. `/api/staff/*` still additionally requires `requireRole(['owner', 'admin'])` for managing the roster itself. **CSE row-level scoping (Phase 10, migration `0011`)**: `staff.cse_rep_id` links a `cse`-role login to a `cse_reps` row; `GET /api/companies`, `/api/contracts`, and `/api/interactions` filter server-side to that rep's accounts. Application-layer filtering only — the service-role Supabase client bypasses Postgres RLS entirely, so a RLS policy here would be silently ineffective. An unlinked `cse` (`cse_rep_id: NULL`) fails closed — sees an empty list, not everything. `b2b_leads` is explicitly not scoped: that table has no CSE-assignment concept in its data model (it's a shared pool). See `src/lib/cseScope.ts`.
 
 ### State management
 
@@ -93,6 +102,7 @@ shadcn/ui primitives live in `src/components/ui/`. The project uses `@base-ui/re
 | `CRON_SECRET` | Yes | Authenticates Vercel cron hits to `/api/cron/*` |
 | `SENTRY_DSN` | No | Sentry project DSN for server-side exception capture (Phase 5). Unset = `Sentry.init` is a no-op, matching every other optional integration in this repo. |
 | `ALERT_EMAIL` | No | Where Phase 6's health-check alerts (cron silence, failure-rate spikes) are sent. Unset = the check silently no-ops, matching every other optional integration in this repo. |
+| `PORTAL_SESSION_SECRET` | Yes | HMAC-SHA256 key for signing candidate and company portal session tokens (magic-link auth, Sprint 2). Raw token is only ever in the emailed link; only the SHA-256 hash is stored in the DB. |
 | `PUBLISH_WEBHOOK_SECRET` / `GITHUB_ACTIONS_TOKEN` / `GITHUB_REPO` / `SITE_URL` | Yes (prod) | Triggers the GitHub Actions workflow that posts new jobs to Telegram/Facebook |
 
 `GOOGLE_SHEET_ID`, `GOOGLE_JOBS_TAB`, `GOOGLE_CANDIDATES_TAB`, `GOOGLE_COMPANIES_TAB`, `GOOGLE_FEEDBACK_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` are **archived** — leftover from the pre-Supabase data layer, no longer read by any code path. `GOOGLE_CANDIDATES_TAB`, `MAKE_WEBHOOK_URL`, and `MAKE_PUBLISH_WEBHOOK_URL` were deleted from Vercel Production on 2026-07-03; the rest were already absent. See `.env.example`'s archive section for historical reference only — do not re-add.

@@ -29,9 +29,13 @@ src/hooks/use*.ts         ← SWR hooks, client-side only
 React components
 ```
 
-All filtering is client-side (`filterJobs()` in `src/hooks/useJobs.ts`) — the
-API returns the full dataset and the browser filters it. No server-side
-pagination exists anywhere in this app.
+The public job board (`/candidate`) uses real server-side query-pushdown
+pagination (Phase 13): `useJobs.ts` calls `/api/jobs` with `limit`/`offset`
+plus filter params, and `getJobsPaginated()` in `src/lib/db/jobs.ts` pushes
+keyword/category/type/location/salary filtering into Supabase — the browser is
+not filtering a full in-memory dataset. Dashboard management views that need an
+effectively-complete list still fetch a large capped page (1000-row ceiling) and
+filter client-side via `filterJobs()` in `useJobs.ts`.
 
 Two integrations run alongside the Supabase data layer, both unrelated to
 each other:
@@ -74,14 +78,12 @@ scoped** — that table has no CSE-assignment concept in its data model at
 all; inventing one is a real product decision, not a technical gap. See
 `docs/superpowers/specs/2026-07-04-phase-10-cse-row-scoping-design.md`.
 
-**Status as of this document**: Phase 10 is implemented, tested (36/36
-passing), merged to `main` via PR #16, and confirmed live in production
-(smoke-tested post-deploy: `/` → 200, `/api/jobs` → 200, `/dashboard` →
-307). No `cse`-role staff existed in the roster at merge time, so the
-fail-closed empty-view behavior for unlinked `cse` staff was not yet
-observed live — it will apply the moment the first `cse` staff member is
-added, until they're linked to a CSE rep via the Team & Access "CSE Rep"
-column.
+**Status as of 2026-07-05**: Phases 4–27+ are complete and live. The CSE
+scoping (Phase 10, migration `0011`) is the most recent change to this
+section — `staff.cse_rep_id` is in Production. No `cse`-role staff existed
+in the roster at Phase 10's merge, so the fail-closed empty-view for unlinked
+CSE staff has not yet been observed live. See `PROGRESS.md` for the full
+phase changelog.
 
 ## Environment variables
 
@@ -98,14 +100,13 @@ operationally important ones for day-to-day ops:
 
 ## Deployment
 
-Push to `main` → GitHub Actions (`.github/workflows/deploy.yml`) runs
-`vercel build --prod && vercel deploy --prebuilt --prod`. PRs get a preview
-deployment with the URL commented automatically. `main` has branch
-protection requiring the `verify` status check (install → build →
-type-check) to pass via a PR — **no direct pushes to `main` are possible**,
-even for docs-only changes; a direct `git push` attempt is rejected outright
-by GitHub (`GH006: Protected branch update failed`), not just discouraged by
-convention.
+Push to `main` → **Vercel's native GitHub integration** deploys automatically
+(preview for PRs, production for `main`) — this is dashboard-configured on
+Vercel's side, not driven by any file in this repo. `.github/workflows/deploy.yml`
+no longer runs `vercel deploy`; its sole job is the quality gate — `npm test` +
+`npm audit` as required status checks on every PR. `ci.yml` runs `next build` +
+`tsc --noEmit`. Both must pass before merge. Branch protection enforces this;
+direct pushes to `main` are rejected outright by GitHub (`GH006`).
 
 ## Database migrations
 
@@ -120,29 +121,32 @@ Process: write `supabase/migrations/NNNN_description.sql` with `IF NOT
 EXISTS` guards, `npx supabase db push`, then `npx supabase migration list`
 to confirm local/remote agree — **verify, don't assume it worked.**
 
-As of this document, migrations run through `0011` (see `MIGRATIONS.md` for
-the full per-file breakdown). *(Note: this reflects the repo's state as of
-Phase 8's completion — migration `0010` landed mid-Phase-8 as a code-review
-fix-forward, after the Phase 8 plan doc's Task 5 was written, so that plan's
-literal text still says `0009`. This document describes the current,
-corrected state on purpose; don't read the discrepancy as an error.)*
-`0011` (Phase 10, `staff.cse_rep_id`) is applied to Production and its
-application code is merged and live (see Access control section above).
+As of this document, migrations run through `0021` (see `MIGRATIONS.md` and
+`supabase/migrations/` for the full breakdown). Key landmarks:
+- `0011` — Phase 10: `staff.cse_rep_id` (CSE row scoping)
+- `0016` — `jobs` ↔ `companies` FK
+- `0017` — `role_permissions` table (Layer 6 Dynamic RBAC)
+- `0018` — `stats_history` table (daily snapshot cron)
+- `0021` — audit log table (in progress, see open PRs)
+
+All through `0018` are applied to Production. `0019`–`0021` status: check
+`npx supabase migration list` against the live project to confirm.
 
 ## Cron jobs
 
-Vercel's Hobby plan caps this project at **2 cron jobs, once-per-day
-minimum interval** — both existing crons are already at that cap:
+Three cron jobs are declared in `vercel.json` and confirmed registered on
+Vercel (verified via `npx vercel crons ls`, 2026-07-05):
 - `/api/cron/job-alerts` (`0 9 * * *`, daily) — posts new jobs to
   Telegram/Facebook, and since Phase 6/7 also runs `runHealthCheck()` and
   `runCrmDigest()` at the start of the same invocation (piggybacked, not
-  separate crons).
+  separate crons). Confirmed firing daily; last run 2026-07-05T09:13 UTC.
 - `/api/cron/weekly-email` (`0 9 * * 1`, Mondays) — weekly digest email.
+- `/api/cron/snapshot-stats` (`0 0 * * *`, daily midnight UTC) — records
+  daily aggregate counts to `stats_history` for Overview trend charts (Phase PR #59).
 
-Both are authenticated via `CRON_SECRET` (see above). If you ever see a
-cron behaving unexpectedly, check Vercel's dashboard → project → **Cron
-Jobs** tab for real invocation history and per-run status — that view is
-not exposed through the Vercel CLI or public API, only the dashboard UI.
+All three are authenticated via `CRON_SECRET` (see above). Use
+`npx vercel crons ls` to check registration status. The System Health
+dashboard tab shows the last run time and status of each monitored cron.
 
 ## Runbook: rotating `CRON_SECRET`
 
@@ -167,45 +171,55 @@ not exposed through the Vercel CLI or public API, only the dashboard UI.
   As of Phase 8 it's indexed on `(category, route, created_at)` for
   cron-status lookups and `(level, category, created_at)` for the dashboard's
   general error listing — see `supabase/migrations/0009` and `0010`.
-- **Open question, not yet resolved**: during Phase 7 follow-up work,
-  `system_events` was found completely empty (zero rows of any kind,
-  including basic cron-success heartbeats) at a point where it should have
-  had rows from Phase 5/6 having been live for some time. A `CRON_SECRET`
-  misconfiguration was investigated and fixed as part of that session, but
-  it was never conclusively confirmed whether that was the actual root
-  cause of the empty table, or a coincidence — the empty/falsy secret state
-  found at the time would have *disabled* the auth check rather than
-  blocked requests, which doesn't fully explain a total absence of rows.
-  Worth checking `system_events` again post-handover to confirm it's
-  populating normally.
+- **`system_events` is confirmed populating normally** (resolved 2026-07-05):
+  direct Supabase REST query showed `job-alerts` fired at 09:13 UTC today and
+  previously on 2026-07-03 — both logged correctly. The earlier "empty table"
+  mystery (Phase 7 follow-up) was a `CRON_SECRET` misconfiguration that caused
+  fail-open auth (secret was blank/falsy, disabling the check rather than
+  blocking — no requests were rejected, but something else caused the absence of
+  rows at the time). That is now fixed; the table is healthy.
 - Sentry alert rules (e.g. paging on spike thresholds) are configured in
   the Sentry dashboard itself, not in this codebase — nothing here manages
   that config.
 
-## Testing (Phase 9+)
+## Testing
 
-`npm test` (Vitest) exists now — it didn't for Phases 4–8. Coverage so far
-is intentionally narrow: pure/unmocked logic only (`src/lib/permissions.ts`'s
-RBAC matrix, `src/lib/cseScope.ts`'s CSE-attribution derivation), chosen
-because those are the highest-risk-if-silently-wrong surfaces and need no
-mocking infrastructure. No DB-accessor or route-level tests exist yet —
-that would need a `@supabase/supabase-js` mock this repo doesn't have.
-`npm test` is wired into `.github/workflows/deploy.yml` as a required step
-before both preview and production Vercel builds — a failing test blocks
-deploy.
+`npm test` (Vitest) — as of 2026-07-05, **68 tests across 6 test files**,
+covering: `apiSecurity.ts` (rate limiting), `permissions.ts` (RBAC matrix),
+`portalAuth.ts` (magic-link token hashing + session signing), `cseScope.ts`
+(CSE rep attribution), and `algorithmicMatch.ts` (matching algorithm).
+Coverage is intentionally targeted at pure/unmocked logic — the highest-risk
+surfaces that need no mocking infrastructure. No DB-accessor or route-level
+tests exist yet (would need a `@supabase/supabase-js` mock this repo doesn't
+have). `npm test` is a required CI gate in `deploy.yml` — a failing test
+blocks merge.
 
-## Recently merged (Phases 9–10)
+## Recent milestones (since Phase 10)
 
-- **PR #15** — Phase 9: ops hygiene (`ADMIN_EMAIL`/dead-env-var cleanup in
-  Vercel, doc sync) and the Vitest harness described above. Merged to
-  `main`, deployed, smoke-tested.
-- **PR #16** — Phase 10: CSE row-level scoping, described above. Originally
-  stacked on PR #15's branch (opened before #15 merged); retargeted to
-  `main` and merged after #15 landed. Merged, deployed, smoke-tested.
+This document was originally written at Phase 10. Significant additions since:
 
-Both went through this repo's normal review path (spec → plan → repo-owner
-review and explicit merge approval) before merging — branch protection and
-the required CI gate stayed in effect for both; they weren't bypassed.
+- **Sprint 2 (Company + Candidate Portals)** — Magic-link portal auth for
+  both candidates and employers. Tokens HMAC-signed with `PORTAL_SESSION_SECRET`,
+  SHA-256 hash stored in DB. Routes: `/candidate/portal`, `/company/portal`.
+- **Phase 11 (Homepage Chooser + Sidebar)** — `/` is now a chooser landing;
+  `/candidate` and `/company` are the separate public-facing flows.
+- **Phase 13 (Jobs Pagination)** — Server-side query-pushdown pagination on the
+  public job board (see Architecture section).
+- **Phase 17 (Algorithmic Matching)** — Zero-API-call 100-pt scoring for
+  candidate↔job fit (`src/lib/matching/algorithmicMatch.ts`).
+- **Phase 20 (API Security Hardening)** — In-memory rate limiter, HMAC
+  `ADMIN_KEY` auth hardening, `CRON_SECRET` fail-open fix.
+- **Phase 21 (Dashboard Caching)** — `unstable_cache` + `force-dynamic` for
+  selected dashboard routes.
+- **Phase 27 (CI Reliability)** — Route-protection CI check; `deploy.yml`
+  refactored to quality-gate-only (removed redundant Vercel CLI deploy step).
+- **Layer 6 Dynamic RBAC** — DB-backed `role_permissions` table
+  (`0017_add_role_permissions.sql`) with async `getAccessLevel()`;
+  hardcoded matrix as fail-closed fallback.
+
+See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
+commit hashes. Open PRs as of 2026-07-05: #70 (snapshot-stats health
+monitoring fix), and `feat/audit-log` branch (migration `0021`).
 
 ## Where to find more history
 
