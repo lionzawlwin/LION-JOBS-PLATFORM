@@ -2,6 +2,7 @@ import { deleteJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireTabAccess } from '@/lib/auth';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 
 // ── DELETE /api/jobs/[id] ─────────────────────────────────────────
 // Removes the job row from the database.
@@ -26,6 +27,7 @@ export async function DELETE(
 
   try {
     await deleteJob(id);
+    await logAudit({ action: 'delete', domain: 'manage-jobs', entityType: 'job', entityId: id });
     return NextResponse.json({ ok: true });
   } catch (err) {
     await logFailure({ category: 'other', route: '/api/jobs/[id]', message: 'Failed to delete job', error: err, context: { jobId: id } });
