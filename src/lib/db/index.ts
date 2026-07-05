@@ -14,3 +14,4 @@ export * from './invoices';
 export * from './staff';
 export * from './systemEvents';
 export * from './statsHistory';
+export * from './rolePermissions';
