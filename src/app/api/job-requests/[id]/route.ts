@@ -40,7 +40,10 @@ export async function PATCH(
   const company = await getCompanyById(request.companyId);
 
   const session = await getServerSession(authOptions);
-  const reviewedBy = session?.user?.email ?? 'unknown';
+  const reviewedBy = session?.user?.email;
+  if (!reviewedBy) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
 
   try {
@@ -80,6 +83,24 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (parsed.data.action === 'approve') {
+      const postFailureState = await getJobRequestById(id).catch(() => null);
+      await logFailure({
+        category: 'other',
+        route: '/api/job-requests/[id]',
+        message: 'Failed to process job request decision',
+        error: err,
+        context: { jobRequestId: id, statusAfterFailure: postFailureState?.status ?? 'unknown' },
+      });
+
+      // Regardless of whether the request row itself was updated before the failure,
+      // we cannot reliably tell whether appendJob() already ran — warn the operator either way.
+      return NextResponse.json(
+        { error: 'Failed to process the approval. If you retry, check Manage Jobs for a possible duplicate posting before resubmitting — a job may have already been created.' },
+        { status: 502 },
+      );
+    }
+
     await logFailure({ category: 'other', route: '/api/job-requests/[id]', message: 'Failed to process job request decision', error: err, context: { jobRequestId: id } });
     return NextResponse.json({ error: 'Failed to process job request.' }, { status: 502 });
   }
