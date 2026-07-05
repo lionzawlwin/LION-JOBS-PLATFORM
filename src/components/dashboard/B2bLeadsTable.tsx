@@ -2,10 +2,14 @@
 
 import { useState, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
+import { toast } from 'sonner';
 import { Search, Loader2, Building2, ChevronDown, ChevronRight, CheckCircle2, Trash2, AlertTriangle, UserCheck } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCseReps } from '@/hooks/useCseReps';
+import { useSelection } from '@/hooks/useSelection';
+import { summarizeBulkResults } from '@/lib/bulkActions';
+import { BulkActionBar } from './BulkActionBar';
 import type { TranslationKey } from '@/lib/i18n';
 import type { B2bLead } from '@/types';
 
@@ -205,11 +209,40 @@ export function B2bLeadsTable() {
   const { data, isLoading, error } = useSWR<B2bLead[]>('/api/leads', fetcher);
   const [search,   setSearch]   = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [bulkStatus, setBulkStatus] = useState<string>('New');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const selection = useSelection<string>();
   const { t } = useLanguage();
   const { cseReps } = useCseReps();
 
   const cseNameById = useMemo(() => new Map(cseReps.map((c) => [c.id, c.name])), [cseReps]);
   const leads = data ?? [];
+
+  // StatusCell's own single-lead PATCH has no toast (just a visual
+  // checkmark) -- bulk needs an explicit summary since there's no
+  // per-row feedback surface for a batch of updates.
+  async function handleBulkStatusApply() {
+    setBulkBusy(true);
+    const results = await Promise.allSettled(
+      Array.from(selection.selected).map(async (id): Promise<boolean> => {
+        const res = await fetch(`/api/leads/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: bulkStatus }),
+        });
+        return res.ok;
+      }),
+    );
+    mutate('/api/leads');
+    const { succeeded, failed } = summarizeBulkResults(results);
+    if (failed === 0) {
+      toast.success(`Updated ${succeeded} lead${succeeded === 1 ? '' : 's'}.`);
+    } else {
+      toast.error(`Updated ${succeeded}, failed to update ${failed}.`);
+    }
+    setBulkBusy(false);
+    selection.clear();
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -263,6 +296,26 @@ export function B2bLeadsTable() {
         />
       </div>
 
+      {/* Bulk action bar */}
+      {selection.count > 0 && (
+        <BulkActionBar count={selection.count} onClear={selection.clear}>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value)}
+            className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          >
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{t(STATUS_KEYS[s])}</option>)}
+          </select>
+          <button
+            onClick={handleBulkStatusApply}
+            disabled={bulkBusy}
+            className="rounded-xl border border-brand-600 bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+          >
+            Apply
+          </button>
+        </BulkActionBar>
+      )}
+
       {/* Table */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card py-14 text-center">
@@ -277,24 +330,39 @@ export function B2bLeadsTable() {
         <div className="overflow-hidden rounded-2xl border border-border">
 
           {/* Column headers */}
-          <div className="hidden lg:grid grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span>{t('bl_col_company_role')}</span>
-            <span>{t('bl_col_contact')}</span>
-            <span>{t('bl_col_budget')}</span>
-            <span>{t('bl_col_urgency')}</span>
-            <span>{t('bl_col_status')}</span>
-            <span>{t('bl_col_submitted')}</span>
-            <span />
-            <span />
+          <div className="hidden lg:flex items-center gap-2 border-b border-border bg-muted/50 px-2 py-2.5">
+            <input
+              type="checkbox"
+              checked={filtered.length > 0 && filtered.every((l) => selection.isSelected(l.id))}
+              onChange={() => selection.toggleAll(filtered.map((l) => l.id))}
+              className="ml-2"
+            />
+            <div className="grid flex-1 grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] gap-3 pr-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span>{t('bl_col_company_role')}</span>
+              <span>{t('bl_col_contact')}</span>
+              <span>{t('bl_col_budget')}</span>
+              <span>{t('bl_col_urgency')}</span>
+              <span>{t('bl_col_status')}</span>
+              <span>{t('bl_col_submitted')}</span>
+              <span />
+              <span />
+            </div>
           </div>
 
           <div className="divide-y divide-border">
             {filtered.map((lead) => (
               <div key={lead.id}>
-                <div
-                  onClick={() => setExpanded(expanded === lead.id ? null : lead.id)}
-                  className="grid grid-cols-[1fr_36px_36px] lg:grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-accent/30 transition-colors"
-                >
+                <div className="flex items-center gap-2 px-2 hover:bg-accent/30 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={selection.isSelected(lead.id)}
+                    onChange={() => selection.toggle(lead.id)}
+                    className="ml-2 shrink-0"
+                  />
+                  <div
+                    onClick={() => setExpanded(expanded === lead.id ? null : lead.id)}
+                    className="grid flex-1 min-w-0 grid-cols-[1fr_36px_36px] lg:grid-cols-[1fr_150px_130px_130px_120px_110px_36px_36px] items-center gap-3 py-3.5 pr-2 cursor-pointer"
+                  >
                   {/* Company & Role */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2.5">
@@ -361,6 +429,7 @@ export function B2bLeadsTable() {
                   {/* Expand toggle */}
                   <div className="flex items-center justify-end text-muted-foreground">
                     {expanded === lead.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </div>
                   </div>
                 </div>
 
