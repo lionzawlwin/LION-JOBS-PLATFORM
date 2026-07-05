@@ -7,10 +7,14 @@ import {
 } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import { useCandidates } from '@/hooks/useCandidates';
+import { useSelection } from '@/hooks/useSelection';
 import { CandidateDrawer } from './CandidateDrawer';
+import { BulkActionBar } from './BulkActionBar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Candidate, ApplicationStatus } from '@/types';
+
+const BULK_STAGE_OPTIONS: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hired'];
 
 const STAGE_KEYS: Record<ApplicationStatus, TranslationKey> = {
   Applied: 'ov_stage_applied', Shortlisted: 'ov_stage_shortlisted',
@@ -41,6 +45,9 @@ export function CandidateDataTable() {
   const [stage,    setStage]    = useState<ApplicationStatus | ''>('');
   const [page,     setPage]     = useState(1);
   const [selected, setSelected] = useState<Candidate | null>(null);
+  const [bulkStage, setBulkStage] = useState<ApplicationStatus>('Shortlisted');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const selection = useSelection<string>();
   const { t } = useLanguage();
 
   const filtered = useMemo(() => {
@@ -66,6 +73,15 @@ export function CandidateDataTable() {
   async function handleStageChange(id: string, newStage: ApplicationStatus) {
     await updateStage(id, newStage);
     if (selected?.id === id) setSelected((prev) => prev ? { ...prev, stage: newStage } : null);
+  }
+
+  // updateStage() already toasts per candidate (success/error) -- no extra
+  // summary toast here, sonner stacks the individual ones.
+  async function handleBulkStageApply() {
+    setBulkBusy(true);
+    await Promise.allSettled(Array.from(selection.selected).map((id) => updateStage(id, bulkStage)));
+    setBulkBusy(false);
+    selection.clear();
   }
 
   const stageCounts = useMemo(() => {
@@ -139,17 +155,45 @@ export function CandidateDataTable() {
           />
         </div>
 
+        {/* ── Bulk action bar ──────────────────────────────────── */}
+        {selection.count > 0 && (
+          <BulkActionBar count={selection.count} onClear={selection.clear}>
+            <select
+              value={bulkStage}
+              onChange={(e) => setBulkStage(e.target.value as ApplicationStatus)}
+              className="rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+            >
+              {BULK_STAGE_OPTIONS.map((s) => <option key={s} value={s}>{t(STAGE_KEYS[s])}</option>)}
+            </select>
+            <button
+              onClick={handleBulkStageApply}
+              disabled={bulkBusy}
+              className="rounded-xl border border-brand-600 bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              Apply
+            </button>
+          </BulkActionBar>
+        )}
+
         {/* ── Table ────────────────────────────────────────────── */}
         <div className="overflow-hidden rounded-2xl border border-border">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[32px_1fr_160px_110px_120px_90px_48px] gap-3 border-b border-border bg-muted/50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span>#</span>
-            <span>{t('cd_col_candidate')}</span>
-            <span>{t('cd_col_position')}</span>
-            <span>{t('cd_col_stage')}</span>
-            <span>{t('cd_col_phone')}</span>
-            <span>{t('cd_col_applied')}</span>
-            <span></span>
+          <div className="hidden sm:flex items-center gap-2 border-b border-border bg-muted/50 px-2 py-2.5">
+            <input
+              type="checkbox"
+              checked={pageItems.length > 0 && pageItems.every((c) => selection.isSelected(c.id))}
+              onChange={() => selection.toggleAll(pageItems.map((c) => c.id))}
+              className="ml-2"
+            />
+            <div className="grid flex-1 grid-cols-[32px_1fr_160px_110px_120px_90px_48px] gap-3 pr-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span>#</span>
+              <span>{t('cd_col_candidate')}</span>
+              <span>{t('cd_col_position')}</span>
+              <span>{t('cd_col_stage')}</span>
+              <span>{t('cd_col_phone')}</span>
+              <span>{t('cd_col_applied')}</span>
+              <span></span>
+            </div>
           </div>
 
           {pageItems.length === 0 ? (
@@ -166,11 +210,18 @@ export function CandidateDataTable() {
                 const initials  = c.name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
 
                 return (
-                  <div
-                    key={c.id}
-                    onClick={() => setSelected(c)}
-                    className="grid grid-cols-[32px_1fr] sm:grid-cols-[32px_1fr_160px_110px_120px_90px_48px] items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors cursor-pointer group"
-                  >
+                  <div key={c.id} className="flex items-center gap-2 px-2 hover:bg-accent/30 transition-colors group">
+                    <input
+                      type="checkbox"
+                      checked={selection.isSelected(c.id)}
+                      onChange={() => selection.toggle(c.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-2 shrink-0"
+                    />
+                    <div
+                      onClick={() => setSelected(c)}
+                      className="grid flex-1 min-w-0 grid-cols-[32px_1fr] sm:grid-cols-[32px_1fr_160px_110px_120px_90px_48px] items-center gap-3 py-3 pr-2 cursor-pointer"
+                    >
                     {/* # */}
                     <span className="text-[11px] font-mono text-muted-foreground">{rowNum}</span>
 
@@ -226,6 +277,7 @@ export function CandidateDataTable() {
                       <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground group-hover:border-brand-600/40 group-hover:text-brand-600 transition-all">
                         <ExternalLink size={11} />
                       </div>
+                    </div>
                     </div>
                   </div>
                 );
