@@ -67,3 +67,44 @@ export async function sendInvoiceIssuedEmail(opts: {
     `,
   });
 }
+
+// Layer 4 of the Company Dashboard roadmap: notify a company contact when
+// staff approve or reject their portal-submitted job request. Same
+// graceful-no-op pattern as the other portal emails -- a missing
+// RESEND_API_KEY (or any send failure) must never block the approve/reject
+// action itself; callers wrap this in try/catch and treat it as best-effort.
+export async function sendJobRequestDecisionEmail(opts: {
+  to: string;
+  companyName: string;
+  title: string;
+  decision: 'approved' | 'rejected';
+  jobUrl?: string;
+  rejectionNote?: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('[portalEmail] RESEND_API_KEY not set — cannot send job request decision email.');
+    return;
+  }
+
+  const isApproved = opts.decision === 'approved';
+  const subject = isApproved
+    ? `Your job request "${opts.title}" is now live`
+    : `Update on your job request "${opts.title}"`;
+
+  const html = isApproved
+    ? `
+      <p>Hi ${opts.companyName},</p>
+      <p>Your job request for <strong>${opts.title}</strong> has been approved and is now live on the job board.</p>
+      <p><a href="${opts.jobUrl ?? SITE_URL}">View the live listing</a></p>
+      <p>You can track it any time in your <a href="${SITE_URL}/company/portal">Company Portal</a>.</p>
+    `
+    : `
+      <p>Hi ${opts.companyName},</p>
+      <p>Your job request for <strong>${opts.title}</strong> was not approved.</p>
+      <p><strong>Reason:</strong> ${opts.rejectionNote ?? 'No reason provided.'}</p>
+      <p>You can submit a revised request any time in your <a href="${SITE_URL}/company/portal">Company Portal</a>.</p>
+    `;
+
+  await resend.emails.send({ from: FROM, to: opts.to, subject, html });
+}
