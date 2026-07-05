@@ -20,7 +20,10 @@ const schema = z.object({
   currency:     z.string().trim().min(1).max(10),
   description:  z.string().trim().min(20).max(10_000),
   requirements: z.array(z.string().trim().max(200)).max(50),
-});
+}).refine(
+  (data) => !(data.salaryMin > 0 && data.salaryMax > 0 && data.salaryMax < data.salaryMin),
+  { message: 'Salary max must be greater than or equal to salary min.', path: ['salaryMax'] },
+);
 
 export async function GET() {
   const companyId = await getPortalSubjectId('company');
