@@ -7,6 +7,7 @@ import { useEnterpriseStats } from '@/hooks/useEnterpriseStats';
 import { useCseReps } from '@/hooks/useCseReps';
 import { useAllContracts } from '@/hooks/useContracts';
 import { EnterpriseAccountRow } from './EnterpriseAccountRow';
+import { CsePerformanceTable } from './CsePerformanceTable';
 import { ManageCseModal } from './ManageCseModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
@@ -92,6 +93,8 @@ export function EnterpriseView() {
           </p>
         </div>
       </div>
+
+      <CsePerformanceTable />
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
