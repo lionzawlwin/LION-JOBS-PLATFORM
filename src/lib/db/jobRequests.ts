@@ -100,9 +100,19 @@ export async function getJobRequestById(id: string): Promise<JobRequest | null> 
 }
 
 // Approving a request creates the live job (reusing appendJob(), the same
-// path the Post Job form uses) then marks the request Approved. Both
-// writes happen in this one function so a caller can never mark a request
-// Approved without the job actually existing, or vice versa.
+// path the Post Job form uses), then marks the request Approved. These are
+// two separate writes, not a transaction: if appendJob() succeeds but the
+// job_requests status update below throws, the job will exist while the
+// request is left stuck at Pending. This is the same accepted-risk shape as
+// candidates.ts's appendCandidate() two-insert pattern, with no rollback here
+// either.
+//
+// Known risk: because nothing on the job_requests row records which job was
+// already created, a caller must not blindly retry approveJobRequest(id, ...)
+// after a failure. Retrying re-runs appendJob() unconditionally, which would
+// create a second live job for the same approval if the first job insert
+// already succeeded. A caller should first re-fetch the request and check
+// whether its status actually changed before deciding to retry.
 export async function approveJobRequest(id: string, reviewedBy: string): Promise<string> {
   const request = await getJobRequestById(id);
   if (!request) throw new Error(`Job request ${id} not found`);
@@ -138,6 +148,10 @@ export async function approveJobRequest(id: string, reviewedBy: string): Promise
 }
 
 export async function rejectJobRequest(id: string, reviewedBy: string, note: string): Promise<void> {
+  const request = await getJobRequestById(id);
+  if (!request) throw new Error(`Job request ${id} not found`);
+  if (request.status !== 'Pending') throw new Error(`Job request ${id} is not pending`);
+
   const { error } = await supabase
     .from('job_requests')
     .update({ status: 'Rejected', reviewed_by: reviewedBy, reviewed_at: new Date().toISOString(), rejection_note: note })
