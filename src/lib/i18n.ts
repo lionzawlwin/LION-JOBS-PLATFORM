@@ -579,6 +579,19 @@ export const translations = {
     mj_toast_network_error:      'Network error',
     mj_toast_network_error_desc: 'Could not reach the server. Please try again.',
 
+    jr_panel_title:             'Job Requests',
+    jr_no_requests:             'No pending job requests.',
+    jr_approve:                 'Approve',
+    jr_reject:                  'Reject',
+    jr_reject_note_placeholder: 'Reason for rejection (required)',
+    jr_reject_confirm:          'Confirm Reject',
+    jr_cancel:                  'Cancel',
+    jr_toast_approve_failed: 'Could not approve this job request.',
+    jr_toast_approved:       'Job request approved and published.',
+    jr_toast_reject_failed:  'Could not reject this job request.',
+    jr_toast_rejected:       'Job request rejected.',
+    jr_toast_load_failed:    'Failed to load job requests.',
+
     // B2B Companies tab
     cv_total_companies: 'Total Companies',
     cv_active_clients:  'Active Clients',
@@ -1333,6 +1346,19 @@ export const translations = {
     mj_toast_deleted_desc: 'အလုပ်ကို ဖယ်ရှားပြီးပါပြီ။',
     mj_toast_network_error:      'ကွန်ရက် အမှား',
     mj_toast_network_error_desc: 'ဆာဗာသို့ ချိတ်ဆက်၍ မရပါ။ ထပ်မံကြိုးစားပါ။',
+
+    jr_panel_title:             'အလုပ်တောင်းဆိုမှုများ',
+    jr_no_requests:             'စောင့်ဆိုင်းနေသော အလုပ်တောင်းဆိုမှု မရှိပါ။',
+    jr_approve:                 'အတည်ပြုမည်',
+    jr_reject:                  'ငြင်းပယ်မည်',
+    jr_reject_note_placeholder: 'ငြင်းပယ်ရသည့် အကြောင်းရင်း (လိုအပ်သည်)',
+    jr_reject_confirm:          'ငြင်းပယ်မှု အတည်ပြုမည်',
+    jr_cancel:                  'ပယ်ဖျက်မည်',
+    jr_toast_approve_failed: 'ဤအလုပ်တောင်းဆိုမှုကို အတည်မပြုနိုင်ပါ။',
+    jr_toast_approved:       'အလုပ်တောင်းဆိုမှုကို အတည်ပြု၍ ထုတ်ပြန်ပြီးပါပြီ။',
+    jr_toast_reject_failed:  'ဤအလုပ်တောင်းဆိုမှုကို ငြင်းပယ်၍ မရပါ။',
+    jr_toast_rejected:       'အလုပ်တောင်းဆိုမှုကို ငြင်းပယ်လိုက်ပါပြီ။',
+    jr_toast_load_failed:    'အလုပ်တောင်းဆိုမှုများကို ဖွင့်၍ မရပါ။',
 
     // B2B Companies tab
     cv_total_companies: 'ကုမ္ပဏီ စုစုပေါင်း',
