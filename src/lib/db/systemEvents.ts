@@ -102,7 +102,7 @@ export async function resolveSystemEvent(id: string, resolvedBy: string): Promis
   if (error) throw new Error(`Failed to resolve system event: ${error.message}`);
 }
 
-const CRON_ROUTES = ['/api/cron/job-alerts', '/api/cron/weekly-email'];
+const CRON_ROUTES = ['/api/cron/job-alerts', '/api/cron/snapshot-stats', '/api/cron/weekly-email'];
 
 export async function getCronStatus(): Promise<CronStatus[]> {
   const results = await Promise.all(

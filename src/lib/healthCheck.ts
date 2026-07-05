@@ -12,8 +12,9 @@ const ROUTE = '/api/cron/job-alerts#health-check';
 // days out of every 7, since a healthy weekly cron is silent that long by
 // design.
 const CRON_SILENCE_HOURS: Record<string, number> = {
-  '/api/cron/job-alerts':   36,   // daily cron — generous slack over 24h
-  '/api/cron/weekly-email': 192,  // weekly cron (7d) — 1 day of slack
+  '/api/cron/job-alerts':      36,  // daily cron — generous slack over 24h
+  '/api/cron/snapshot-stats':  36,  // daily cron — same cadence as job-alerts
+  '/api/cron/weekly-email':   192,  // weekly cron (7d) — 1 day of slack
 };
 
 function getResend(): Resend | null {
