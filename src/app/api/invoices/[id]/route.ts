@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getInvoiceById, updateInvoiceStatus } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 import type { InvoiceStatus } from '@/types';
@@ -42,6 +43,7 @@ export async function PATCH(
 
   try {
     await updateInvoiceStatus(id, body.status as InvoiceStatus);
+    await logAudit({ action: 'update', domain: 'billing', entityType: 'invoice', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({

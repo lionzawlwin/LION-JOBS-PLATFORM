@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
 import { updateCandidateFinalSalary } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
 
@@ -29,6 +30,7 @@ export async function PATCH(
 
   try {
     await updateCandidateFinalSalary(id, body.finalAgreedSalary);
+    await logAudit({ action: 'update', domain: 'billing', entityType: 'candidate', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({
