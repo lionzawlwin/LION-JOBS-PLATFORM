@@ -62,8 +62,6 @@ export function ContentStudio() {
   const [tone,     setTone]       = useState<PostTone>('professional');
   const [content,  setContent]    = useState('');
   const [copied,   setCopied]     = useState(false);
-  const [sending,  setSending]    = useState(false);
-  const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [history,  setHistory]    = useState<HistoryEntry[]>([]);
   const { t } = useLanguage();
 
@@ -90,7 +88,6 @@ export function ContentStudio() {
   function generate() {
     const result = generateContent(postType, platform, tone, vars);
     setContent(result);
-    setSendResult(null);
     setCopied(false);
   }
 
@@ -98,38 +95,13 @@ export function ContentStudio() {
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  }
-
-  async function sendToMake() {
-    if (!content) return;
-    setSending(true);
-    setSendResult(null);
-
-    try {
-      const res = await fetch('/api/content/distribute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: content, platform, postType, tone }),
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        setSendResult({ ok: false, msg: json.error ?? t('cs_msg_send_failed') });
-      } else if (json.dev) {
-        setSendResult({ ok: true, msg: t('cs_msg_dev_mode') });
-      } else {
-        setSendResult({ ok: true, msg: t('cs_msg_sent') });
-        // Save to history
-        setHistory(h => [
-          { text: content, platform, postType, ts: new Date().toLocaleTimeString() },
-          ...h.slice(0, 4),
-        ]);
-      }
-    } catch {
-      setSendResult({ ok: false, msg: t('cs_msg_network_error') });
-    } finally {
-      setSending(false);
-    }
+    // Direct distribution isn't wired up (see the not-configured notice
+    // below the action buttons) -- copy is the real "send" today, so
+    // this is where a generated post actually enters history.
+    setHistory(h => [
+      { text: content, platform, postType, ts: new Date().toLocaleTimeString() },
+      ...h.slice(0, 4),
+    ]);
   }
 
   const activePostType = POST_TYPES.find(p => p.value === postType);
@@ -144,7 +116,7 @@ export function ContentStudio() {
           {POST_TYPES.map((pt) => (
             <button
               key={pt.value}
-              onClick={() => { setPostType(pt.value); setContent(''); setSendResult(null); }}
+              onClick={() => { setPostType(pt.value); setContent(''); }}
               className={cn(
                 'flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all',
                 postType === pt.value
@@ -276,7 +248,7 @@ export function ContentStudio() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setContent(''); setSendResult(null); }} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+                  <button onClick={() => setContent('')} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground transition-colors">
                     <Trash2 size={13} />
                   </button>
                   <button onClick={generate} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
@@ -319,30 +291,26 @@ export function ContentStudio() {
                   {copied ? <><CheckCheck size={15} /> {t('cs_copied')}</> : <><Copy size={15} /> {t('cs_copy')}</>}
                 </button>
                 <button
-                  onClick={sendToMake}
-                  disabled={sending || overLimit}
+                  disabled
+                  title={t('cs_send_not_configured_tooltip')}
+                  aria-disabled="true"
                   className={cn(
                     'flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all',
-                    'bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-600/20',
-                    'disabled:opacity-60 disabled:cursor-not-allowed',
+                    'border border-border bg-muted/40 text-muted-foreground',
+                    'cursor-not-allowed opacity-70',
                   )}
                 >
-                  {sending ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
-                  {sending ? t('cs_sending') : t('cs_send_to_make')}
+                  <Send size={15} />
+                  {t('cs_send_to_make_soon')}
                 </button>
               </div>
 
-              {/* Send result */}
-              {sendResult && (
-                <div className={cn(
-                  'rounded-xl border px-4 py-3 text-xs font-medium',
-                  sendResult.ok
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700/30 dark:bg-emerald-900/20 dark:text-emerald-400'
-                    : 'border-red-200 bg-red-50 text-red-700 dark:border-red-700/30 dark:bg-red-900/20 dark:text-red-400',
-                )}>
-                  {sendResult.ok ? '✓ ' : '✗ '}{sendResult.msg}
-                </div>
-              )}
+              {/* Not-configured notice -- direct distribution isn't wired up;
+                  see CLAUDE.md's Content Studio note. Copy/paste (above) is
+                  the real workflow today. */}
+              <p className="rounded-xl border border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                {t('cs_send_not_configured_tooltip')}
+              </p>
             </>
           ) : (
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center">

@@ -11,6 +11,7 @@ import { cn, timeAgo } from '@/lib/utils';
 import { useCandidates } from '@/hooks/useCandidates';
 import { useJobs } from '@/hooks/useJobs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { TrendChart } from './TrendChart';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Company } from '@/types';
 
@@ -160,6 +161,9 @@ export function AnalyticsOverview() {
         <KpiCard icon={Target}     label={t('ov_kpi_clients')}     value={s.clients}         sub={t('ov_kpi_sub_paying')}        iconBg="bg-amber-600"  />
         <KpiCard icon={TrendingUp} label={t('ov_kpi_leads')}       value={s.leads}           sub={`${s.convRate}${t('ov_suffix_engaged')}`} iconBg="bg-rose-600" />
       </div>
+
+      {/* ── 30-Day Trend ─────────────────────────────────────────── */}
+      <TrendChart />
 
       {/* ── Charts Row ───────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
