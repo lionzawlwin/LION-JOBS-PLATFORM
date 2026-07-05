@@ -133,6 +133,7 @@ export interface Company {
   notes:         string;
   lastContacted: string;
   createdAt:     string;
+  isInternal:    boolean;
   commissionRatePct?: number | null;
 }
 

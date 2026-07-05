@@ -18,6 +18,7 @@ function mapToCompany(row: Record<string, unknown>): Company {
       : Number(row.commission_rate_pct),
     lastContacted: (row.last_contacted as string) ?? '',
     createdAt:     row.created_at as string,
+    isInternal:    (row.is_internal as boolean) ?? false,
   };
 }
 
