@@ -21,6 +21,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import type { TabDomain } from '@/lib/permissions';
 import { Sidebar } from './Sidebar';
+import { NotificationBell } from './NotificationBell';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffRole } from '@/types';
@@ -140,6 +141,12 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
         </AnimatePresence>
 
         <main className="min-w-0 flex-1">
+      {/* Notification bell — right-aligned above the context banner, visible
+          on both mobile and desktop since <main> is shared markup. */}
+      <div className="mb-3 flex justify-end">
+        <NotificationBell onNavigate={(tab) => setActiveTab(tab)} />
+      </div>
+
       {/* Context banner */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <Info size={14} className="mt-0.5 shrink-0" />
