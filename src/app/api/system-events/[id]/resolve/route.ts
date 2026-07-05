@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
 import { resolveSystemEvent } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
+import { logAudit } from '@/lib/audit';
 
 export async function PATCH(
   _req: Request,
@@ -22,6 +23,7 @@ export async function PATCH(
 
   try {
     await resolveSystemEvent(id, resolvedBy);
+    await logAudit({ action: 'update', domain: 'system-health', entityType: 'system_event', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({
