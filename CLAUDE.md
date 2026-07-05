@@ -12,10 +12,11 @@ This project runs **Next.js 16.2.9**, which has breaking changes from older vers
 npm run dev      # start dev server at localhost:3000
 npm run build    # production build (runs next build)
 npm run lint     # ESLint
-npx tsc --noEmit # type-check without emitting (no test suite exists)
+npm test         # runs vitest (unit tests only -- see coverage note below)
+npx tsc --noEmit # type-check without emitting
 ```
 
-No test suite is configured. Use `npx tsc --noEmit` to catch type errors before committing.
+A Vitest suite exists (`npm test`) but coverage is thin and targeted, not comprehensive — as of 2026-07-05 it covers `apiSecurity.ts`, `permissions.ts`, `portalAuth.ts`, `cseScope.ts`, and `algorithmicMatch.ts`. Most of the app (routes, components, db accessors) has no test coverage. Still run `npx tsc --noEmit` before committing; it catches far more than the test suite does today.
 
 ## Architecture
 
@@ -48,7 +49,7 @@ src/hooks/{useJobs,useCandidates,...}.ts       ← SWR hooks, client-side only
 React components
 ```
 
-All filtering happens **client-side** inside `filterJobs()` in `src/hooks/useJobs.ts` — the API returns the full dataset and the browser filters it. No server-side pagination exists.
+The public job board (homepage `/` and `/jobs`) uses real server-side query-pushdown pagination as of Phase 13: `useJobs.ts` calls `/api/jobs` with `limit`/`offset` plus filter params, and `getJobsPaginated()` (`src/lib/db/jobs.ts`) pushes keyword/category/type/location/salary filtering into the Supabase query itself — the browser is not filtering a full in-memory dataset for this flow. Dashboard views that need an effectively-complete list instead of a paginated one (`JobsPanel`'s management table, `AnalyticsOverview`'s stats) still fetch a large capped page (see `getJobsPaginated()`'s 1000-row ceiling) and filter client-side via `filterJobs()` in `useJobs.ts` — that part of the old client-filtering model is still accurate for those two call sites specifically.
 
 ### Pages and routing
 

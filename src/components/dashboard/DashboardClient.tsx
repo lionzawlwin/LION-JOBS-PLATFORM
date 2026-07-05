@@ -19,7 +19,7 @@ import { CandidateDataTable } from './CandidateDataTable';
 import { MyApplicationsClient } from '@/components/apply/MyApplicationsClient';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { getAccessLevel, type TabDomain } from '@/lib/permissions';
+import type { TabDomain } from '@/lib/permissions';
 import { Sidebar } from './Sidebar';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,9 +30,13 @@ type Tab = TabDomain;
 interface Props {
   isAdmin?: boolean;
   role?: StaffRole;
+  // RBAC Step 2 (Layer 6, Dynamic RBAC): computed server-side in
+  // dashboard/page.tsx, since getAccessLevel is now async and DB-backed —
+  // this client component can no longer call it directly.
+  visibleTabs?: TabDomain[];
 }
 
-export function DashboardClient({ isAdmin = false, role }: Props) {
+export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Props) {
   const effectiveRole = role ?? 'viewer';
   // owner/admin/viewer keep the existing Overview default; cse's actual
   // working domain is Companies/Enterprise/B2B Leads (they have no
@@ -60,7 +64,7 @@ export function DashboardClient({ isAdmin = false, role }: Props) {
     { value: 'system-health', label: t('admin_tab_system_health'), icon: <Activity size={14} /> },
   ];
 
-  const TABS = ALL_TABS.filter((tab) => getAccessLevel(effectiveRole, tab.value) !== 'none');
+  const TABS = ALL_TABS.filter((tab) => visibleTabs.includes(tab.value));
 
   if (!isAdmin) {
     // Non-admin: public candidate status view only
