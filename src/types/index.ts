@@ -330,3 +330,12 @@ export interface SearchResult {
   subtitle: string;
   href: NotificationTargetTab;
 }
+
+export interface CsePerformanceRow {
+  cseRepId: string;
+  name: string;
+  activeContractsCount: number;
+  activeContractValue: number;
+  assignedCompaniesCount: number;
+  claimedLeadsCount: number;
+}
