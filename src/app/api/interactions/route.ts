@@ -1,6 +1,7 @@
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getInteractions, appendInteraction, getContracts } from '@/lib/db';
 import { deriveActiveCseByCompany } from '@/lib/cseScope';
+import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       loggedByCseId: body.loggedByCseId !== undefined ? String(body.loggedByCseId) : undefined,
       occurredAt:    body.occurredAt    !== undefined ? String(body.occurredAt) : undefined,
     });
+    await logAudit({ action: 'create', domain: 'enterprise', entityType: 'interaction', entityId: id });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
