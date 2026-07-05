@@ -47,6 +47,7 @@ export async function appendCompany(data: {
   tier?:          string;
   notes?:         string;
   lastContacted?: string;
+  isInternal?:    boolean;
 }): Promise<string> {
   const id = `co-${Date.now()}`;
 
@@ -62,6 +63,7 @@ export async function appendCompany(data: {
     tier:           data.tier ?? 'smb',
     notes:          data.notes ?? null,
     last_contacted: data.lastContacted ?? null,
+    is_internal:    data.isInternal ?? false,
   });
 
   if (error) throw new Error(`Failed to insert company: ${error.message}`);
@@ -89,6 +91,14 @@ export async function updateCompanyTier(id: string, tier: string): Promise<void>
     .update({ tier })
     .eq('id', id);
   if (error) throw new Error(`Failed to update company tier: ${error.message}`);
+}
+
+export async function updateCompanyIsInternal(id: string, isInternal: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ is_internal: isInternal })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update company internal flag: ${error.message}`);
 }
 
 export async function deleteCompany(id: string): Promise<void> {
