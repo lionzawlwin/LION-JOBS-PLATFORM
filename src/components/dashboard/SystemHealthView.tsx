@@ -2,9 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash, Gauge, Check } from 'lucide-react';
+import { Sparkline } from './TrendChart';
 import type { SystemEvent, CronStatus, FailureCategory } from '@/types';
+import type { CronDayStatus } from '@/lib/healthTrends';
 
 type ResolvedFilter = 'unresolved' | 'resolved' | 'all';
+
+interface HealthTrend {
+  dailyErrorCounts: { date: string; count: number }[];
+  cronDayStatus: Record<string, CronDayStatus[]>;
+}
+
+const EMPTY_TREND: HealthTrend = { dailyErrorCounts: [], cronDayStatus: {} };
+
+const DAY_STATUS_COLOR: Record<CronDayStatus, string> = {
+  ok:   'bg-emerald-500',
+  fail: 'bg-red-500',
+  none: 'bg-muted',
+};
 
 interface IntegrationStatus {
   name: string;
@@ -44,6 +59,7 @@ export function SystemHealthView() {
   const [days, setDays]             = useState(7);
   const [rateLimitHits24h, setRateLimitHits24h] = useState<number | null>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [trend, setTrend] = useState<HealthTrend>(EMPTY_TREND);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +79,7 @@ export function SystemHealthView() {
       setEvents(data.events ?? []);
       setCronStatus(data.cronStatus ?? []);
       setRateLimitHits24h(typeof data.rateLimitHits24h === 'number' ? data.rateLimitHits24h : null);
+      setTrend(data.trend ?? EMPTY_TREND);
       if (integrationsRes.ok) {
         const integrationsData = await integrationsRes.json();
         setIntegrations(integrationsData.integrations ?? []);
@@ -166,6 +183,44 @@ export function SystemHealthView() {
           ))
         )}
       </div>
+
+      {/* Trend charts -- history over the selected `days` window, not just
+          the single latest run/failure shown above. */}
+      <div>
+        <h3 className="mb-3 text-sm font-bold text-foreground">Error Rate Trend</h3>
+        {trend.dailyErrorCounts.length < 2 ? (
+          <p className="text-sm text-muted-foreground">Not enough history yet for this range.</p>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <Sparkline series={[{ label: 'Errors', color: '#dc2626', values: trend.dailyErrorCounts.map((d) => d.count) }]} />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {trend.dailyErrorCounts[0].date} – {trend.dailyErrorCounts[trend.dailyErrorCounts.length - 1].date}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {Object.keys(trend.cronDayStatus).length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-bold text-foreground">Cron Uptime</h3>
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+            {Object.entries(trend.cronDayStatus).map(([route, dayStatuses]) => (
+              <div key={route} className="flex items-center gap-3">
+                <span className="w-48 shrink-0 truncate font-mono text-xs text-muted-foreground" title={route}>{route}</span>
+                <div className="flex gap-1">
+                  {dayStatuses.map((status, i) => (
+                    <span
+                      key={i}
+                      title={status}
+                      className={`h-3 w-3 rounded-sm ${DAY_STATUS_COLOR[status]}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <h3 className="text-sm font-bold text-foreground">Recent Failures</h3>

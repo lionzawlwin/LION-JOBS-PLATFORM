@@ -89,6 +89,27 @@ export async function getRateLimitHitCount(hours: number): Promise<number> {
   return count ?? 0;
 }
 
+// Unlike listSystemEvents(), fetches every level (not just 'error') --
+// trend charts need cron *successes* too (logged at level='info' by
+// logCronSuccess()), not only failures. Capped at 2000 rows: at this
+// app's current cron/event volume that's a generous multi-month window,
+// not a real ceiling risk.
+export async function listSystemEventsForTrend(days: number): Promise<SystemEvent[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('system_events')
+    .select('*')
+    .gte('created_at', since)
+    .order('created_at', { ascending: true })
+    .limit(2000);
+
+  if (error) {
+    console.error('[db/systemEvents] listSystemEventsForTrend failed:', error.message);
+    return [];
+  }
+  return (data ?? []).map(mapToSystemEvent);
+}
+
 // First-mover-wins guard (`.is('resolved_at', null)`), matching this
 // repo's established pattern (b2b_leads claiming, portal login tokens) —
 // a second concurrent resolve attempt matches zero rows and silently

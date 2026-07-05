@@ -1,5 +1,6 @@
 import { requireTabAccess } from '@/lib/auth';
-import { listSystemEvents, getCronStatus, getRateLimitHitCount } from '@/lib/db';
+import { listSystemEvents, getCronStatus, getRateLimitHitCount, listSystemEventsForTrend } from '@/lib/db';
+import { computeDailyErrorCounts, computeCronDayStatus } from '@/lib/healthTrends';
 import type { NextRequest } from 'next/server';
 import type { FailureCategory } from '@/types';
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'days must be a positive number' }, { status: 422 });
   }
 
-  const [events, cronStatus, rateLimitHits24h] = await Promise.all([
+  const [events, cronStatus, rateLimitHits24h, trendEvents] = await Promise.all([
     listSystemEvents({
       category: categoryParam as FailureCategory | undefined,
       days,
@@ -43,7 +44,14 @@ export async function GET(req: NextRequest) {
     }),
     getCronStatus(),
     getRateLimitHitCount(24),
+    listSystemEventsForTrend(days),
   ]);
 
-  return Response.json({ events, cronStatus, rateLimitHits24h }, { headers: { 'Cache-Control': 'no-store' } });
+  const now = new Date();
+  const trend = {
+    dailyErrorCounts: computeDailyErrorCounts(trendEvents, days, now),
+    cronDayStatus: computeCronDayStatus(trendEvents, days, now),
+  };
+
+  return Response.json({ events, cronStatus, rateLimitHits24h, trend }, { headers: { 'Cache-Control': 'no-store' } });
 }
