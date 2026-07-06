@@ -92,13 +92,30 @@ const STAGE_KEY: Record<string, TranslationKey> = {
 };
 
 // Employer Applicant Visibility -- name + resume/CV only, no contact info
-// (the repo owner's explicit decision: the agency stays the required
-// intermediary for actually reaching a candidate). Only ever mounted
+// by default (the repo owner's explicit decision: the agency stays the
+// required intermediary for actually reaching a candidate). Direct-
+// Contact-Info Upsell Tier (2026-07-07) is the one paid, opt-in exception
+// to that -- see getApplicantsForJob()'s own comment. Only ever mounted
 // while its job row is expanded, so this is the one place per session
 // that fetches a given job's applicant list.
 function ApplicantList({ jobId }: { jobId: string }) {
   const { t } = useLanguage();
-  const { applicants, loading } = useJobApplicants(jobId);
+  const { applicants, contactUnlockPriceMmk, loading, mutate } = useJobApplicants(jobId);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function handleUnlockRequest(applicationId: string) {
+    setBusyId(applicationId);
+    try {
+      const res = await fetch('/api/company-portal/contact-unlock-requests', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jobId, applicationId }),
+      });
+      if (res.ok) await mutate();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (loading) {
     return <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>;
@@ -111,23 +128,48 @@ function ApplicantList({ jobId }: { jobId: string }) {
   return (
     <ul className="mt-2 flex flex-col gap-1.5">
       {applicants.map((a) => (
-        <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><User size={12} /></span>
-            <span className="truncate font-medium text-foreground">{a.name}</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE_CLASSES[a.stage] ?? ''}`}>
-              {t(STAGE_KEY[a.stage])}
-            </span>
+        <li key={a.id} className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><User size={12} /></span>
+              <span className="truncate font-medium text-foreground">{a.name}</span>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE_CLASSES[a.stage] ?? ''}`}>
+                {t(STAGE_KEY[a.stage])}
+              </span>
+            </div>
+            {a.cvUrl && (
+              <a
+                href={a.cvUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <Download size={11} /> {t('cp_view_resume')}
+              </a>
+            )}
           </div>
-          {a.cvUrl && (
-            <a
-              href={a.cvUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+
+          {/* Direct-Contact-Info Upsell Tier -- one of four states */}
+          {a.contactUnlockStatus === 'paid' ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+              <span><strong>{t('cp_unlocked_phone_label')}:</strong> {a.phone}</span>
+              {a.email && <span><strong>{t('cp_unlocked_email_label')}:</strong> {a.email}</span>}
+            </div>
+          ) : a.contactUnlockStatus === 'pending' ? (
+            <p className="text-[11px] text-muted-foreground">{t('cp_unlock_requested')}</p>
+          ) : a.directContactConsent ? (
+            <button
+              onClick={() => handleUnlockRequest(a.id)}
+              disabled={busyId === a.id}
+              className="flex w-fit items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-60 dark:border-brand-700/30 dark:bg-brand-900/20 dark:text-brand-300"
             >
-              <Download size={11} /> {t('cp_view_resume')}
-            </a>
+              {busyId === a.id
+                ? <Loader2 size={11} className="animate-spin" />
+                : t('cp_unlock_contact_cta').replace('{price}', contactUnlockPriceMmk.toLocaleString())
+              }
+            </button>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">{t('cp_unlock_not_enabled')}</p>
           )}
         </li>
       ))}

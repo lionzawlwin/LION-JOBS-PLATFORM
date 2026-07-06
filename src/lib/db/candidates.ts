@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { google } from 'googleapis';
+import { getDirectContactConsentedApplicationIds } from '@/lib/db/consents';
+import { getContactUnlockStatusesForApplications, getUnlockedContactInfo } from '@/lib/db/contactUnlocks';
 import type { Candidate, ApplicationStatus, EmployerVisibleApplicant } from '@/types';
 
 // ── Drive helper (inline to avoid modifying drive.ts) ─────────────────────
@@ -488,7 +490,13 @@ export async function getCandidateApplicationsByCandidateId(
 // verifying the job belongs to the requesting company before calling
 // this -- this function trusts jobId, matching every other db/*.ts
 // accessor's contract in this app.
-export async function getApplicantsForJob(jobId: string): Promise<EmployerVisibleApplicant[]> {
+//
+// companyId (2026-07-07, Direct-Contact-Info Upsell Tier) is the ONE
+// exception to "phone/email never appear here": getUnlockedContactInfo()
+// re-derives paid status itself rather than trusting a caller-supplied
+// flag, so phone/email only ever populate for a row this same function
+// confirms is paid-and-unlocked for that specific company.
+export async function getApplicantsForJob(jobId: string, companyId: string): Promise<EmployerVisibleApplicant[]> {
   const { data, error } = await supabase
     .from('applications')
     .select('id, stage, applied_at, google_drive_cv_url, candidates ( full_name )')
@@ -500,15 +508,29 @@ export async function getApplicantsForJob(jobId: string): Promise<EmployerVisibl
     return [];
   }
 
+  const applicationIds = (data ?? []).map((row) => row.id as string);
+  const [consentedIds, unlockStatuses, contactInfo] = await Promise.all([
+    getDirectContactConsentedApplicationIds(applicationIds),
+    getContactUnlockStatusesForApplications(applicationIds, companyId),
+    getUnlockedContactInfo(applicationIds, companyId).catch(() => new Map<string, { phone: string; email: string | null }>()),
+  ]);
+
   return (data ?? []).map((row) => {
     const candidate = row.candidates as unknown as { full_name: string } | { full_name: string }[] | null;
     const fullName = Array.isArray(candidate) ? candidate[0]?.full_name : candidate?.full_name;
+    const id = row.id as string;
+    const unlockStatus = unlockStatuses.get(id) ?? 'none';
+    const contact = unlockStatus === 'paid' ? contactInfo.get(id) : undefined;
     return {
-      id:        row.id as string,
+      id,
       name:      fullName ?? 'Unknown',
       stage:     row.stage as ApplicationStatus,
       appliedAt: row.applied_at as string,
       cvUrl:     (row.google_drive_cv_url as string) ?? null,
+      directContactConsent: consentedIds.has(id),
+      contactUnlockStatus:  unlockStatus,
+      phone: contact?.phone ?? null,
+      email: contact?.email ?? null,
     };
   });
 }

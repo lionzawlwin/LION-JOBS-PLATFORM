@@ -50,6 +50,8 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   featured_placement: 'Featured Placement',
   // Same reasoning -- surfaced by JobBoostRequestsInbox in the Billing tab.
   job_boost: 'Job Boost',
+  // Same reasoning -- surfaced by ContactUnlockRequestsInbox in the Billing tab.
+  contact_unlock: 'Contact Unlock',
 };
 
 function fmtDateTime(iso: string) {

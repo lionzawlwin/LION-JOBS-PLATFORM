@@ -50,6 +50,7 @@ const baseSchema = z.object({
   position:        z.string().min(2, 'Position must be at least 2 characters'),
   expectedSalary:  z.string().optional(),
   portfolioUrl:    z.string().optional(),
+  consentDirectContactUnlock: z.boolean().optional(),
 });
 
 const cvSchema = baseSchema.extend({
@@ -558,6 +559,16 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
                 </div>
               )}
             </div>
+
+            {/* Direct-Contact-Info Upsell Tier: opt-in consent, default unchecked */}
+            <label className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/30 p-3.5">
+              <input
+                type="checkbox"
+                {...register('consentDirectContactUnlock' as keyof FormData)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-brand-600 focus:ring-2 focus:ring-brand-600/40"
+              />
+              <span className="text-xs text-muted-foreground">{t('form_direct_contact_consent')}</span>
+            </label>
           </div>
         )}
 
