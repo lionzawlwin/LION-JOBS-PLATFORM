@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { google } from 'googleapis';
-import type { Candidate, ApplicationStatus } from '@/types';
+import type { Candidate, ApplicationStatus, EmployerVisibleApplicant } from '@/types';
 
 // ── Drive helper (inline to avoid modifying drive.ts) ─────────────────────
 function getDriveForDeletion() {
@@ -451,6 +451,39 @@ export async function getCandidateApplicationsByCandidateId(
   const candidate = data as CandidateRow;
   const apps = candidate.applications ?? [];
   return apps.map((app) => mapToCandidate(candidate, app));
+}
+
+// Employer Applicant Visibility (Company Portal). Deliberately its own
+// minimal-column query -- not a filtered view of getCandidates()/
+// mapToCandidate() -- so this employer-facing surface can never leak
+// email/phone/salary/AI-score/notes through a future refactor of the
+// internal Candidate shape. Caller (the API route) is responsible for
+// verifying the job belongs to the requesting company before calling
+// this -- this function trusts jobId, matching every other db/*.ts
+// accessor's contract in this app.
+export async function getApplicantsForJob(jobId: string): Promise<EmployerVisibleApplicant[]> {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('id, stage, applied_at, google_drive_cv_url, candidates ( full_name )')
+    .eq('job_id', jobId)
+    .order('applied_at', { ascending: false });
+
+  if (error) {
+    console.error('[db/candidates] getApplicantsForJob error:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => {
+    const candidate = row.candidates as unknown as { full_name: string } | { full_name: string }[] | null;
+    const fullName = Array.isArray(candidate) ? candidate[0]?.full_name : candidate?.full_name;
+    return {
+      id:        row.id as string,
+      name:      fullName ?? 'Unknown',
+      stage:     row.stage as ApplicationStatus,
+      appliedAt: row.applied_at as string,
+      cvUrl:     (row.google_drive_cv_url as string) ?? null,
+    };
+  });
 }
 
 export async function updateCandidateInterviewDetails(

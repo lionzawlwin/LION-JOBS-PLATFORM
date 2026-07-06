@@ -92,6 +92,22 @@ export interface Candidate {
   aiProcessedAt?: string;
 }
 
+// Employer Applicant Visibility (Company Portal). Deliberately a separate,
+// minimal type from Candidate -- not a subset selected in the API route --
+// so the accessor function that produces it (getApplicantsForJob in
+// db/candidates.ts) can only ever query these columns, never accidentally
+// leak email/phone/salary/AI-score/notes through this employer-facing
+// surface via a future refactor of the full Candidate query. See the repo
+// owner's explicit decision on this boundary (name + resume only, no
+// contact info -- the agency stays the required intermediary for contact).
+export interface EmployerVisibleApplicant {
+  id: string;
+  name: string;
+  stage: ApplicationStatus;
+  appliedAt: string;
+  cvUrl: string | null;
+}
+
 export interface B2bLead {
   id: string;
   companyName: string;
