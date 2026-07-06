@@ -39,6 +39,7 @@ export interface Job {
   applicationsCount?: number;
   deadline?: string;
   screeningQuestions?: ScreeningQuestion[];
+  viewCount?: number;
 }
 
 export interface ScreeningQuestion {

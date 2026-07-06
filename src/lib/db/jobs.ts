@@ -31,6 +31,7 @@ export async function getJobs(): Promise<Job[]> {
     postedAt:     row.posted_at,
     isUrgent:     row.is_urgent ?? false,
     isFeatured:   row.is_featured ?? false,
+    viewCount:    row.view_count ?? 0,
   }));
   } catch (err) {
     console.error('[db/jobs] getJobs error:', err instanceof Error ? err.message : err);
@@ -68,7 +69,13 @@ export async function getJobById(id: string): Promise<Job | null> {
     postedAt:     data.posted_at,
     isUrgent:     data.is_urgent ?? false,
     isFeatured:   data.is_featured ?? false,
+    viewCount:    data.view_count ?? 0,
   };
+}
+
+export async function incrementJobViewCount(id: string): Promise<void> {
+  const { error } = await supabase.rpc('increment_job_view_count', { p_job_id: id });
+  if (error) console.error('[db/jobs] incrementJobViewCount error:', error.message);
 }
 
 export interface GetJobsPaginatedOptions {
@@ -143,6 +150,7 @@ export async function getJobsPaginated(
       postedAt:     row.posted_at,
       isUrgent:     row.is_urgent ?? false,
       isFeatured:   row.is_featured ?? false,
+      viewCount:    row.view_count ?? 0,
     }));
 
     return { jobs, total: count ?? jobs.length };

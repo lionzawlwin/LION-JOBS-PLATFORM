@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check } from 'lucide-react';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -11,6 +11,7 @@ interface JobSummary {
   category: string;
   type: string;
   postedAt: string;
+  viewCount: number;
   applicantCounts: { Applied: number; Shortlisted: number; Interview: number; Hired: number };
 }
 
@@ -36,7 +37,9 @@ interface ContractSummary {
 
 interface InsightsSummary {
   totalJobsPosted: number;
+  totalViews: number;
   totalApplicants: number;
+  viewToApplyRate: number | null;
   hiredCount: number;
   fillRate: number | null;
   avgMatchScore: number | null;
@@ -127,14 +130,21 @@ export function CompanyPortalClientImpl() {
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
         <section>
           <h2 className="mb-3 text-sm font-bold text-foreground">Your Hiring Insights</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">Jobs Posted</p>
               <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalJobsPosted}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Job Views</p>
+              <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalViews}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">Total Applicants</p>
               <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalApplicants}</p>
+              {data.insights.viewToApplyRate !== null && (
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{Math.round(data.insights.viewToApplyRate * 100)}% of viewers applied</p>
+              )}
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">Fill Rate</p>
@@ -187,6 +197,7 @@ export function CompanyPortalClientImpl() {
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={11} /> {job.location} · {job.type}</p>
                     </div>
                     <div className="flex gap-3 text-center text-xs">
+                      <div><p className="flex items-center justify-center gap-1 font-bold text-foreground"><Eye size={11} className="text-muted-foreground" />{job.viewCount}</p><p className="text-muted-foreground">Views</p></div>
                       <div><p className="font-bold text-foreground">{job.applicantCounts.Applied}</p><p className="text-muted-foreground">Applied</p></div>
                       <div><p className="font-bold text-foreground">{job.applicantCounts.Shortlisted}</p><p className="text-muted-foreground">Shortlisted</p></div>
                       <div><p className="font-bold text-foreground">{job.applicantCounts.Interview}</p><p className="text-muted-foreground">Interview</p></div>

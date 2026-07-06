@@ -72,9 +72,17 @@ export async function GET() {
     })
     .filter((d): d is number => d !== null);
 
+  const totalViews = companyJobs.reduce((sum, j) => sum + (j.viewCount ?? 0), 0);
+
   const insights = {
     totalJobsPosted: companyJobs.length,
+    totalViews,
     totalApplicants: companyApplicants.length,
+    // Top-of-funnel conversion: what share of viewers actually applied.
+    // null (not 0) when there's no view data yet, so the UI can distinguish
+    // "0% conversion" from "nothing to compute this from" -- same pattern
+    // as fillRate/avgMatchScore below.
+    viewToApplyRate: totalViews > 0 ? companyApplicants.length / totalViews : null,
     hiredCount: hiredApplicants.length,
     fillRate: companyJobs.length > 0 ? hiredApplicants.length / companyJobs.length : null,
     avgMatchScore: scoredApplicants.length > 0
@@ -101,6 +109,7 @@ export async function GET() {
       category: j.category,
       type: j.type,
       postedAt: j.postedAt,
+      viewCount: j.viewCount ?? 0,
       applicantCounts: applicantCountsByJob.get(j.id) ?? { Applied: 0, Shortlisted: 0, Interview: 0, Hired: 0 },
     })),
     invoices: invoices.map((inv) => ({
