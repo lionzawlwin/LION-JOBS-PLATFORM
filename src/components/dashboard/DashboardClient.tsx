@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart2, Building2, Landmark, Users, Info, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale, Receipt, UserCog, Activity } from 'lucide-react';
+import { BarChart2, Building2, Landmark, Users, PenSquare, Mail, LayoutGrid, Table2, PlusSquare, Briefcase, ClipboardList, Scale, Receipt, UserCog, Activity } from 'lucide-react';
 import { KanbanBoard } from './KanbanBoard';
 import { PostJobForm } from './PostJobForm';
 import { JobsPanel } from './JobsPanel';
@@ -25,6 +25,7 @@ import type { TabDomain } from '@/lib/permissions';
 import { Sidebar } from './Sidebar';
 import { NotificationBell } from './NotificationBell';
 import { CommandPalette } from './CommandPalette';
+import { TabHelpPanel } from './TabHelpPanel';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StaffRole } from '@/types';
@@ -152,26 +153,13 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
         <NotificationBell onNavigate={(tab) => setActiveTab(tab)} />
       </div>
 
-      {/* Context banner */}
-      <div className="mb-6 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-        <Info size={14} className="mt-0.5 shrink-0" />
-        <span>
-          {t('admin_banner_prefix')}
-          {activeTab === 'overview'    && t('admin_banner_overview')}
-          {activeTab === 'candidates'  && t('admin_banner_candidates')}
-          {activeTab === 'post-job'    && t('admin_banner_post_job')}
-          {activeTab === 'manage-jobs' && t('admin_banner_manage_jobs')}
-          {activeTab === 'companies'   && t('admin_banner_companies')}
-          {activeTab === 'enterprise'  && t('admin_banner_enterprise')}
-          {activeTab === 'b2b-leads'   && t('admin_banner_b2b_leads')}
-          {activeTab === 'content'     && t('admin_banner_content')}
-          {activeTab === 'campaigns'   && t('admin_banner_campaigns')}
-          {activeTab === 'legal'       && t('admin_banner_legal')}
-          {activeTab === 'billing'     && t('admin_banner_billing')}
-          {activeTab === 'team'        && t('admin_banner_team')}
-          {activeTab === 'system-health' && t('admin_banner_system_health')}
-        </span>
-      </div>
+      {/* Per-tab help: one-line description (unchanged) + expandable tips
+          and a related-tab shortcut, replacing the old plain-text banner. */}
+      <TabHelpPanel
+        tab={activeTab}
+        visibleTabLabels={Object.fromEntries(TABS.map((tb) => [tb.value, tb.label]))}
+        onNavigate={setActiveTab}
+      />
 
       {activeTab === 'overview' && <AnalyticsOverview />}
 
