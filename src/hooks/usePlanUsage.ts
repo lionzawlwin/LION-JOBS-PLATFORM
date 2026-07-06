@@ -6,8 +6,8 @@ import type { AccountPlan, CompanyPlanUsageRow } from '@/types';
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useAccountPlans() {
-  const { data, isLoading } = useSWR<AccountPlan[]>('/api/account-plans', fetcher, { revalidateOnFocus: false });
-  return { plans: data ?? [], loading: isLoading };
+  const { data, isLoading, mutate } = useSWR<AccountPlan[]>('/api/account-plans', fetcher, { revalidateOnFocus: false });
+  return { plans: data ?? [], loading: isLoading, mutate };
 }
 
 export function usePlanUsageSummary() {

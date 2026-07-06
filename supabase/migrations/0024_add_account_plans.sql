@@ -12,15 +12,13 @@ CREATE TABLE IF NOT EXISTS account_plans (
 );
 ALTER TABLE account_plans ENABLE ROW LEVEL SECURITY;
 
--- price_mmk is a placeholder (0) for all three tiers -- real pricing is a
--- commercial decision for the repo owner, not something to invent here.
--- Update these rows (or via the Account Plans panel once a pricing UI
--- exists) before treating this as live monetization rather than a job-slot
--- gating mechanism.
+-- Launch pricing set by the repo owner (2026-07-06). Editable afterwards
+-- via PATCH /api/account-plans/[id] (Manage Pricing control in the
+-- Account Plans panel) -- never redeploy code to change a price.
 INSERT INTO account_plans (id, name, job_slot_limit, cse_hours_included, price_mmk) VALUES
-  ('plan-bronze', 'Bronze', 5,    2, 0),
-  ('plan-silver', 'Silver', 15,   6, 0),
-  ('plan-gold',   'Gold',   NULL, 20, 0)
+  ('plan-bronze', 'Bronze', 5,    2, 30000),
+  ('plan-silver', 'Silver', 15,   6, 70000),
+  ('plan-gold',   'Gold',   NULL, 20, 150000)
 ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE companies

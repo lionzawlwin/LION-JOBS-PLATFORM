@@ -25,6 +25,18 @@ export async function getAccountPlans(): Promise<AccountPlan[]> {
   return (data ?? []).map(mapToAccountPlan);
 }
 
+// Lets the repo owner change tier pricing from the Account Plans panel --
+// no code change or redeploy needed. Job-slot limits/CSE hours are left
+// out of this write path deliberately for this pass; only price is exposed
+// as editable for now (see roadmap Layer 13 follow-up note).
+export async function updateAccountPlanPrice(id: string, priceMmk: number): Promise<void> {
+  const { error } = await supabase
+    .from('account_plans')
+    .update({ price_mmk: priceMmk })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update plan price: ${error.message}`);
+}
+
 async function countJobSlotsUsed(companyId: string): Promise<number> {
   const { count, error } = await supabase
     .from('jobs')
