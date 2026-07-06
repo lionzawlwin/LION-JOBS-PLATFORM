@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
-import { getInvoiceById, getPaymentsByInvoiceId, recordInvoicePayment, activateFeaturedPlacementIfInvoicePaid } from '@/lib/db';
+import { getInvoiceById, getPaymentsByInvoiceId, recordInvoicePayment, activateFeaturedPlacementIfInvoicePaid, activateJobBoostIfInvoicePaid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -88,6 +88,17 @@ export async function POST(
         category: 'invoicing',
         route:    '/api/invoices/[id]/payments',
         message:  'Payment recorded but featured placement activation failed',
+        error:    activationErr,
+        context:  { invoiceId: id, companyId: invoice.companyId },
+      });
+    }
+    try {
+      await activateJobBoostIfInvoicePaid(invoice);
+    } catch (activationErr) {
+      await logFailure({
+        category: 'invoicing',
+        route:    '/api/invoices/[id]/payments',
+        message:  'Payment recorded but job boost activation failed',
         error:    activationErr,
         context:  { invoiceId: id, companyId: invoice.companyId },
       });

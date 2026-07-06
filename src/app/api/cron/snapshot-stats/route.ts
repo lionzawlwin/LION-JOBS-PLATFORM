@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { recordDailySnapshot, expireFeaturedPlacements } from '@/lib/db';
+import { recordDailySnapshot, expireFeaturedPlacements, expireJobBoosts } from '@/lib/db';
 import { logFailure, logCronSuccess } from '@/lib/observability';
 
 export const dynamic = 'force-dynamic';
@@ -28,10 +28,25 @@ export async function GET(req: Request) {
     });
   }
 
+  let expiredJobBoostCount = 0;
+  try {
+    expiredJobBoostCount = await expireJobBoosts();
+  } catch (err) {
+    await logFailure({
+      category: 'cron',
+      route:    ROUTE,
+      message:  'Failed to expire job boosts',
+      error:    err,
+    });
+  }
+
   try {
     await recordDailySnapshot();
-    await logCronSuccess(ROUTE, `Daily stats snapshot recorded (expired ${expiredCount} featured placement${expiredCount === 1 ? '' : 's'})`);
-    return NextResponse.json({ ok: true, expiredFeaturedPlacements: expiredCount });
+    await logCronSuccess(
+      ROUTE,
+      `Daily stats snapshot recorded (expired ${expiredCount} featured placement${expiredCount === 1 ? '' : 's'}, ${expiredJobBoostCount} job boost${expiredJobBoostCount === 1 ? '' : 's'})`,
+    );
+    return NextResponse.json({ ok: true, expiredFeaturedPlacements: expiredCount, expiredJobBoosts: expiredJobBoostCount });
   } catch (err) {
     await logFailure({
       category: 'cron',

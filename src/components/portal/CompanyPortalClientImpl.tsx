@@ -14,6 +14,8 @@ interface JobSummary {
   type: string;
   postedAt: string;
   viewCount: number;
+  isFeatured: boolean;
+  featuredUntil: string | null;
   applicantCounts: { Applied: number; Shortlisted: number; Interview: number; Hired: number };
 }
 
@@ -54,6 +56,7 @@ interface MeResponse {
     isFeatured: boolean; featuredUntil: string | null;
     featuredPlacementPriceMmk: number; featuredPlacementDurationDays: number;
   };
+  jobBoost: { priceMmk: number; durationDays: number };
   insights: InsightsSummary;
   jobs: JobSummary[];
   invoices: InvoiceSummary[];
@@ -71,6 +74,8 @@ export function CompanyPortalClientImpl() {
   const [slotRequestSent, setSlotRequestSent] = useState(false);
   const [requestingFeatured, setRequestingFeatured] = useState(false);
   const [featuredRequestSent, setFeaturedRequestSent] = useState(false);
+  const [boostingJobId, setBoostingJobId] = useState<string | null>(null);
+  const [boostedJobIds, setBoostedJobIds] = useState<Set<string>>(new Set());
 
   // Fires once per real login (the ?login=success param verify/route.ts
   // adds), not on every subsequent page view of the same session --
@@ -120,6 +125,23 @@ export function CompanyPortalClientImpl() {
       }
     } finally {
       setRequestingFeatured(false);
+    }
+  }
+
+  async function handleRequestJobBoost(jobId: string) {
+    setBoostingJobId(jobId);
+    try {
+      const res = await fetch('/api/company-portal/job-boost-request', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jobId }),
+      });
+      if (res.ok) {
+        setBoostedJobIds((prev) => new Set(prev).add(jobId));
+        trackEvent('job_boost_requested');
+      }
+    } finally {
+      setBoostingJobId(null);
     }
   }
 
@@ -298,7 +320,14 @@ export function CompanyPortalClientImpl() {
                 <div key={job.id} className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{job.title}</p>
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        {job.title}
+                        {job.isFeatured && (
+                          <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                            <Sparkles size={9} /> {t('cp_job_featured_badge')}
+                          </span>
+                        )}
+                      </p>
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={11} /> {job.location} · {job.type}</p>
                     </div>
                     <div className="flex gap-3 text-center text-xs">
@@ -309,6 +338,28 @@ export function CompanyPortalClientImpl() {
                       <div><p className="font-bold text-emerald-600">{job.applicantCounts.Hired}</p><p className="text-muted-foreground">{t('ov_stage_hired')}</p></div>
                     </div>
                   </div>
+                  {!job.isFeatured && (
+                    <div className="mt-2 flex justify-end border-t border-border/50 pt-2">
+                      {boostedJobIds.has(job.id) ? (
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          <Check size={12} /> {t('cp_featured_request_sent')}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleRequestJobBoost(job.id)}
+                          disabled={boostingJobId === job.id}
+                          className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700/30 dark:bg-amber-900/20 dark:text-amber-300"
+                        >
+                          {boostingJobId === job.id
+                            ? <><Loader2 size={11} className="animate-spin" /> {t('cv_sending')}</>
+                            : <><Sparkles size={11} /> {t('cp_boost_job_cta')
+                                .replace('{price}', data.jobBoost.priceMmk.toLocaleString())
+                                .replace('{days}', String(data.jobBoost.durationDays))}</>
+                          }
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

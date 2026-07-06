@@ -107,6 +107,10 @@ export async function GET() {
       featuredPlacementPriceMmk: agencySettings.featuredPlacementPriceMmk,
       featuredPlacementDurationDays: agencySettings.featuredPlacementDurationDays,
     },
+    jobBoost: {
+      priceMmk:     agencySettings.jobBoostPriceMmk,
+      durationDays: agencySettings.jobBoostDurationDays,
+    },
     jobs: companyJobs.map((j) => ({
       id: j.id,
       title: j.title,
@@ -115,6 +119,8 @@ export async function GET() {
       type: j.type,
       postedAt: j.postedAt,
       viewCount: j.viewCount ?? 0,
+      isFeatured: j.isFeatured ?? false,
+      featuredUntil: j.featuredUntil ?? null,
       applicantCounts: applicantCountsByJob.get(j.id) ?? { Applied: 0, Shortlisted: 0, Interview: 0, Hired: 0 },
     })),
     invoices: invoices.map((inv) => ({

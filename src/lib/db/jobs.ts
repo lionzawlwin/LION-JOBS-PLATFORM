@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import type { Job, JobCategory, JobType } from '@/types';
+import type { Job, JobCategory, JobType, Invoice } from '@/types';
 import { getCompanyByName } from './companies';
+import { parseJobBoost } from '@/lib/jobRules';
 
 export async function getJobs(): Promise<Job[]> {
   try {
@@ -31,6 +32,7 @@ export async function getJobs(): Promise<Job[]> {
     postedAt:     row.posted_at,
     isUrgent:     row.is_urgent ?? false,
     isFeatured:   row.is_featured ?? false,
+    featuredUntil: row.featured_until ?? null,
     viewCount:    row.view_count ?? 0,
   }));
   } catch (err) {
@@ -69,6 +71,7 @@ export async function getJobById(id: string): Promise<Job | null> {
     postedAt:     data.posted_at,
     isUrgent:     data.is_urgent ?? false,
     isFeatured:   data.is_featured ?? false,
+    featuredUntil: data.featured_until ?? null,
     viewCount:    data.view_count ?? 0,
   };
 }
@@ -150,6 +153,7 @@ export async function getJobsPaginated(
       postedAt:     row.posted_at,
       isUrgent:     row.is_urgent ?? false,
       isFeatured:   row.is_featured ?? false,
+      featuredUntil: row.featured_until ?? null,
       viewCount:    row.view_count ?? 0,
     }));
 
@@ -215,4 +219,46 @@ export async function appendJob(data: {
 export async function deleteJob(id: string): Promise<void> {
   const { error } = await supabase.from('jobs').delete().eq('id', id);
   if (error) throw new Error(`Failed to delete job: ${error.message}`);
+}
+
+// Self-Serve Featured Job Listing Boost: called once an invoice tagged as
+// a job-boost charge (see jobRules.ts) is marked Paid. Sets featured_until
+// so expireJobBoosts() below knows when to turn it back off -- distinct
+// from is_featured being set at job creation via PostJobForm's checkbox,
+// which has no expiry.
+export async function activateJobBoost(jobId: string, durationDays: number): Promise<void> {
+  const featuredUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('jobs')
+    .update({ is_featured: true, featured_until: featuredUntil })
+    .eq('id', jobId);
+  if (error) throw new Error(`Failed to activate job boost: ${error.message}`);
+}
+
+// Single choke point both "mark invoice Paid" routes call, same pattern
+// as activateFeaturedPlacementIfInvoicePaid in companies.ts. Duration
+// comes from the invoice's own tagged position, not the current
+// agency_settings value, for the same reason: a later price/duration
+// edit must never retroactively change what an already-issued invoice
+// activates for.
+export async function activateJobBoostIfInvoicePaid(invoice: Invoice): Promise<void> {
+  const boost = parseJobBoost(invoice.position);
+  if (!boost) return;
+  await activateJobBoost(boost.jobId, boost.durationDays);
+}
+
+// Daily sweep, piggybacked on the snapshot-stats cron alongside
+// expireFeaturedPlacements() -- same "piggyback, don't add a cron slot"
+// reasoning. Only ever matches a row with a real featured_until, so a job
+// marked featured at creation time (featured_until IS NULL) is never
+// touched.
+export async function expireJobBoosts(): Promise<number> {
+  const { data, error } = await supabase
+    .from('jobs')
+    .update({ is_featured: false, featured_until: null })
+    .eq('is_featured', true)
+    .lt('featured_until', new Date().toISOString())
+    .select('id');
+  if (error) throw new Error(`Failed to expire job boosts: ${error.message}`);
+  return data?.length ?? 0;
 }

@@ -35,6 +35,11 @@ export interface Job {
   postedAt: string;
   isUrgent?: boolean;
   isFeatured?: boolean;
+  // Self-Serve Featured Job Listing Boost. Null for both "never boosted"
+  // and "featured at creation via PostJobForm's checkbox" -- only set by
+  // activateJobBoost() once a boost invoice is paid, same featuredUntil
+  // convention as companies.featuredUntil (0030).
+  featuredUntil?: string | null;
   logoUrl?: string;
   applicationsCount?: number;
   deadline?: string;
@@ -278,6 +283,11 @@ export interface AgencySettings {
   // Billing tab's FeaturedPlacementSettingsPanel, PATCH /api/featured-placement-settings.
   featuredPlacementPriceMmk: number;
   featuredPlacementDurationDays: number;
+  // Self-Serve Featured Job Listing Boost pricing -- separate product from
+  // the company-level placement above, owner-editable via the Billing
+  // tab's JobBoostSettingsPanel, PATCH /api/job-boost-settings.
+  jobBoostPriceMmk: number;
+  jobBoostDurationDays: number;
 }
 
 export interface ConsentRecord {
@@ -318,7 +328,7 @@ export interface Payment {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade' | 'featured_placement';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade' | 'featured_placement' | 'job_boost';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {

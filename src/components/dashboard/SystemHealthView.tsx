@@ -48,6 +48,8 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   // Same reasoning as plan_upgrade above -- surfaced by
   // FeaturedPlacementRequestsInbox in the Billing tab instead.
   featured_placement: 'Featured Placement',
+  // Same reasoning -- surfaced by JobBoostRequestsInbox in the Billing tab.
+  job_boost: 'Job Boost',
 };
 
 function fmtDateTime(iso: string) {

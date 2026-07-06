@@ -6,6 +6,8 @@ import { AccountPlansPanel } from './AccountPlansPanel';
 import { PlanUpgradeRequestsInbox } from './PlanUpgradeRequestsInbox';
 import { FeaturedPlacementRequestsInbox } from './FeaturedPlacementRequestsInbox';
 import { FeaturedPlacementSettingsPanel } from './FeaturedPlacementSettingsPanel';
+import { JobBoostRequestsInbox } from './JobBoostRequestsInbox';
+import { JobBoostSettingsPanel } from './JobBoostSettingsPanel';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import type { Invoice, InvoiceStatus, PaymentMethod } from '@/types';
 
@@ -202,6 +204,8 @@ export function BillingView() {
       <PlanUpgradeRequestsInbox />
       <FeaturedPlacementSettingsPanel />
       <FeaturedPlacementRequestsInbox />
+      <JobBoostSettingsPanel />
+      <JobBoostRequestsInbox />
       <AccountPlansPanel />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
