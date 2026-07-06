@@ -11,12 +11,13 @@ const RATE_LIMIT_WINDOW_S = 600;
 const RATE_LIMIT_MAX      = 5;
 
 const feedbackSchema = z.object({
-  candidateId:    z.string().trim().min(1).max(100),
-  company:        z.string().trim().min(1).max(200),
-  jobTitle:       z.string().trim().max(200).optional(),
-  rating:         z.number().int().min(1).max(5),
-  experience:     z.string().trim().min(10).max(5000),
-  wouldRecommend: z.boolean().optional(),
+  candidateId:      z.string().trim().min(1).max(100),
+  company:          z.string().trim().min(1).max(200),
+  jobTitle:         z.string().trim().max(200).optional(),
+  rating:           z.number().int().min(1).max(5),
+  experience:       z.string().trim().min(10).max(5000),
+  wouldRecommend:   z.boolean().optional(),
+  consentToFeature: z.boolean().optional(),
 });
 
 // GET /api/feedback?company=COMPANY_NAME — aggregate rating for company page
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
       rating: body.rating,
       experience: body.experience,
       wouldRecommend: body.wouldRecommend === true,
+      consentToFeature: body.consentToFeature === true,
     });
 
     return NextResponse.json({ ok: true });

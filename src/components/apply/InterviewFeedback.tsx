@@ -15,6 +15,7 @@ export function InterviewFeedback({ candidateId, company = '', jobTitle = '' }: 
   const [hoverRating, setHoverRating]   = useState(0);
   const [experience, setExperience]     = useState('');
   const [wouldRecommend, setWouldRecommend] = useState<boolean | null>(null);
+  const [consentToFeature, setConsentToFeature] = useState(false);
   const [submitting, setSubmitting]     = useState(false);
   const [success, setSuccess]           = useState(false);
   const [error, setError]               = useState('');
@@ -31,7 +32,7 @@ export function InterviewFeedback({ candidateId, company = '', jobTitle = '' }: 
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId, company, jobTitle, rating, experience, wouldRecommend }),
+        body: JSON.stringify({ candidateId, company, jobTitle, rating, experience, wouldRecommend, consentToFeature }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -138,6 +139,21 @@ export function InterviewFeedback({ candidateId, company = '', jobTitle = '' }: 
           ))}
         </div>
       </div>
+
+      {/* Optional consent to feature this feedback publicly. Off by
+          default -- only checked-in submissions ever enter the staff
+          moderation queue for the homepage testimonials section. */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
+        <input
+          type="checkbox"
+          checked={consentToFeature}
+          onChange={(e) => setConsentToFeature(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand-600"
+        />
+        <span className="text-xs text-muted-foreground">
+          I&apos;m open to Lion Jobs featuring an anonymous quote from my feedback (no name attached) on the public website. A staff member will review it before anything is published.
+        </span>
+      </label>
 
       {error && (
         <p className="rounded-lg border border-danger/30 bg-danger/5 px-4 py-2.5 text-sm text-danger">

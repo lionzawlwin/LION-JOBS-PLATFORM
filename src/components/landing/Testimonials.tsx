@@ -1,36 +1,7 @@
 'use client';
 
 import { Star } from 'lucide-react';
-
-const TESTIMONIALS = [
-  {
-    name:     'Mg Kyaw Zin Thu',
-    role:     'Software Engineer',
-    company:  'Atom Myanmar Limited (Distributor)',
-    avatar:   'KZ',
-    bg:       'from-brand-600 to-brand-700',
-    quote:    'Lion Jobs matched me with my dream role in just 2 weeks. The team understood exactly what I was looking for and prepared me well for interviews.',
-    stars:    5,
-  },
-  {
-    name:     'Ma Aye Thandar',
-    role:     'Digital Marketing Manager',
-    company:  'KBZ Bank',
-    avatar:   'AT',
-    bg:       'from-gold-500 to-gold-600',
-    quote:    'I was transitioning careers and Lion Jobs made it seamless. I received 3 interview invitations in my very first week on the platform.',
-    stars:    5,
-  },
-  {
-    name:     'Ko Win Myat Aung',
-    role:     'Operations Lead',
-    company:  'Blue Sky International Co., Ltd',
-    avatar:   'WM',
-    bg:       'from-green-600 to-green-700',
-    quote:    'Thanks to Lion Jobs, I am now earning 40% more than my previous role. The salary negotiation support alone was worth everything.',
-    stars:    5,
-  },
-] as const;
+import { useTestimonials } from '@/hooks/useTestimonials';
 
 function Stars({ count }: { count: number }) {
   return (
@@ -43,6 +14,13 @@ function Stars({ count }: { count: number }) {
 }
 
 export function Testimonials() {
+  const { testimonials, isLoading } = useTestimonials();
+
+  // Layer 18: no fabricated fallback content. If no candidate has yet
+  // consented + been approved to have their feedback featured, the
+  // section simply doesn't render rather than showing placeholder people.
+  if (!isLoading && testimonials.length === 0) return null;
+
   return (
     <section className="border-t border-border bg-bg-subtle py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -56,45 +34,42 @@ export function Testimonials() {
             Candidates Who Found Their Dream Job
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Real people. Real placements. Zero agency fee for candidates.
+            Real feedback from real candidates. Zero agency fee, always.
           </p>
         </div>
 
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
+          {testimonials.map((t) => (
             <div
-              key={t.name}
+              key={t.id}
               className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
             >
               {/* Stars */}
-              <Stars count={t.stars} />
+              <Stars count={t.rating} />
 
               {/* Quote */}
               <blockquote className="flex-1 text-sm leading-relaxed text-muted-foreground">
                 &ldquo;{t.quote}&rdquo;
               </blockquote>
 
-              {/* Author */}
+              {/* Attribution -- deliberately no name: this comes from the
+                  anonymous interview feedback form, so a real name was
+                  never collected in the first place. */}
               <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${t.bg} text-xs font-bold text-white`}>
-                  {t.avatar}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-700 text-xs font-bold text-white">
+                  ★
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-sm font-semibold text-foreground">Verified candidate</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.role} · {t.company}
+                    Interviewed at {t.company}
                   </p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Bottom CTA */}
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Join 200+ candidates who found their dream role through Lion Jobs Agency — completely free.
-        </p>
       </div>
     </section>
   );

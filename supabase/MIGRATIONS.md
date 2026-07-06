@@ -1,5 +1,22 @@
 # Migrations — current state and process
 
+## Pending — written but NOT applied to the live database
+
+- **`0025_add_feedback_consent.sql`** (2026-07-06, Layer 18) — adds
+  `feedback.consent_to_feature`/`featured_status`/`reviewed_at`/`reviewed_by`
+  so real candidate feedback can be opted-in and staff-approved as a public
+  homepage testimonial, replacing the hardcoded fake names/quotes that were
+  live in `Testimonials.tsx`. Written and app-side code (`src/lib/db/feedback.ts`,
+  `/api/testimonials`, `TestimonialModeration.tsx`) already targets the new
+  columns, guarded so the app doesn't crash if they don't exist yet --
+  but per the "0023/0024 required explicit go-ahead" precedent below, this
+  one was written autonomously while the repo owner was away and
+  deliberately **not pushed live**. Apply with `supabase db push`, then
+  verify via `list_tables` (both boolean/text columns present, index created)
+  before relying on `/api/testimonials` in production -- until then, the
+  homepage testimonials section will just render its empty state.
+
+
 ## The gap this closes
 
 Every migration in this folder was written as a one-off SQL file with a

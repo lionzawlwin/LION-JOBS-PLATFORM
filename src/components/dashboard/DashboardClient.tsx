@@ -10,6 +10,7 @@ import { CompaniesView } from './CompaniesView';
 import { EnterpriseView } from './EnterpriseView';
 import { B2bLeadsTable } from './B2bLeadsTable';
 import { ContentStudio } from './ContentStudio';
+import { TestimonialModeration } from './TestimonialModeration';
 import { EmailCampaigns } from './EmailCampaigns';
 import { LegalView } from './LegalView';
 import { BillingView } from './BillingView';
@@ -215,7 +216,12 @@ export function DashboardClient({ isAdmin = false, role, visibleTabs = [] }: Pro
       {activeTab === 'companies'   && <CompaniesView />}
       {activeTab === 'enterprise'  && <EnterpriseView />}
       {activeTab === 'b2b-leads'   && <B2bLeadsTable />}
-      {activeTab === 'content'     && <ContentStudio />}
+      {activeTab === 'content'     && (
+        <div className="space-y-6">
+          <ContentStudio />
+          <TestimonialModeration />
+        </div>
+      )}
       {activeTab === 'campaigns'   && <EmailCampaigns />}
       {activeTab === 'legal'       && <LegalView />}
       {activeTab === 'billing'     && <BillingView />}

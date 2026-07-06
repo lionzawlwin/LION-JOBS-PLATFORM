@@ -1,15 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePublicStats } from '@/hooks/usePublicStats';
 
 interface Stat { label: string; value: number; suffix: string }
 
-function buildStats(liveJobCount?: number): Stat[] {
+// Layer 18 follow-on: these three used to be hardcoded (200/50/87) --
+// the same fabricated-social-proof problem as the old Testimonials.tsx.
+// Only "Average Match Score" stays a fixed figure -- it's a product claim
+// about the AI matching feature (algorithmicMatch.ts), not a headcount
+// that has a real, checkable number sitting in the database.
+function buildStats(liveJobCount: number, partnerCompanies: number, placements: number): Stat[] {
   return [
-    { label: 'Open Positions',        value: Math.max(liveJobCount ?? 0, 500), suffix: '+' },
-    { label: 'Successful Placements', value: 200, suffix: '+' },
-    { label: 'Partner Companies',     value: 50,  suffix: '+' },
-    { label: 'Average Match Score',   value: 87,  suffix: '%' },
+    { label: 'Open Positions',        value: liveJobCount,     suffix: '+' },
+    { label: 'Successful Placements', value: placements,       suffix: '+' },
+    { label: 'Partner Companies',     value: partnerCompanies, suffix: '+' },
+    { label: 'Average Match Score',   value: 87,               suffix: '%' },
   ];
 }
 
@@ -46,7 +52,8 @@ function StatItem({ stat, triggered }: { stat: Stat; triggered: boolean }) {
 export function StatsBar({ liveJobCount }: { liveJobCount?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [triggered, setTriggered] = useState(false);
-  const STATS = buildStats(liveJobCount);
+  const { partnerCompanies, placements } = usePublicStats();
+  const STATS = buildStats(liveJobCount ?? 0, partnerCompanies, placements);
 
   useEffect(() => {
     const el = ref.current;
