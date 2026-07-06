@@ -39,6 +39,7 @@ export interface Job {
   applicationsCount?: number;
   deadline?: string;
   screeningQuestions?: ScreeningQuestion[];
+  viewCount?: number;
 }
 
 export interface ScreeningQuestion {
@@ -146,6 +147,9 @@ export interface Company {
   // means unmetered/no gating -- exactly today's behavior for every
   // pre-existing row until a plan is deliberately assigned.
   planId: string | null;
+  // Featured Employer Placement (technical capability only, same pattern as
+  // jobs.isFeatured -- staff-toggled, no pricing logic in code).
+  isFeatured: boolean;
 }
 
 // Layer 13 (Plan Tiers & Usage Metering).
@@ -290,6 +294,19 @@ export interface Invoice {
   commissionFeeMmk: number;
   status: InvoiceStatus;
   issuedAt: string;
+  createdAt: string;
+}
+
+export type PaymentMethod = 'bank_transfer' | 'kbzpay' | 'wavepay' | 'cash' | 'other';
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  amountMmk: number;
+  method: PaymentMethod;
+  paidAt: string;
+  recordedBy: string;
+  notes: string | null;
   createdAt: string;
 }
 

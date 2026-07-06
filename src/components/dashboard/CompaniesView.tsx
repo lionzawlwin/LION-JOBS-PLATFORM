@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send, Trash2, AlertTriangle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
@@ -95,6 +95,15 @@ export function CompaniesView() {
       body: JSON.stringify({ isInternal }),
     });
     setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, isInternal } : c));
+  }
+
+  async function toggleFeatured(id: string, isFeatured: boolean) {
+    await fetch(`/api/companies/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isFeatured }),
+    });
+    setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, isFeatured } : c));
   }
 
   async function setParent(id: string, parentAccountId: string | null) {
@@ -317,6 +326,19 @@ export function CompaniesView() {
                       ))}
                     </div>
                   </div>
+                  {/* Featured toggle */}
+                  <button
+                    onClick={() => toggleFeatured(co.id, !co.isFeatured)}
+                    title={co.isFeatured ? 'Remove from Featured Employers' : 'Mark as Featured Employer'}
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full border transition-colors',
+                      co.isFeatured
+                        ? 'border-gold-300 bg-gold-50 text-gold-600 dark:border-gold-600/40 dark:bg-gold-600/10 dark:text-gold-400'
+                        : 'border-border text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    <Star size={12} fill={co.isFeatured ? 'currentColor' : 'none'} />
+                  </button>
                   {/* Internal toggle */}
                   <button
                     onClick={() => toggleInternal(co.id, !co.isInternal)}

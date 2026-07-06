@@ -10,6 +10,7 @@ import { JobPostingSchema } from '@/components/seo/JobPostingSchema';
 import { ShareButton } from '@/components/jobs/ShareButton';
 import { SimilarJobs } from '@/components/jobs/SimilarJobs';
 import { TrackJobView } from '@/components/jobs/TrackJobView';
+import { JobViewPing } from '@/components/jobs/JobViewPing';
 import { JoinCommunity } from '@/components/JoinCommunity';
 import { VerifiedEmployerBadge } from '@/components/jobs/VerifiedEmployerBadge';
 import { getJobs, getCompanyHealthBand } from '@/lib/db';
@@ -254,6 +255,8 @@ export default async function JobDetailPage(
 
           {/* Track this view in recently-viewed (client-side localStorage) */}
           <TrackJobView jobId={job.id} />
+          {/* Server-side aggregate view counter, surfaced to the employer portal */}
+          <JobViewPing jobId={job.id} />
         </div>
 
         <JoinCommunity />

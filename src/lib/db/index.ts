@@ -19,3 +19,4 @@ export * from './auditLog';
 export * from './jobRequests';
 export * from './clientHealth';
 export * from './accountPlans';
+export * from './payments';

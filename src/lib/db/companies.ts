@@ -21,6 +21,7 @@ function mapToCompany(row: Record<string, unknown>): Company {
     isInternal:    (row.is_internal as boolean) ?? false,
     parentAccountId: (row.parent_account_id as string) ?? null,
     planId:          (row.plan_id as string) ?? null,
+    isFeatured:      (row.is_featured as boolean) ?? false,
   };
 }
 
@@ -123,6 +124,45 @@ export async function updateCompanyPlan(id: string, planId: string | null): Prom
     .update({ plan_id: planId })
     .eq('id', id);
   if (error) throw new Error(`Failed to update company plan: ${error.message}`);
+}
+
+export async function updateCompanyFeatured(id: string, isFeatured: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ is_featured: isFeatured })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update featured flag: ${error.message}`);
+}
+
+// Public-safe subset for the job board's "Featured Employers" spotlight —
+// only fields already shown on the public /companies/[slug] profile page,
+// no CRM/contact detail. Excludes internal (group-brand) companies, same
+// boundary CompaniesView.tsx's default filter and Enterprise use.
+export interface FeaturedCompany {
+  id: string;
+  name: string;
+  industry: string;
+  city: string;
+}
+
+export async function getFeaturedCompanies(): Promise<FeaturedCompany[]> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, name, industry, city')
+    .eq('is_featured', true)
+    .eq('is_internal', false)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('[db/companies] getFeaturedCompanies error:', error.message);
+    return [];
+  }
+  return (data ?? []).map((row) => ({
+    id:       row.id as string,
+    name:     row.name as string,
+    industry: (row.industry as string) ?? '',
+    city:     (row.city as string) ?? '',
+  }));
 }
 
 export async function deleteCompany(id: string): Promise<void> {
