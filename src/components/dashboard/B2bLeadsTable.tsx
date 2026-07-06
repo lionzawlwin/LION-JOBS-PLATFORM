@@ -11,7 +11,7 @@ import { useSelection } from '@/hooks/useSelection';
 import { summarizeBulkResults } from '@/lib/bulkActions';
 import { BulkActionBar } from './BulkActionBar';
 import type { TranslationKey } from '@/lib/i18n';
-import type { B2bLead } from '@/types';
+import type { B2bLead, CseRep } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -173,6 +173,45 @@ function DeleteLeadButton({ lead }: { lead: B2bLead }) {
     >
       <Trash2 size={13} />
     </button>
+  );
+}
+
+// Previously there was no way to claim an unclaimed lead at all through the
+// UI -- the only path that ever set claimed_by_cse_rep_id was an invisible
+// side effect of a cse-role user changing status, which never fires for
+// owner/admin. Reuses the already-fetched cseReps list: a cse picking their
+// own name claims it, an owner/admin picking someone else dispatches it.
+function ClaimLeadControl({ lead, cseReps }: { lead: B2bLead; cseReps: CseRep[] }) {
+  const [assigning, setAssigning] = useState(false);
+  const { t } = useLanguage();
+
+  async function handleAssign(cseRepId: string) {
+    if (!cseRepId) return;
+    setAssigning(true);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/claim`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ cseRepId }),
+      });
+      if (res.ok) mutate('/api/leads');
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  return (
+    <select
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => handleAssign(e.target.value)}
+      value=""
+      disabled={assigning || cseReps.length === 0}
+      title={t('bl_claim_lead_title')}
+      className="rounded-lg border border-dashed border-violet-300 bg-violet-50/50 px-2 py-0.5 text-[10px] font-semibold text-violet-600 hover:bg-violet-50 disabled:opacity-50 transition-colors dark:border-violet-700/40 dark:bg-violet-900/10 dark:text-violet-400"
+    >
+      <option value="" disabled>{assigning ? '…' : t('bl_claim_lead')}</option>
+      {cseReps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+    </select>
   );
 }
 
@@ -376,7 +415,7 @@ export function B2bLeadsTable() {
                           {lead.headcount && ` · ${lead.headcount} ${lead.headcount !== '1' ? t('bl_hire_plural') : t('bl_hire_singular')}`}
                           {lead.workSetup && ` · ${lead.workSetup}`}
                         </p>
-                        {lead.claimedByCseRepId && (
+                        {lead.claimedByCseRepId ? (
                           <p className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
                             <UserCheck size={10} />
                             {t('bl_claimed_by')}: {cseNameById.get(lead.claimedByCseRepId) ?? lead.claimedByCseRepId}
@@ -384,6 +423,10 @@ export function B2bLeadsTable() {
                               <ReleaseLeadButton lead={lead} />
                             </span>
                           </p>
+                        ) : (
+                          <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                            <ClaimLeadControl lead={lead} cseReps={cseReps} />
+                          </div>
                         )}
                         {/* Mobile: status + time */}
                         <div className="lg:hidden flex items-center gap-2 mt-1 flex-wrap">

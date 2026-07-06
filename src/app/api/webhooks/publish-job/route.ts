@@ -30,16 +30,18 @@ const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app'
 const WEBHOOK_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
 
 // ── GitHub Actions trigger ────────────────────────────────────────
-async function triggerGitHubActions(payload: object): Promise<void> {
-  const token = process.env.GITHUB_ACTIONS_TOKEN;
-  const repo  = process.env.GITHUB_REPO;
-
-  if (!token || !repo) {
-    console.warn('[publish-job] GITHUB_ACTIONS_TOKEN or GITHUB_REPO not set — GH Actions skipped');
-    return;
-  }
-
-  const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+// Root-cause note (2026-07-06): this call previously had no retry, so any
+// single transient failure -- a cold-start-adjacent slow response from
+// api.github.com exceeding the timeout, a momentary DNS/network blip --
+// permanently dropped that job's auto-post with no recovery, logged only
+// as a bare "GitHub Actions trigger error" with no captured error detail
+// (Sentry isn't configured in this environment, so system_events was the
+// only diagnostic trail and it recorded nothing useful). One retry after
+// a short delay covers the transient case without masking a genuine,
+// persistent misconfiguration (auth/repo errors still fail after the
+// retry and get logged with the real error detail).
+async function dispatchOnce(payload: object, token: string, repo: string): Promise<Response> {
+  return fetch(`https://api.github.com/repos/${repo}/dispatches`, {
     method: 'POST',
     headers: {
       Accept:         'application/vnd.github.v3+json',
@@ -53,13 +55,35 @@ async function triggerGitHubActions(payload: object): Promise<void> {
     }),
     signal: AbortSignal.timeout(8_000),
   });
+}
+
+async function triggerGitHubActions(payload: object): Promise<void> {
+  const token = process.env.GITHUB_ACTIONS_TOKEN;
+  const repo  = process.env.GITHUB_REPO;
+
+  if (!token || !repo) {
+    console.warn('[publish-job] GITHUB_ACTIONS_TOKEN or GITHUB_REPO not set — GH Actions skipped');
+    return;
+  }
+
+  let res: Response;
+  try {
+    res = await dispatchOnce(payload, token, repo);
+  } catch {
+    // First attempt threw (timeout/network) -- wait briefly and retry once
+    // before giving up. A second consecutive network failure is genuinely
+    // exceptional, not routine transient noise.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    res = await dispatchOnce(payload, token, repo);
+  }
 
   if (!res.ok) {
+    const body = await res.text().catch(() => '');
     await logFailure({
       category: 'webhook',
       route:    '/api/webhooks/publish-job',
       message:  `GitHub Actions dispatch failed: ${res.status}`,
-      context:  { status: res.status },
+      context:  { status: res.status, body: body.slice(0, 500) },
     });
   }
 }
@@ -182,12 +206,20 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Trigger GitHub Actions (non-blocking) ────────────────────────
+  // Now retried once internally (see triggerGitHubActions) -- reaching
+  // this .catch() means both attempts failed. Captures the real error
+  // name/message in context so a future occurrence is actually
+  // diagnosable from System Health (Sentry isn't configured here).
   triggerGitHubActions(payload).catch((err) =>
     logFailure({
       category: 'webhook',
       route:    '/api/webhooks/publish-job',
       message:  'GitHub Actions trigger error',
       error:    err,
+      context: {
+        errorName:    err instanceof Error ? err.name : 'unknown',
+        errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+      },
     }),
   );
 

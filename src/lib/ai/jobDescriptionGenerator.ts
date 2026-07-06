@@ -6,6 +6,17 @@
  * title alone. Returns null when ANTHROPIC_API_KEY is unset — same "unset
  * = no-op" contract as every other optional integration in this repo — the
  * caller (the API route) turns that into a 503, not an error.
+ *
+ * Root-cause note (2026-07-06): the original version asked the model to
+ * hand-format its own JSON in free text and extracted it with a
+ * first-brace-to-last-brace regex + a bare JSON.parse. A job description
+ * is prose -- it can contain quotes, apostrophes, or punctuation the model
+ * doesn't always escape correctly inside a hand-written JSON string, and
+ * any malformed output threw an uncaught SyntaxError all the way up to the
+ * API route (logged as "Job description generation failed"). Switched to
+ * Claude's tool-use (function-calling) mode instead: the model is forced
+ * to call submit_job_draft with schema-validated arguments, so there is no
+ * free-text JSON to parse or get wrong.
  */
 
 export interface JobDraftInput {
@@ -33,6 +44,8 @@ function isJobDraftResult(value: unknown): value is JobDraftResult {
   );
 }
 
+const SUBMIT_TOOL_NAME = 'submit_job_draft';
+
 export async function generateJobDraft(input: JobDraftInput): Promise<JobDraftResult | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
@@ -52,25 +65,30 @@ ${input.keyPoints ? `Extra notes from the poster: ${input.keyPoints}` : ''}
 
 Write a professional, appealing job description (3-5 short paragraphs, no markdown headers), plus a requirements list and a benefits list. Keep it realistic for the Myanmar job market — don't invent a salary or company history you don't have.
 
-Return ONLY a JSON object with exactly:
-- "description": string (the job description prose)
-- "requirements": string[] (5-8 concise bullet points, no leading dashes)
-- "benefits": string[] (3-6 concise bullet points, no leading dashes)
-
-Example: {"description":"...","requirements":["...","..."],"benefits":["...","..."]}`;
+Call the ${SUBMIT_TOOL_NAME} tool with the finished draft.`;
 
   const message = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
+    tools: [{
+      name: SUBMIT_TOOL_NAME,
+      description: 'Submit the drafted job listing content.',
+      input_schema: {
+        type: 'object',
+        properties: {
+          description:  { type: 'string', description: 'The job description prose (3-5 short paragraphs)' },
+          requirements: { type: 'array', items: { type: 'string' }, description: '5-8 concise bullet points, no leading dashes' },
+          benefits:     { type: 'array', items: { type: 'string' }, description: '3-6 concise bullet points, no leading dashes' },
+        },
+        required: ['description', 'requirements', 'benefits'],
+      },
+    }],
+    tool_choice: { type: 'tool', name: SUBMIT_TOOL_NAME },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const textBlock = message.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') return null;
+  const toolUse = message.content.find((b) => b.type === 'tool_use');
+  if (!toolUse || toolUse.type !== 'tool_use') return null;
 
-  const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
-
-  const parsed: unknown = JSON.parse(jsonMatch[0]);
-  return isJobDraftResult(parsed) ? parsed : null;
+  return isJobDraftResult(toolUse.input) ? toolUse.input : null;
 }
