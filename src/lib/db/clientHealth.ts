@@ -77,3 +77,26 @@ export const getClientHealthSummary = unstable_cache(
   ['client-health'],
   { revalidate: 30, tags: ['client-health'] },
 );
+
+// Layer 14 (Verified Employer Badge). Single-company variant safe to call
+// from public pages (companies/[slug], jobs/[slug]) -- returns only a band,
+// never the raw interaction/contract rows the aggregate above exposes to
+// staff. Deliberately NOT cached via unstable_cache/tags like the aggregate:
+// those public pages are themselves already ISR-cached (revalidate = 3600),
+// so a second caching layer here would just add complexity for no benefit.
+export async function getCompanyHealthBand(companyId: string): Promise<HealthBand | null> {
+  const [companyRes, interactionRes, contractRes] = await Promise.all([
+    supabase.from('companies').select('status, last_contacted').eq('id', companyId).maybeSingle(),
+    supabase.from('interactions').select('occurred_at').eq('company_id', companyId).order('occurred_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('contracts').select('id').eq('company_id', companyId).eq('status', 'Active').limit(1).maybeSingle(),
+  ]);
+
+  if (companyRes.error || !companyRes.data) return null;
+
+  const lastContactedAt = (interactionRes.data?.occurred_at as string | undefined) ?? companyRes.data.last_contacted ?? null;
+  return computeHealthBand({
+    status: companyRes.data.status as CompanyStatus,
+    lastContactedAt,
+    hasActiveContract: !!contractRes.data,
+  });
+}

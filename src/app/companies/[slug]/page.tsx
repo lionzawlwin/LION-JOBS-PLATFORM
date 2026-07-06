@@ -5,7 +5,8 @@ import { ArrowLeft, MapPin, Briefcase, Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { JobCard } from '@/components/jobs/JobCard';
-import { getJobs, getCompanyFeedback } from '@/lib/db';
+import { VerifiedEmployerBadge } from '@/components/jobs/VerifiedEmployerBadge';
+import { getJobs, getCompanyFeedback, getCompanyByName, getCompanyHealthBand } from '@/lib/db';
 import { buildJobSlug } from '@/lib/utils';
 
 export const revalidate = 3600;
@@ -47,6 +48,8 @@ export default async function CompanyProfilePage(
   if (!companyName) notFound();
 
   const rating = await getCompanyFeedback(companyName);
+  const crmCompany = await getCompanyByName(companyName);
+  const healthBand = crmCompany ? await getCompanyHealthBand(crmCompany.id) : null;
   const companyJobs = jobs.filter((j) => j.company === companyName);
   const categories  = [...new Set(companyJobs.map((j) => j.category))];
   const locations   = [...new Set(companyJobs.map((j) => j.location))];
@@ -67,7 +70,10 @@ export default async function CompanyProfilePage(
                 {companyName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{companyName}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">{companyName}</h1>
+                  <VerifiedEmployerBadge band={healthBand} />
+                </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5"><Briefcase size={13} /> {companyJobs.length} open position{companyJobs.length !== 1 ? 's' : ''}</span>
                   {locations.slice(0, 2).map((loc) => (

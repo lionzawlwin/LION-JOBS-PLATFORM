@@ -34,8 +34,18 @@ interface ContractSummary {
   endDate: string | null;
 }
 
+interface InsightsSummary {
+  totalJobsPosted: number;
+  totalApplicants: number;
+  hiredCount: number;
+  fillRate: number | null;
+  avgMatchScore: number | null;
+  avgDaysToFirstApplicantHired: number | null;
+}
+
 interface MeResponse {
   company: { id: string; name: string; industry: string; city: string; tier: string };
+  insights: InsightsSummary;
   jobs: JobSummary[];
   invoices: InvoiceSummary[];
   contracts: ContractSummary[];
@@ -103,6 +113,32 @@ export function CompanyPortalClientImpl() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
+        <section>
+          <h2 className="mb-3 text-sm font-bold text-foreground">Your Hiring Insights</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Jobs Posted</p>
+              <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalJobsPosted}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Total Applicants</p>
+              <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalApplicants}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Fill Rate</p>
+              <p className="mt-1 text-xl font-bold text-foreground">
+                {data.insights.fillRate !== null ? `${Math.round(data.insights.fillRate * 100)}%` : '—'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">Avg. Days to First Hire Applying</p>
+              <p className="mt-1 text-xl font-bold text-foreground">
+                {data.insights.avgDaysToFirstApplicantHired !== null ? `${data.insights.avgDaysToFirstApplicantHired}d` : '—'}
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
             <Briefcase size={16} /> Your Open Positions ({data.jobs.length})
