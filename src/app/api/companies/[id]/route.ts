@@ -1,6 +1,6 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
-import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, deleteCompany } from '@/lib/db';
+import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, updateCompanyPlan, deleteCompany } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus, CompanyTier } from '@/types';
@@ -20,12 +20,13 @@ export async function PATCH(
     commissionRatePct?: number | null;
     isInternal?:        boolean;
     parentAccountId?:   string | null;
+    planId?:            string | null;
   };
   if (
     !body.status && !body.tier && body.commissionRatePct === undefined &&
-    body.isInternal === undefined && body.parentAccountId === undefined
+    body.isInternal === undefined && body.parentAccountId === undefined && body.planId === undefined
   ) {
-    return Response.json({ error: 'status, tier, commissionRatePct, isInternal, or parentAccountId is required.' }, { status: 422 });
+    return Response.json({ error: 'status, tier, commissionRatePct, isInternal, parentAccountId, or planId is required.' }, { status: 422 });
   }
   if (
     body.commissionRatePct !== undefined && body.commissionRatePct !== null &&
@@ -43,6 +44,7 @@ export async function PATCH(
     if (body.commissionRatePct !== undefined) await updateCompanyCommissionRate(id, body.commissionRatePct);
     if (body.isInternal !== undefined) { await updateCompanyIsInternal(id, body.isInternal); revalidateTag('client-health', { expire: 0 }); }
     if (body.parentAccountId !== undefined) await updateCompanyParent(id, body.parentAccountId);
+    if (body.planId !== undefined) { await updateCompanyPlan(id, body.planId); revalidateTag('plan-usage-summary', { expire: 0 }); }
     await logAudit({ action: 'update', domain: 'companies', entityType: 'company', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {

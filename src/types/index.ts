@@ -138,6 +138,35 @@ export interface Company {
   // Layer 12 (Multi-Brand Account Grouping). Null = standalone account,
   // exactly today's behavior for every pre-existing row.
   parentAccountId: string | null;
+  // Layer 13 (Plan Tiers & Usage Metering). Null = no plan assigned, which
+  // means unmetered/no gating -- exactly today's behavior for every
+  // pre-existing row until a plan is deliberately assigned.
+  planId: string | null;
+}
+
+// Layer 13 (Plan Tiers & Usage Metering).
+export interface AccountPlan {
+  id:               string;
+  name:             string;
+  jobSlotLimit:     number | null; // null = unlimited
+  cseHoursIncluded: number | null;
+  priceMmk:         number | null;
+}
+
+export interface PlanUsage {
+  plan:        AccountPlan | null;
+  jobSlotsUsed: number;
+  atCapacity:  boolean;
+}
+
+export interface CompanyPlanUsageRow {
+  companyId:    string;
+  companyName:  string;
+  planId:       string | null;
+  planName:     string | null;
+  jobSlotLimit: number | null;
+  jobSlotsUsed: number;
+  atCapacity:   boolean;
 }
 
 export interface ApplicationPayload {

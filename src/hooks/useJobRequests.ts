@@ -15,13 +15,20 @@ export function useJobRequests() {
   );
   const { t } = useLanguage();
 
-  async function approve(id: string) {
+  async function approve(id: string, overridePlanCapacity = false) {
     const res = await fetch(`/api/job-requests/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'approve' }),
+      body: JSON.stringify({ action: 'approve', overridePlanCapacity }),
     });
     if (!res.ok) {
+      const body = await res.json().catch(() => null) as { code?: string; error?: string } | null;
+      if (body?.code === 'plan_capacity_exceeded' && !overridePlanCapacity) {
+        if (window.confirm(`${body.error} Approve anyway?`)) {
+          return approve(id, true);
+        }
+        return false;
+      }
       toast.error(t('jr_toast_approve_failed'));
       return false;
     }

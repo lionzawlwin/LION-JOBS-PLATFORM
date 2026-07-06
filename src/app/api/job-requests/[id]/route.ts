@@ -1,16 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
-import { approveJobRequest, rejectJobRequest, getJobRequestById, getCompanyById } from '@/lib/db';
+import { approveJobRequest, rejectJobRequest, getJobRequestById, getCompanyById, hasPlanCapacity } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
 import { logAudit } from '@/lib/audit';
 import { sendJobRequestDecisionEmail } from '@/lib/portalEmail';
 import { buildJobSlug } from '@/lib/utils';
 
 const schema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('approve') }),
+  z.object({ action: z.literal('approve'), overridePlanCapacity: z.boolean().optional() }),
   z.object({ action: z.literal('reject'), rejectionNote: z.string().trim().min(1).max(2000) }),
 ]);
 
@@ -48,9 +49,17 @@ export async function PATCH(
 
   try {
     if (parsed.data.action === 'approve') {
+      if (!parsed.data.overridePlanCapacity && company && !(await hasPlanCapacity(company.id, company.planId))) {
+        return NextResponse.json(
+          { error: 'This account is at its plan\'s job-slot limit. Upgrade the plan or resubmit with an explicit override.', code: 'plan_capacity_exceeded' },
+          { status: 409 },
+        );
+      }
+
       const jobId = await approveJobRequest(id, reviewedBy);
       await logAudit({ action: 'update', domain: 'manage-jobs', entityType: 'job_request', entityId: id });
       await logAudit({ action: 'create', domain: 'manage-jobs', entityType: 'job', entityId: jobId });
+      revalidateTag('plan-usage-summary', { expire: 0 });
 
       if (company?.email) {
         try {

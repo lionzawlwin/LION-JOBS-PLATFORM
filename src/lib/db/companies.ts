@@ -20,6 +20,7 @@ function mapToCompany(row: Record<string, unknown>): Company {
     createdAt:     row.created_at as string,
     isInternal:    (row.is_internal as boolean) ?? false,
     parentAccountId: (row.parent_account_id as string) ?? null,
+    planId:          (row.plan_id as string) ?? null,
   };
 }
 
@@ -112,6 +113,16 @@ export async function updateCompanyParent(id: string, parentAccountId: string | 
     .update({ parent_account_id: parentAccountId })
     .eq('id', id);
   if (error) throw new Error(`Failed to update company parent account: ${error.message}`);
+}
+
+// Layer 13 (Plan Tiers & Usage Metering). planId: null unassigns the plan,
+// returning the account to unmetered (today's default) behavior.
+export async function updateCompanyPlan(id: string, planId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ plan_id: planId })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update company plan: ${error.message}`);
 }
 
 export async function deleteCompany(id: string): Promise<void> {
