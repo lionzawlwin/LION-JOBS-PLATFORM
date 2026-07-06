@@ -11,29 +11,35 @@ export function isInvoiceableCompany(company: Company): boolean {
   return !company.isInternal;
 }
 
-// Self-Serve Featured Placement Upsell. Flat price/duration, not a
-// per-company-negotiated rate -- deliberately simple like Layer 13's
-// account plan prices, and just as owner-editable in principle (there's
-// just no admin UI for it yet since there's only one price point, unlike
-// the 3-tier account plans). Treat this initial price as a placeholder
-// the repo owner should confirm/adjust; it was not given by the owner the
-// way the Bronze/Silver/Gold prices were in an earlier session.
-export const FEATURED_PLACEMENT_PRICE_MMK = 50_000;
-export const FEATURED_PLACEMENT_DURATION_DAYS = 30;
+// Self-Serve Featured Placement Upsell. Price and duration are owner-
+// editable data now (agency_settings.featured_placement_price_mmk/
+// _duration_days, via the Billing tab's FeaturedPlacementSettingsPanel) --
+// this file only carries the invoice-tagging convention, not the values
+// themselves, so it has no stale copy of a number that can drift from the
+// DB. Deliberately has zero Supabase/server-only imports (see
+// isInvoiceableCompany's comment) -- callers fetch the live settings via
+// getAgencySettings() and pass the duration in here.
 
 // The marker this flow tags its invoices with (Invoice.position), the
 // same "encode the type in a descriptive text field" trick
 // createPlanUpgradeInvoice() uses -- avoids a schema change to invoices
-// for a second non-candidate-placement charge type. Whatever reads an
-// invoice back to decide "is this a featured-placement charge" (the
-// paid-invoice webhook-equivalent in the payments route) must use
-// isFeaturedPlacementInvoicePosition(), not a fresh string comparison.
+// for a second non-candidate-placement charge type. The duration is
+// embedded in the tag itself (not looked up again later) so a price/
+// duration change in Settings never retroactively changes what an
+// already-issued invoice activates for -- parseFeaturedPlacementDurationDays()
+// reads back exactly what was invoiced.
 const FEATURED_PLACEMENT_POSITION_PREFIX = 'Featured Placement — ';
+const FEATURED_PLACEMENT_POSITION_PATTERN = /^Featured Placement — (\d+) days$/;
 
-export function featuredPlacementInvoicePosition(): string {
-  return `${FEATURED_PLACEMENT_POSITION_PREFIX}${FEATURED_PLACEMENT_DURATION_DAYS} days`;
+export function featuredPlacementInvoicePosition(durationDays: number): string {
+  return `${FEATURED_PLACEMENT_POSITION_PREFIX}${durationDays} days`;
 }
 
-export function isFeaturedPlacementInvoicePosition(position: string): boolean {
-  return position.startsWith(FEATURED_PLACEMENT_POSITION_PREFIX);
+// Returns the invoiced duration in days if `position` is a featured-
+// placement charge, or null otherwise -- doubles as the "is this a
+// featured-placement invoice" check (the payments route's paid-invoice
+// activation trigger uses this instead of a fresh string comparison).
+export function parseFeaturedPlacementDurationDays(position: string): number | null {
+  const match = FEATURED_PLACEMENT_POSITION_PATTERN.exec(position);
+  return match ? Number(match[1]) : null;
 }

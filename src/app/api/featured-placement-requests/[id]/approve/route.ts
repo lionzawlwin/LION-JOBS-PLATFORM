@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
-import { createFeaturedPlacementInvoice, resolveSystemEvent } from '@/lib/db';
-import { FEATURED_PLACEMENT_PRICE_MMK, featuredPlacementInvoicePosition } from '@/lib/companyRules';
+import { createFeaturedPlacementInvoice, resolveSystemEvent, getAgencySettings } from '@/lib/db';
+import { featuredPlacementInvoicePosition } from '@/lib/companyRules';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -40,11 +40,12 @@ export async function POST(
   if (!resolvedBy) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    const settings = await getAgencySettings();
     const invoice = await createFeaturedPlacementInvoice({
       companyId,
       companyName,
-      priceMmk: FEATURED_PLACEMENT_PRICE_MMK,
-      position: featuredPlacementInvoicePosition(),
+      priceMmk: settings.featuredPlacementPriceMmk,
+      position: featuredPlacementInvoicePosition(settings.featuredPlacementDurationDays),
     });
 
     await resolveSystemEvent(id, resolvedBy);

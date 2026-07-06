@@ -274,6 +274,10 @@ export interface AgencySettings {
   antiBypassPenaltyMmk: number;
   antiBypassRestrictionMonths: number;
   termsVersion: string;
+  // Self-Serve Featured Placement Upsell pricing -- owner-editable via the
+  // Billing tab's FeaturedPlacementSettingsPanel, PATCH /api/featured-placement-settings.
+  featuredPlacementPriceMmk: number;
+  featuredPlacementDurationDays: number;
 }
 
 export interface ConsentRecord {

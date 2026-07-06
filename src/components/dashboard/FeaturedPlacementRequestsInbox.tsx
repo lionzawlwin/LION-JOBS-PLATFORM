@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Sparkles, Check, X, AlertTriangle } from 'lucide-react';
 import { timeAgo } from '@/lib/utils';
-import { FEATURED_PLACEMENT_PRICE_MMK, FEATURED_PLACEMENT_DURATION_DAYS } from '@/lib/companyRules';
+import { useFeaturedPlacementSettings } from '@/hooks/useFeaturedPlacementSettings';
 import type { SystemEvent } from '@/types';
 
 function fmt(v: unknown): string {
@@ -20,6 +20,7 @@ export function FeaturedPlacementRequestsInbox() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(false);
   const [busyId, setBusyId]     = useState<string | null>(null);
+  const { settings } = useFeaturedPlacementSettings();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,9 +91,9 @@ export function FeaturedPlacementRequestsInbox() {
         <Sparkles size={15} className="text-amber-500" /> Featured Placement Requests ({requests.length})
       </h3>
       <p className="mb-4 text-xs text-muted-foreground">
-        Employers who requested a Featured Placement from their portal ({FEATURED_PLACEMENT_PRICE_MMK.toLocaleString()} MMK
-        for {FEATURED_PLACEMENT_DURATION_DAYS} days). Approve to generate an invoice — the placement activates
-        automatically once it&apos;s marked Paid, and expires on its own after {FEATURED_PLACEMENT_DURATION_DAYS} days.
+        Employers who requested a Featured Placement from their portal ({settings.priceMmk.toLocaleString()} MMK
+        for {settings.durationDays} days — edit below). Approve to generate an invoice — the placement activates
+        automatically once it&apos;s marked Paid, and expires on its own after the invoiced duration.
       </p>
 
       <ul className="flex flex-col gap-3">

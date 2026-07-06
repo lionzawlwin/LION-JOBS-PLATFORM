@@ -137,8 +137,9 @@ export async function createPlanUpgradeInvoice(data: {
 // Self-Serve Featured Placement Upsell: same non-candidate-placement
 // pattern as createPlanUpgradeInvoice() above. `position` is tagged via
 // featuredPlacementInvoicePosition() (companyRules.ts) -- the payments
-// route reads it back with isFeaturedPlacementInvoicePosition() to decide
-// whether a paid invoice should flip the company's featured flag on.
+// route reads it back with parseFeaturedPlacementDurationDays() to decide
+// whether a paid invoice should flip the company's featured flag on, and
+// for how long.
 export async function createFeaturedPlacementInvoice(data: {
   companyId:   string;
   companyName: string;

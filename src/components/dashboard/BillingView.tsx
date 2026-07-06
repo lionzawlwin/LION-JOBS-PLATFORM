@@ -5,6 +5,7 @@ import { Loader2, Printer, FileText, AlertTriangle, Banknote, X } from 'lucide-r
 import { AccountPlansPanel } from './AccountPlansPanel';
 import { PlanUpgradeRequestsInbox } from './PlanUpgradeRequestsInbox';
 import { FeaturedPlacementRequestsInbox } from './FeaturedPlacementRequestsInbox';
+import { FeaturedPlacementSettingsPanel } from './FeaturedPlacementSettingsPanel';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import type { Invoice, InvoiceStatus, PaymentMethod } from '@/types';
 
@@ -199,6 +200,7 @@ export function BillingView() {
   return (
     <div className="space-y-6">
       <PlanUpgradeRequestsInbox />
+      <FeaturedPlacementSettingsPanel />
       <FeaturedPlacementRequestsInbox />
       <AccountPlansPanel />
 

@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isInvoiceableCompany,
   featuredPlacementInvoicePosition,
-  isFeaturedPlacementInvoicePosition,
-  FEATURED_PLACEMENT_DURATION_DAYS,
+  parseFeaturedPlacementDurationDays,
 } from './companyRules';
 import type { Company } from '@/types';
 
@@ -28,14 +27,13 @@ describe('isInvoiceableCompany', () => {
 });
 
 describe('featured placement invoice tagging', () => {
-  it('round-trips: a generated position is recognized as a featured placement invoice', () => {
-    const position = featuredPlacementInvoicePosition();
-    expect(position).toContain(String(FEATURED_PLACEMENT_DURATION_DAYS));
-    expect(isFeaturedPlacementInvoicePosition(position)).toBe(true);
+  it('round-trips: a generated position yields back the exact duration it was tagged with', () => {
+    expect(parseFeaturedPlacementDurationDays(featuredPlacementInvoicePosition(30))).toBe(30);
+    expect(parseFeaturedPlacementDurationDays(featuredPlacementInvoicePosition(90))).toBe(90);
   });
 
   it('does not misclassify a candidate-placement or plan-upgrade invoice position', () => {
-    expect(isFeaturedPlacementInvoicePosition('Senior Software Engineer')).toBe(false);
-    expect(isFeaturedPlacementInvoicePosition('Plan Upgrade — Gold')).toBe(false);
+    expect(parseFeaturedPlacementDurationDays('Senior Software Engineer')).toBeNull();
+    expect(parseFeaturedPlacementDurationDays('Plan Upgrade — Gold')).toBeNull();
   });
 });

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
-import { getCompanyById, appendSystemEvent } from '@/lib/db';
-import { FEATURED_PLACEMENT_PRICE_MMK, FEATURED_PLACEMENT_DURATION_DAYS } from '@/lib/companyRules';
+import { getCompanyById, appendSystemEvent, getAgencySettings } from '@/lib/db';
 
 // Self-Serve Featured Placement Upsell (employer side). Same shape as
 // POST /api/company-portal/plan-upgrade-request -- a company can't already
@@ -24,6 +23,8 @@ export async function POST() {
     return NextResponse.json({ error: 'Your company is already featured.' }, { status: 409 });
   }
 
+  const settings = await getAgencySettings();
+
   await appendSystemEvent({
     category: 'featured_placement',
     level:    'info',
@@ -32,8 +33,8 @@ export async function POST() {
     context: {
       companyId,
       companyName: company.name,
-      priceMmk:    FEATURED_PLACEMENT_PRICE_MMK,
-      durationDays: FEATURED_PLACEMENT_DURATION_DAYS,
+      priceMmk:    settings.featuredPlacementPriceMmk,
+      durationDays: settings.featuredPlacementDurationDays,
     },
   });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
-import { getCompanyById, getJobs, getCandidates, getInvoices, getContracts } from '@/lib/db';
+import { getCompanyById, getJobs, getCandidates, getInvoices, getContracts, getAgencySettings } from '@/lib/db';
 import type { ApplicationStatus } from '@/types';
 
 const STAGES: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hired'];
@@ -23,11 +23,12 @@ export async function GET() {
   // has no company_id (e.g. its company name never matched a CRM row at
   // creation time) so this never regresses visibility for an edge case
   // the backfill didn't cover.
-  const [allJobs, allCandidates, invoices, contracts] = await Promise.all([
+  const [allJobs, allCandidates, invoices, contracts, agencySettings] = await Promise.all([
     getJobs(),
     getCandidates(),
     getInvoices({ companyId }),
     getContracts(companyId),
+    getAgencySettings(),
   ]);
 
   const companyJobs = allJobs.filter((j) => j.companyId === companyId || (!j.companyId && j.company === company.name));
@@ -103,6 +104,8 @@ export async function GET() {
       tier: company.tier,
       isFeatured: company.isFeatured,
       featuredUntil: company.featuredUntil,
+      featuredPlacementPriceMmk: agencySettings.featuredPlacementPriceMmk,
+      featuredPlacementDurationDays: agencySettings.featuredPlacementDurationDays,
     },
     jobs: companyJobs.map((j) => ({
       id: j.id,
