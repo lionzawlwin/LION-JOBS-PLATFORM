@@ -110,6 +110,29 @@ export async function listSystemEventsForTrend(days: number): Promise<SystemEven
   return (data ?? []).map(mapToSystemEvent);
 }
 
+// Batch 2, Feature 1: surfaces plan-upgrade requests as an actionable list
+// instead of the buried, invisible-by-construction feed they were before --
+// listSystemEvents() hard-filters level='error', but appendSystemEvent()
+// logs these at level='info' (a request isn't a failure), so they could
+// never have shown up there regardless of category. `resolved_at` is
+// reused as "handled" -- once staff approves or dismisses a request via
+// resolveSystemEvent(), it drops out of this list the same way a fixed
+// error drops out of the System Health feed.
+export async function listPlanUpgradeRequests(): Promise<SystemEvent[]> {
+  const { data, error } = await supabase
+    .from('system_events')
+    .select('*')
+    .eq('category', 'plan_upgrade')
+    .is('resolved_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[db/systemEvents] listPlanUpgradeRequests failed:', error.message);
+    return [];
+  }
+  return (data ?? []).map(mapToSystemEvent);
+}
+
 // First-mover-wins guard (`.is('resolved_at', null)`), matching this
 // repo's established pattern (b2b_leads claiming, portal login tokens) —
 // a second concurrent resolve attempt matches zero rows and silently

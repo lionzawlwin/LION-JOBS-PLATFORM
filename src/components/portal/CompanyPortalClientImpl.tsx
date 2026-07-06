@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { trackEvent } from '@/lib/analytics';
 import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye } from 'lucide-react';
 
 interface JobSummary {
@@ -56,11 +57,22 @@ interface MeResponse {
 
 export function CompanyPortalClientImpl() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [requestingSlots, setRequestingSlots] = useState(false);
   const [slotRequestSent, setSlotRequestSent] = useState(false);
+
+  // Fires once per real login (the ?login=success param verify/route.ts
+  // adds), not on every subsequent page view of the same session --
+  // stripped from the URL immediately after so a refresh doesn't re-fire it.
+  useEffect(() => {
+    if (searchParams.get('login') === 'success') {
+      trackEvent('portal_login', { portal: 'company' });
+      router.replace('/company/portal');
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     let cancelled = false;

@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
 import { getCompanyById, getPlanUsage, appendSystemEvent } from '@/lib/db';
 
-// Layer 15 (Self-serve job slot request) -- SCAFFOLD ONLY. No payment rail
-// is wired up: Stripe vs. manual-invoice upgrade is a business decision for
-// the repo owner, not something to default into. This just gets the
-// request in front of staff (via System Health's system_events feed,
-// category 'other') instead of the company having to email a CSE directly.
-// Revisit once a payment-rail decision is made -- see roadmap Layer 15.
+// Layer 15 (Self-serve job slot request). No payment rail is wired up:
+// Stripe vs. manual-invoice upgrade is a business decision for the repo
+// owner, not something to default into. Batch 2 (Plan Upgrade Request
+// Inbox) made this request actually actionable -- category 'plan_upgrade'
+// (not 'other') so listPlanUpgradeRequests() can query it directly, surfaced
+// in the Billing tab instead of nowhere (it used to log at level='info'
+// under 'other', which System Health's error feed can't show regardless of
+// category -- it hard-filters level='error').
 export async function POST() {
   const companyId = await getPortalSubjectId('company');
   if (!companyId) {
@@ -22,7 +24,7 @@ export async function POST() {
   const usage = await getPlanUsage(companyId, company.planId);
 
   await appendSystemEvent({
-    category: 'other',
+    category: 'plan_upgrade',
     level:    'info',
     route:    '/api/company-portal/plan-upgrade-request',
     message:  `${company.name} requested more job slots / a plan upgrade`,
