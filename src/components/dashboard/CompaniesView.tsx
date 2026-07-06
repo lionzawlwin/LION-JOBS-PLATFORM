@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Building2, Mail, Phone, MapPin, Loader2, ChevronDown, X, Send, Trash2, AlertTriangle, Star } from 'lucide-react';
+import { Plus, Building2, Mail, Phone, MapPin, Loader2, X, Send, Trash2, AlertTriangle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { StatusStepper } from '@/components/ui/StatusStepper';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Company, CompanyStatus } from '@/types';
 
-const STATUS_STYLES: Record<CompanyStatus, string> = {
-  Lead:          'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
-  Active:        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/30',
-  'In-Contract': 'bg-gold-50 text-gold-700 border-gold-200 dark:bg-gold-600/20 dark:text-gold-400 dark:border-gold-600/40',
-  Inactive:      'bg-muted text-muted-foreground border-border',
-};
+// Lead -> Active -> In-Contract is the real progression a company moves
+// through; Inactive is an exception exit, not a 4th linear step (a company
+// can go Inactive from any of the other three), so it's an off-path badge
+// instead of forcing it into the sequence.
+const COMPANY_STEPS: { value: CompanyStatus; label: TranslationKey }[] = [
+  { value: 'Lead',         label: 'status_lead' },
+  { value: 'Active',       label: 'status_active' },
+  { value: 'In-Contract',  label: 'status_in_contract' },
+];
 
 const STATUSES: CompanyStatus[] = ['Lead', 'Active', 'In-Contract', 'Inactive'];
 const STATUS_KEYS: Record<CompanyStatus, TranslationKey> = {
@@ -315,18 +319,32 @@ export function CompaniesView() {
                     )}
                   </div>
                 </div>
-                <div className="relative group shrink-0">
-                  <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
-                    {t(STATUS_KEYS[co.status])} <ChevronDown size={10} />
+              </div>
+
+              {/* Status stepper -- its own full-width row so the connected
+                  dots have room, rather than crammed into the header corner. */}
+              <div className="mt-3 flex items-center gap-2">
+                <StatusStepper
+                  steps={COMPANY_STEPS.map((s) => ({ value: s.value, label: t(s.label) }))}
+                  current={co.status === 'Inactive' ? 'Lead' : co.status}
+                  offPath={co.status === 'Inactive' ? { label: t(STATUS_KEYS.Inactive), tone: 'neutral' } : null}
+                  onSelect={(s) => changeStatus(co.id, s)}
+                />
+                {co.status === 'Inactive' ? (
+                  <button
+                    onClick={() => changeStatus(co.id, 'Lead')}
+                    className="shrink-0 text-[10px] font-semibold text-muted-foreground underline decoration-dotted hover:text-foreground"
+                  >
+                    Reactivate
                   </button>
-                  <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
-                    {STATUSES.map((s) => (
-                      <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
-                        {t(STATUS_KEYS[s])}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => changeStatus(co.id, 'Inactive')}
+                    className="shrink-0 text-[10px] font-semibold text-muted-foreground underline decoration-dotted hover:text-red-600"
+                  >
+                    Mark inactive
+                  </button>
+                )}
               </div>
 
               {/* Action bar: its own row with breathing room, separated from

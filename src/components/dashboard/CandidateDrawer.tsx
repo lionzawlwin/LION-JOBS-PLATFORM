@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Candidate, ApplicationStatus, Job, Company, Invoice } from '@/types';
 import { isInvoiceableCompany } from '@/lib/companyRules';
+import { StatusStepper } from '@/components/ui/StatusStepper';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -368,23 +369,11 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
             {onStageChange && (
               <div>
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('cdw_move_to_stage')}</p>
-                <div className="flex gap-2">
-                  {STAGES.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => onStageChange(candidate.id, s)}
-                      disabled={s === candidate.stage}
-                      className={cn(
-                        'flex-1 rounded-xl border py-2 text-xs font-semibold transition-all',
-                        s === candidate.stage
-                          ? 'border-foreground/20 bg-foreground/5 text-muted-foreground cursor-default'
-                          : 'border-border text-muted-foreground hover:border-brand-600 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-600/10 dark:hover:text-brand-300',
-                      )}
-                    >
-                      {t(STAGE_KEYS[s])}
-                    </button>
-                  ))}
-                </div>
+                <StatusStepper
+                  steps={STAGES.map((s) => ({ value: s, label: t(STAGE_KEYS[s]) }))}
+                  current={candidate.stage}
+                  onSelect={(s) => onStageChange(candidate.id, s)}
+                />
               </div>
             )}
 

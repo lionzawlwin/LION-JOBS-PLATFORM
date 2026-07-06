@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { CVUpload } from './CVUpload';
 import { SuccessModal } from './SuccessModal';
 import { ScreeningQuestions } from './ScreeningQuestions';
+import { FormStepProgress } from '@/components/ui/FormStepProgress';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -276,6 +277,13 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
             </button>
           </div>
         )}
+
+        {/* Progress bar */}
+        <FormStepProgress
+          currentIndex={tabIndex}
+          totalSteps={TABS.length}
+          stepLabel={t(TABS[tabIndex].labelKey)}
+        />
 
         {/* Tab navigation */}
         <div className="flex items-center gap-1 rounded-2xl border border-border bg-muted/30 p-1.5">
