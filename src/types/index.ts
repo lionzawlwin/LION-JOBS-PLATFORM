@@ -147,6 +147,9 @@ export interface Company {
   // means unmetered/no gating -- exactly today's behavior for every
   // pre-existing row until a plan is deliberately assigned.
   planId: string | null;
+  // Featured Employer Placement (technical capability only, same pattern as
+  // jobs.isFeatured -- staff-toggled, no pricing logic in code).
+  isFeatured: boolean;
 }
 
 // Layer 13 (Plan Tiers & Usage Metering).

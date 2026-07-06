@@ -1,6 +1,6 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
-import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, updateCompanyPlan, deleteCompany, getContracts } from '@/lib/db';
+import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, updateCompanyPlan, updateCompanyFeatured, deleteCompany, getContracts } from '@/lib/db';
 import { deriveActiveCseByCompany } from '@/lib/cseScope';
 import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
@@ -41,12 +41,14 @@ export async function PATCH(
     isInternal?:        boolean;
     parentAccountId?:   string | null;
     planId?:            string | null;
+    isFeatured?:        boolean;
   };
   if (
     !body.status && !body.tier && body.commissionRatePct === undefined &&
-    body.isInternal === undefined && body.parentAccountId === undefined && body.planId === undefined
+    body.isInternal === undefined && body.parentAccountId === undefined && body.planId === undefined &&
+    body.isFeatured === undefined
   ) {
-    return Response.json({ error: 'status, tier, commissionRatePct, isInternal, parentAccountId, or planId is required.' }, { status: 422 });
+    return Response.json({ error: 'status, tier, commissionRatePct, isInternal, parentAccountId, planId, or isFeatured is required.' }, { status: 422 });
   }
   if (
     body.commissionRatePct !== undefined && body.commissionRatePct !== null &&
@@ -65,6 +67,7 @@ export async function PATCH(
     if (body.isInternal !== undefined) { await updateCompanyIsInternal(id, body.isInternal); revalidateTag('client-health', { expire: 0 }); }
     if (body.parentAccountId !== undefined) await updateCompanyParent(id, body.parentAccountId);
     if (body.planId !== undefined) { await updateCompanyPlan(id, body.planId); revalidateTag('plan-usage-summary', { expire: 0 }); }
+    if (body.isFeatured !== undefined) await updateCompanyFeatured(id, body.isFeatured);
     await logAudit({ action: 'update', domain: 'companies', entityType: 'company', entityId: id });
     return Response.json({ ok: true });
   } catch (err) {

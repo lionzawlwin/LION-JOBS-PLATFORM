@@ -16,7 +16,7 @@ function company(overrides: Partial<Company> = {}): Company {
   return {
     id: 'co-1', name: 'Acme Ltd', contactPerson: '', email: '', phone: '',
     industry: '', city: '', status: 'Active', tier: 'smb', notes: '',
-    lastContacted: '', createdAt: '', isInternal: false, parentAccountId: null, planId: null, ...overrides,
+    lastContacted: '', createdAt: '', isInternal: false, parentAccountId: null, planId: null, isFeatured: false, ...overrides,
   };
 }
 
