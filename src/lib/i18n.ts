@@ -281,6 +281,63 @@ export const translations = {
     admin_banner_team:        ' Staff roster and intended roles. Does not yet control dashboard login.',
     admin_banner_system_health:     ' Recent failures and cron job status. Visible to Owner and Admin only.',
 
+    // Admin dashboard — per-tab tips + related-tab shortcuts
+    help_show_tips:    'Show tips',
+    help_hide_tips:    'Hide tips',
+    help_related_label: 'Related',
+
+    help_tip_overview_1: 'This is a snapshot, not a live task list — drill into Candidates or Manage Jobs for anything you need to act on.',
+    help_tip_overview_2: "Charts update from a nightly snapshot, so today's numbers may lag by a few hours.",
+    help_related_overview_candidates: 'See the applications behind these numbers',
+
+    help_tip_candidates_1: 'Toggle between Table and Kanban board using the buttons above the list.',
+    help_tip_candidates_2: 'Once a candidate reaches Hired, open their profile to set the final salary and generate an invoice.',
+    help_related_candidates_billing: 'Generate the invoice for a Hired candidate',
+
+    help_tip_post_job_1: 'Fill in Job Title, Company, and Location, then click Generate with AI to draft the description — edit before posting.',
+    help_tip_post_job_2: 'Mark Urgent or Featured to highlight time-sensitive roles on the public job board.',
+    help_related_post_job_manage_jobs: 'Confirm your new listing went live',
+
+    help_tip_manage_jobs_1: 'Job Requests at the top came from companies via their own portal — approve one to publish it as a real listing.',
+    help_tip_manage_jobs_2: 'Applicant and view counts here are the same numbers the employer sees in their own portal.',
+    help_related_manage_jobs_post_job: 'Post a new listing directly',
+
+    help_tip_companies_1: 'Click the star to feature a company on the public job board homepage.',
+    help_tip_companies_2: 'Use "Group under" to link sister brands under one parent account.',
+    help_related_companies_enterprise: "Manage this account's contracts and CSE assignment",
+
+    help_tip_enterprise_1: 'Only companies tiered Enterprise appear here — this is your contract pipeline, not the full company list.',
+    help_tip_enterprise_2: "The colored dot shows account health: how recently you've logged contact and whether a contract is active.",
+    help_related_enterprise_companies: "Edit this company's core details or tier",
+
+    help_tip_b2b_leads_1: 'New leads land here from the public Request Talent form — everyone on the team sees the same shared pool.',
+    help_tip_b2b_leads_2: "Claim a lead as soon as you start working it, so a teammate doesn't duplicate the outreach.",
+    help_related_b2b_leads_companies: 'Add a converted lead as a company',
+
+    help_tip_content_1: "Content Studio drafts copy-paste-ready posts — there's no auto-publish, you paste them yourself.",
+    help_tip_content_2: "Testimonial Moderation below controls what appears publicly on a company's profile page.",
+    help_related_content_campaigns: 'Send the same message as an email instead',
+
+    help_tip_campaigns_1: "Emails send via Resend — check the delivery status before assuming a campaign didn't go out.",
+    help_tip_campaigns_2: 'Keep subject lines short — most employers read email on mobile.',
+    help_related_campaigns_content: 'Reuse the same message as a social post',
+
+    help_tip_legal_1: 'Candidate consent is recorded automatically the moment someone applies — nothing to do manually.',
+    help_tip_legal_2: 'Use Print/View on a contract to generate a clean PDF for signing.',
+    help_related_legal_billing: 'Invoices reference the same placement as a contract',
+
+    help_tip_billing_1: 'Record Payment is the only way to mark an invoice Paid — it keeps a record of the amount, method, and date.',
+    help_tip_billing_2: 'Account Plans further down control tier pricing — changes apply immediately, no redeploy needed.',
+    help_related_billing_candidates: 'Generate a new invoice from a Hired candidate',
+
+    help_tip_team_1: "A role change only takes effect the next time that person logs in, not immediately.",
+    help_tip_team_2: "Link a CSE rep here so their Companies/Enterprise/B2B Leads views are scoped to just their own accounts.",
+    help_related_team_system_health: 'Owner and Admin can see this tab too',
+
+    help_tip_system_health_1: "Check here first if a daily job (like Telegram posting or weekly emails) seems to have silently stopped.",
+    help_tip_system_health_2: 'Visible to Owner and Admin only, the same access level as Team & Access.',
+    help_related_system_health_team: 'Manage who has access to this tab',
+
     // Enterprise — status/type enum display labels (data values stay English; these are display-only)
     status_lead:            'Lead',
     status_active:          'Active',
@@ -1057,6 +1114,63 @@ export const translations = {
     admin_banner_billing:     ' ခန့်အပ်ပြီးသော ကိုယ်စားလှယ်လောင်းများအတွက် ငွေတောင်းခံလွှာများ ထုတ်ပေးပြီး ခြေရာခံပါ။',
     admin_banner_team:        ' ဝန်ထမ်းစာရင်းနှင့် ရည်ရွယ်ထားသော အခန်းကဏ္ဍများ။ ဒက်ရှ်ဘုတ် ဝင်ရောက်ခွင့်ကို မထိန်းချုပ်သေးပါ။',
     admin_banner_system_health:     ' လတ်တလော မအောင်မြင်မှုများနှင့် cron အလုပ်အခြေအနေ။ ပိုင်ရှင်နှင့် အက်ဒမင်သာ ကြည့်ရှုနိုင်သည်။',
+
+    // Admin dashboard — per-tab tips + related-tab shortcuts
+    help_show_tips:    'အကြံပြုချက်များ ပြပါ',
+    help_hide_tips:    'အကြံပြုချက်များ ဖျောက်ပါ',
+    help_related_label: 'ဆက်စပ်တဘ်',
+
+    help_tip_overview_1: 'ဤစာမျက်နှာသည် အလုပ်လုပ်ရန် စာရင်းမဟုတ်ပါ — လုပ်ဆောင်ရန်လိုအပ်သည်များအတွက် Candidates သို့မဟုတ် Manage Jobs သို့ ဝင်ကြည့်ပါ။',
+    help_tip_overview_2: 'ဂရပ်များသည် ညစဉ်ပြင်ဆင်ထားသော အချက်အလက်များကို အသုံးပြုသောကြောင့် ယနေ့ကိန်းဂဏန်းများသည် အနည်းငယ် နောက်ကျနိုင်ပါသည်။',
+    help_related_overview_candidates: 'ဤကိန်းဂဏန်းများနောက်ကွယ်ရှိ လျှောက်လွှာများကို ကြည့်ပါ',
+
+    help_tip_candidates_1: 'စာရင်း (Table) နှင့် Kanban board ကြားတွင် အထက်ပါခလုတ်များဖြင့် ပြောင်းလဲနိုင်ပါသည်။',
+    help_tip_candidates_2: 'ကိုယ်စားလှယ်လောင်းတစ်ဦး Hired အဆင့်ရောက်သည်နှင့် ၎င်း၏ပရိုဖိုင်ကိုဖွင့်ပြီး နောက်ဆုံးလစာသတ်မှတ်ကာ ငွေတောင်းခံလွှာ ထုတ်ပါ။',
+    help_related_candidates_billing: 'Hired ဖြစ်သွားသူအတွက် ငွေတောင်းခံလွှာ ထုတ်ပါ',
+
+    help_tip_post_job_1: 'အလုပ်အမည်၊ ကုမ္ပဏီနှင့် တည်နေရာကို ဖြည့်ပြီးနောက် Generate with AI ကိုနှိပ်၍ ဖော်ပြချက်ကို ရေးစေနိုင်ပါသည် — တင်ခြင်းမပြုမီ ပြင်ဆင်နိုင်ပါသည်။',
+    help_tip_post_job_2: 'အချိန်ကာလကန့်သတ်ထားသော ရာထူးများကို Urgent (သို့) Featured ဖြင့် အထူးပြသနိုင်ပါသည်။',
+    help_related_post_job_manage_jobs: 'သင့်ရာထူးအသစ် တင်ပြီးကြောင်း အတည်ပြုကြည့်ပါ',
+
+    help_tip_manage_jobs_1: 'အပေါ်ဆုံးရှိ Job Requests များသည် ကုမ္ပဏီများက သူတို့ portal မှတဆင့် တင်သွင်းလိုက်သော တောင်းဆိုချက်များဖြစ်ပြီး၊ အတည်ပြုမှသာ ရာထူးအဖြစ် တင်ရပါမည်။',
+    help_tip_manage_jobs_2: 'လျှောက်ထားသူနှင့် ကြည့်ရှုသူအရေအတွက်များသည် ကုမ္ပဏီ၏ portal တွင်တွေ့သည့် ကိန်းဂဏန်းများနှင့် တူညီပါသည်။',
+    help_related_manage_jobs_post_job: 'ရာထူးအသစ်တစ်ခု တိုက်ရိုက်တင်ပါ',
+
+    help_tip_companies_1: 'ကြယ်ပွင့်ကိုနှိပ်ပြီး ကုမ္ပဏီကို အများပြည်သူ အလုပ်ရှာဖွေရေးစာမျက်နှာတွင် ထင်ရှားစွာ ပြသနိုင်ပါသည်။',
+    help_tip_companies_2: 'ညီအစ်မကုမ္ပဏီများကို "Group under" ဖြင့် မိဘအကောင့်တစ်ခုအောက်တွင် ချိတ်ဆက်နိုင်ပါသည်။',
+    help_related_companies_enterprise: 'ဤအကောင့်၏ စာချုပ်များနှင့် CSE တာဝန်ခံကို စီမံပါ',
+
+    help_tip_enterprise_1: 'Enterprise အဆင့်သတ်မှတ်ထားသော ကုမ္ပဏီများသာ ဤနေရာတွင် ပေါ်လာမည်ဖြစ်ပြီး၊ ကုမ္ပဏီစာရင်းအပြည့်အစုံ မဟုတ်ပါ။',
+    help_tip_enterprise_2: 'အရောင်စက်ဝိုင်းသည် အကောင့်ကျန်းမာရေးအခြေအနေကို ပြသည် — နောက်ဆုံးဆက်သွယ်ခဲ့သည့်အချိန်နှင့် စာချုပ်လက်ရှိရှိမရှိအပေါ် မူတည်ပါသည်။',
+    help_related_enterprise_companies: 'ဤကုမ္ပဏီ၏ အခြေခံအချက်အလက် (သို့) အဆင့်ကို ပြင်ဆင်ပါ',
+
+    help_tip_b2b_leads_1: 'တောင်းဆိုချက်အသစ်များသည် အများပြည်သူ Request Talent ဖောင်မှ ဝင်ရောက်လာပြီး၊ အဖွဲ့ဝင်အားလုံးက တူညီသောစာရင်းကို မြင်ရပါသည်။',
+    help_tip_b2b_leads_2: 'တာဝန်ယူစတင်ဆောင်ရွက်သည်နှင့် Claim ချက်ချင်းလုပ်ပါ — အခြားဝန်ထမ်းတစ်ဦးက ထပ်ဆင့်ဆက်သွယ်မိမည်ကို ရှောင်ရှားနိုင်ပါသည်။',
+    help_related_b2b_leads_companies: 'အောင်မြင်သော lead ကို ကုမ္ပဏီအဖြစ် ထည့်သွင်းပါ',
+
+    help_tip_content_1: 'Content Studio သည် ကူးယူ၍ ချက်ချင်းသုံးနိုင်သော ပို့စ်များကို ရေးပေးပါသည် — အလိုအလျောက်တင်ခြင်း မရှိပါ၊ ကိုယ်တိုင်ကူးထည့်ရပါမည်။',
+    help_tip_content_2: 'အောက်ရှိ Testimonial Moderation က ကုမ္ပဏီ၏ အများပြည်သူပရိုဖိုင်စာမျက်နှာတွင် ဘာများပြသမည်ကို ထိန်းချုပ်ပါသည်။',
+    help_related_content_campaigns: 'အလားတူစာသားကို အီးမေးလ်အဖြစ် ပို့ပါ',
+
+    help_tip_campaigns_1: 'အီးမေးလ်များကို Resend မှတဆင့် ပို့ပါသည် — campaign တစ်ခု မပို့ဖြစ်ဟု မယူဆမီ ပို့ဆောင်မှုအခြေအနေကို စစ်ဆေးပါ။',
+    help_tip_campaigns_2: 'ခေါင်းစဉ်များကို တိုတိုထားပါ — ကုမ္ပဏီအများစုသည် အီးမေးလ်ကို မိုဘိုင်းဖုန်းဖြင့် ဖတ်ကြသည်။',
+    help_related_campaigns_content: 'အလားတူစာသားကို social post အဖြစ် ပြန်သုံးပါ',
+
+    help_tip_legal_1: 'ကိုယ်စားလှယ်လောင်း သဘောတူညီချက်ကို လျှောက်လွှာတင်သည်နှင့် အလိုအလျောက် မှတ်တမ်းတင်ပေးပါသည် — ကိုယ်တိုင်လုပ်ရန်မလိုပါ။',
+    help_tip_legal_2: 'စာချုပ်တွင် Print/View ကိုသုံးပြီး လက်မှတ်ရေးထိုးရန် သန့်ရှင်းသော PDF ထုတ်နိုင်ပါသည်။',
+    help_related_legal_billing: 'ငွေတောင်းခံလွှာများသည် စာချုပ်တစ်ခုတည်းကို ရည်ညွှန်းသည်',
+
+    help_tip_billing_1: 'Record Payment သည် ငွေတောင်းခံလွှာကို Paid အဖြစ်သတ်မှတ်နိုင်သည့် တစ်ခုတည်းသောနည်းလမ်းဖြစ်ပြီး ပမာဏ၊ နည်းလမ်းနှင့် ရက်စွဲကို မှတ်တမ်းတင်ပေးပါသည်။',
+    help_tip_billing_2: 'အောက်ရှိ Account Plans ဖြင့် အဆင့်စျေးနှုန်းများကို ထိန်းချုပ်နိုင်ပြီး ပြောင်းလဲချက်များသည် ချက်ချင်းသက်ရောက်ပါသည်။',
+    help_related_billing_candidates: 'Hired ဖြစ်သူထံမှ ငွေတောင်းခံလွှာအသစ် ထုတ်ပါ',
+
+    help_tip_team_1: 'အခန်းကဏ္ဍပြောင်းလဲမှုသည် ထိုသူ နောက်တစ်ကြိမ်ဝင်ရောက်မှသာ သက်ရောက်ပြီး ချက်ချင်းမသက်ရောက်ပါ။',
+    help_tip_team_2: 'CSE တာဝန်ခံကို ဤနေရာတွင်ချိတ်ဆက်ပါ — ၎င်း၏ Companies/Enterprise/B2B Leads မြင်ကွင်းများသည် ကိုယ်ပိုင်အကောင့်များသာ ပြသပါမည်။',
+    help_related_team_system_health: 'Owner နှင့် Admin သာ ဤတဘ်ကိုလည်း မြင်နိုင်သည်',
+
+    help_tip_system_health_1: 'နေ့စဉ်လုပ်ငန်းစဉ် (Telegram တင်ခြင်း (သို့) အပတ်စဉ်အီးမေးလ်ကဲ့သို့) ရပ်တန့်သွားပုံရလျှင် ဤနေရာကို ဦးစွာစစ်ဆေးပါ။',
+    help_tip_system_health_2: 'Owner နှင့် Admin သာ ကြည့်ရှုနိုင်ပြီး Team & Access ကဲ့သို့ တူညီသော ခွင့်ပြုချက်အဆင့်ဖြစ်ပါသည်။',
+    help_related_system_health_team: 'ဤတဘ်ကို မည်သူများ ဝင်ရောက်ခွင့်ရှိသည်ကို စီမံပါ',
 
     // Enterprise — status/type enum display labels
     status_lead:            'အလားအလာ',
