@@ -228,16 +228,14 @@ This document was originally written at Phase 10. Significant additions since:
   several rounds of "found a bug mid-testing, fixed it, kept going."
 
 See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
-commit hashes. As of 2026-07-07: PRs #106, #108, #109, #110 merged
-(lint debt paydown, KV-backed rate limiter, route-handler integration
-tests, Candidate Portal i18n). **Two PRs open and blocked on the repo
-owner's explicit authorization to apply a live-database change**: #107
-(invoice `charge_type`/`metadata` columns — application code hard-depends
-on the migration already being live, do not merge before applying it)
-and #111 (an RLS policy fix — safe to apply any time, no app code
-depends on it). Both are fully built, reviewed, and waiting only on a
-go-ahead; see `PROGRESS.md`'s "CTO Technical Audit + Roadmap execution"
-entry and `supabase/MIGRATIONS.md` for exact resume steps.
+commit hashes. As of 2026-07-07: PRs #106, #107, #108, #109, #110, #111
+all merged (lint debt paydown, invoice `charge_type`/`metadata` migration,
+KV-backed rate limiter, route-handler integration tests, Candidate Portal
+i18n, RLS policy fix) — both previously-blocked migrations (`0033`,
+`0034`) are live. One new PR open, not yet merged: **#114** (candidate
+stage-change email notifications — Shortlisted/Interview/Hired — built in
+an overnight session per `docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`,
+which also proposes a ranked menu of further upgrades for review).
 
 **Known open item, currently PAUSED**: the Resend account has no
 verified sending domain, so no transactional email can currently reach
