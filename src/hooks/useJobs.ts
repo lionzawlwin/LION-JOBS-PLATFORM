@@ -40,6 +40,11 @@ export function useJobs(
 ) {
   const limit = options?.limit ?? PAGE_SIZE;
   const filterKey = JSON.stringify(filters ?? {});
+  // filterKey is a deliberate stable proxy for `filters` -- it collapses
+  // any new-but-identical-content filters object into the same dependency,
+  // avoiding a refetch on every render. Adding `filters` itself here would
+  // defeat that.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const url = useMemo(() => buildUrl(filters, 0, limit), [filterKey, limit]);
 
   const { data, error, isLoading, mutate: rawMutate } = useSWR<JobsResponse>(url, fetcher, {

@@ -17,6 +17,10 @@ const eslintConfig = defineConfig([
     "**/out/**",
     "**/build/**",
     "next-env.d.ts",
+    // Worktrees are checked-out copies of source elsewhere in history --
+    // linting them duplicates every finding from whatever branch/commit
+    // they happen to be sitting on and pollutes the real baseline.
+    ".worktrees/**",
   ]),
 ]);
 

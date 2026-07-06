@@ -20,18 +20,6 @@ export interface TestimonialRecord {
   featuredStatus: 'pending' | 'approved' | 'rejected';
 }
 
-function mapToFeedback(row: Record<string, unknown>): FeedbackRecord {
-  return {
-    id:             row.id as string,
-    candidateId:    (row.candidate_id as string) ?? undefined,
-    company:        row.company as string,
-    jobTitle:       (row.job_title as string) ?? undefined,
-    rating:         row.rating as number,
-    experience:     row.experience as string,
-    wouldRecommend: (row.would_recommend as boolean) ?? false,
-    submittedAt:    row.submitted_at as string,
-  };
-}
 
 function mapToTestimonial(row: Record<string, unknown>): TestimonialRecord {
   return {
