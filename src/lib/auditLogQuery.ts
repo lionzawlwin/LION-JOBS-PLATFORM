@@ -14,6 +14,12 @@ export interface AuditLogFilters {
   limit: number;
   offset: number;
   format: 'json' | 'csv';
+  // Layer 17 (Audit log compliance export). Replaces actorEmail with the
+  // actor's staff role in the response -- for handing an audit trail to an
+  // external party (enterprise procurement/security review) without
+  // disclosing internal staff email addresses, which are this platform's
+  // information, not theirs to see.
+  redact: boolean;
 }
 
 export type ParsedAuditLogQuery =
@@ -32,6 +38,7 @@ export function parseAuditLogQuery(searchParams: URLSearchParams): ParsedAuditLo
   const to = searchParams.get('to') ?? undefined;
   const actionParam = searchParams.get('action') ?? undefined;
   const formatParam = searchParams.get('format') ?? 'json';
+  const redact = searchParams.get('redact') === 'true';
   const limitParam = searchParams.get('limit');
   const offsetParam = searchParams.get('offset');
 
@@ -85,6 +92,7 @@ export function parseAuditLogQuery(searchParams: URLSearchParams): ParsedAuditLo
       limit,
       offset,
       format: formatParam,
+      redact,
     },
   };
 }

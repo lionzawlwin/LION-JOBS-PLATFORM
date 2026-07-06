@@ -53,6 +53,12 @@ export function useAuditLog(filters: AuditLogFiltersInput) {
     return `/api/audit-log?${buildQuery(filters, MAX_LIMIT)}&format=csv`;
   }
 
+  // Layer 17: same export, actor identity replaced with role#n -- for
+  // handing to an external party (enterprise procurement/security review).
+  function exportRedactedCsvUrl(): string {
+    return `/api/audit-log?${buildQuery(filters, MAX_LIMIT)}&format=csv&redact=true`;
+  }
+
   const entries = data?.entries ?? [];
   const totalCount = data?.totalCount ?? 0;
 
@@ -64,5 +70,6 @@ export function useAuditLog(filters: AuditLogFiltersInput) {
     hasMore: entries.length < totalCount && limit < MAX_LIMIT,
     loadMore,
     exportCsvUrl,
+    exportRedactedCsvUrl,
   };
 }

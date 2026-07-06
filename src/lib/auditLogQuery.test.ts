@@ -16,7 +16,7 @@ describe('parseAuditLogQuery', () => {
       filters: {
         domain: 'candidates', action: 'update', actorEmail: 'owner@example.com',
         q: 'app-1', from: '2026-07-01', to: '2026-07-06', limit: 25, offset: 10,
-        format: 'json',
+        format: 'json', redact: false,
       },
     });
   });
@@ -28,6 +28,7 @@ describe('parseAuditLogQuery', () => {
       filters: {
         domain: undefined, action: undefined, actorEmail: undefined, q: undefined,
         from: undefined, to: undefined, limit: 50, offset: 0, format: 'json',
+        redact: false,
       },
     });
   });
@@ -75,5 +76,15 @@ describe('parseAuditLogQuery', () => {
   it('accepts format=csv', () => {
     const result = parseAuditLogQuery(paramsFrom({ format: 'csv' }));
     expect(result).toMatchObject({ ok: true, filters: { format: 'csv' } });
+  });
+
+  it('parses redact=true', () => {
+    const result = parseAuditLogQuery(paramsFrom({ redact: 'true' }));
+    expect(result).toMatchObject({ ok: true, filters: { redact: true } });
+  });
+
+  it('defaults redact to false for any other value', () => {
+    const result = parseAuditLogQuery(paramsFrom({ redact: 'yes' }));
+    expect(result).toMatchObject({ ok: true, filters: { redact: false } });
   });
 });
