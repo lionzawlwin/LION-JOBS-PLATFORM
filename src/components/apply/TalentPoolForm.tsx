@@ -18,6 +18,7 @@ const CATEGORIES: JobCategory[] = [
   'Customer Service',
   'Healthcare',
   'Education',
+  'Logistics & Distribution',
   'Other',
 ];
 

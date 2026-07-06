@@ -8,6 +8,10 @@ export type JobCategory =
   | 'Customer Service'
   | 'Healthcare'
   | 'Education'
+  // Layer 16b: added for the Vietnam-Myanmar import/distribution venture's
+  // warehouse/logistics hiring -- rides the existing job posting/filtering
+  // pipeline rather than a parallel intake system.
+  | 'Logistics & Distribution'
   | 'Other';
 
 export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Remote' | 'Hybrid';
@@ -388,4 +392,8 @@ export interface CsePerformanceRow {
   activeContractValue: number;
   assignedCompaniesCount: number;
   claimedLeadsCount: number;
+  // Layer 16: count of this rep's assigned companies currently in the red
+  // health band (Layer 11) -- surfaces overloaded/neglected books of
+  // business before they churn, not just deal volume.
+  atRiskAccountsCount: number;
 }

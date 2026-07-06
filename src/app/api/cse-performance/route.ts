@@ -1,5 +1,5 @@
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
-import { getCseReps, getContracts, getB2bLeads } from '@/lib/db';
+import { getCseReps, getContracts, getB2bLeads, getClientHealthSummary } from '@/lib/db';
 import { computeCsePerformance } from '@/lib/csePerformance';
 
 // Row-scoped like Phase 10's companies/contracts/interactions scoping: a
@@ -10,9 +10,11 @@ export async function GET() {
   }
 
   const scope = await getSessionScope();
-  const [cseReps, contracts, leads] = await Promise.all([getCseReps(), getContracts(), getB2bLeads()]);
+  const [cseReps, contracts, leads, health] = await Promise.all([
+    getCseReps(), getContracts(), getB2bLeads(), getClientHealthSummary(),
+  ]);
 
-  let rows = computeCsePerformance({ cseReps, contracts, leads });
+  let rows = computeCsePerformance({ cseReps, contracts, leads, healthAccounts: health.accounts });
   if (scope?.role === 'cse') {
     rows = rows.filter((r) => r.cseRepId === scope.cseRepId);
   }
