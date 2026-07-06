@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import type { ApplicationStatus } from '@/types';
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <noreply@lionjobs.co>';
 const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
@@ -127,5 +128,53 @@ export async function sendJobRequestDecisionEmail(opts: {
     `;
 
   const result = await resend.emails.send({ from: FROM, to: opts.to, subject, html });
+  assertResendSuccess(result);
+}
+
+// CTO overnight roadmap session (2026-07-07): notify a candidate when
+// their application moves to a meaningful stage. Deliberately only
+// Shortlisted/Interview/Hired -- "Applied" is redundant with the
+// confirmation the candidate already gets from submitting the form
+// themselves. Same graceful-no-op pattern as every other function here:
+// a missing RESEND_API_KEY (or any send failure) must never block the
+// stage-change action itself; the caller wraps this in try/catch.
+export async function sendCandidateStageChangeEmail(opts: {
+  to: string;
+  candidateName: string;
+  jobTitle: string;
+  stage: Extract<ApplicationStatus, 'Shortlisted' | 'Interview' | 'Hired'>;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('[portalEmail] RESEND_API_KEY not set — cannot send stage-change email.');
+    return;
+  }
+
+  const COPY: Record<typeof opts.stage, { subject: string; body: string }> = {
+    Shortlisted: {
+      subject: `You've been shortlisted for ${opts.jobTitle}`,
+      body: `<p>Good news -- you've been shortlisted for the <strong>${opts.jobTitle}</strong> position. Our team will be in touch about next steps.</p>`,
+    },
+    Interview: {
+      subject: `Interview stage: ${opts.jobTitle}`,
+      body: `<p>Your application for <strong>${opts.jobTitle}</strong> has moved to the interview stage. Our team will contact you shortly with scheduling details.</p>`,
+    },
+    Hired: {
+      subject: `Congratulations! ${opts.jobTitle}`,
+      body: `<p>Congratulations, ${opts.candidateName} -- you've been selected for the <strong>${opts.jobTitle}</strong> position! Our team will follow up with onboarding details.</p>`,
+    },
+  };
+  const { subject, body } = COPY[opts.stage];
+
+  const result = await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject,
+    html: `
+      <p>Hi ${opts.candidateName},</p>
+      ${body}
+      <p>You can track your application status any time at <a href="${SITE_URL}/my-applications">My Applications</a>.</p>
+    `,
+  });
   assertResendSuccess(result);
 }
