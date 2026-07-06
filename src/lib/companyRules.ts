@@ -43,3 +43,14 @@ export function parseFeaturedPlacementDurationDays(position: string): number | n
   const match = FEATURED_PLACEMENT_POSITION_PATTERN.exec(position);
   return match ? Number(match[1]) : null;
 }
+
+// Employer Applicant Visibility's real enforcement boundary, extracted as
+// a pure function so it's directly unit-testable rather than only ever
+// checked inline in GET /api/company-portal/jobs/[jobId]/applicants --
+// same reasoning as permissions.ts's isLockedOutByChange(). A job with no
+// companyId (never matched to a CRM company at creation) can never be
+// viewed by any company -- `null !== companyId` is always true for a
+// non-empty companyId, which is the correct fail-closed behavior.
+export function canViewJobApplicants(job: { companyId?: string | null } | null, requestingCompanyId: string): boolean {
+  return job !== null && job.companyId === requestingCompanyId;
+}
