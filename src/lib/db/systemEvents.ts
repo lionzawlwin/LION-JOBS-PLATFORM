@@ -133,6 +133,23 @@ export async function listPlanUpgradeRequests(): Promise<SystemEvent[]> {
   return (data ?? []).map(mapToSystemEvent);
 }
 
+// Self-Serve Featured Placement Upsell -- same inbox pattern as
+// listPlanUpgradeRequests() above, one category over.
+export async function listFeaturedPlacementRequests(): Promise<SystemEvent[]> {
+  const { data, error } = await supabase
+    .from('system_events')
+    .select('*')
+    .eq('category', 'featured_placement')
+    .is('resolved_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[db/systemEvents] listFeaturedPlacementRequests failed:', error.message);
+    return [];
+  }
+  return (data ?? []).map(mapToSystemEvent);
+}
+
 // First-mover-wins guard (`.is('resolved_at', null)`), matching this
 // repo's established pattern (b2b_leads claiming, portal login tokens) —
 // a second concurrent resolve attempt matches zero rows and silently

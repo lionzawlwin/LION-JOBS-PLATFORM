@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Printer, FileText, AlertTriangle, Banknote, X } from 'lucide-react';
 import { AccountPlansPanel } from './AccountPlansPanel';
 import { PlanUpgradeRequestsInbox } from './PlanUpgradeRequestsInbox';
+import { FeaturedPlacementRequestsInbox } from './FeaturedPlacementRequestsInbox';
 import { StatusStepper } from '@/components/ui/StatusStepper';
 import type { Invoice, InvoiceStatus, PaymentMethod } from '@/types';
 
@@ -198,6 +199,7 @@ export function BillingView() {
   return (
     <div className="space-y-6">
       <PlanUpgradeRequestsInbox />
+      <FeaturedPlacementRequestsInbox />
       <AccountPlansPanel />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
-import { getInvoiceById, getPaymentsByInvoiceId, recordInvoicePayment } from '@/lib/db';
+import { getInvoiceById, getPaymentsByInvoiceId, recordInvoicePayment, activateFeaturedPlacementIfInvoicePaid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -76,6 +76,22 @@ export async function POST(
     });
 
     await logAudit({ action: 'update', domain: 'billing', entityType: 'invoice', entityId: id });
+
+    // Best-effort: the payment itself is already recorded and committed at
+    // this point, so a failure here must never surface as "payment failed"
+    // to the caller -- same non-critical-side-effect reasoning as the CV
+    // Drive upload in /api/apply.
+    try {
+      await activateFeaturedPlacementIfInvoicePaid(invoice);
+    } catch (activationErr) {
+      await logFailure({
+        category: 'invoicing',
+        route:    '/api/invoices/[id]/payments',
+        message:  'Payment recorded but featured placement activation failed',
+        error:    activationErr,
+        context:  { invoiceId: id, companyId: invoice.companyId },
+      });
+    }
 
     return Response.json({ ok: true, paymentId }, { status: 201 });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { requireTabAccess } from '@/lib/auth';
-import { getInvoiceById, updateInvoiceStatus } from '@/lib/db';
+import { getInvoiceById, updateInvoiceStatus, activateFeaturedPlacementIfInvoicePaid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -42,8 +42,29 @@ export async function PATCH(
   }
 
   try {
+    const invoice = await getInvoiceById(id);
     await updateInvoiceStatus(id, body.status as InvoiceStatus);
     await logAudit({ action: 'update', domain: 'billing', entityType: 'invoice', entityId: id });
+
+    // Defense-in-depth: the UI's own status stepper only ever reaches Paid
+    // via POST /api/invoices/[id]/payments (see BillingView.tsx's
+    // INVOICE_STEPS comment), which already does this. This covers the
+    // route's own manual-dropdown capability, in case anything else calls
+    // it directly. Best-effort, same reasoning as the payments route.
+    if (body.status === 'Paid' && invoice) {
+      try {
+        await activateFeaturedPlacementIfInvoicePaid(invoice);
+      } catch (activationErr) {
+        await logFailure({
+          category: 'invoicing',
+          route:    '/api/invoices/[id]',
+          message:  'Invoice marked Paid but featured placement activation failed',
+          error:    activationErr,
+          context:  { invoiceId: id, companyId: invoice.companyId },
+        });
+      }
+    }
+
     return Response.json({ ok: true });
   } catch (err) {
     await logFailure({

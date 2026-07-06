@@ -134,6 +134,46 @@ export async function createPlanUpgradeInvoice(data: {
   return invoice;
 }
 
+// Self-Serve Featured Placement Upsell: same non-candidate-placement
+// pattern as createPlanUpgradeInvoice() above. `position` is tagged via
+// featuredPlacementInvoicePosition() (companyRules.ts) -- the payments
+// route reads it back with isFeaturedPlacementInvoicePosition() to decide
+// whether a paid invoice should flip the company's featured flag on.
+export async function createFeaturedPlacementInvoice(data: {
+  companyId:   string;
+  companyName: string;
+  priceMmk:    number;
+  position:    string;
+}): Promise<Invoice> {
+  const { count, error: countError } = await supabase
+    .from('invoices')
+    .select('*', { count: 'exact', head: true });
+  if (countError) throw new Error(`Failed to compute invoice number: ${countError.message}`);
+
+  const sequence      = (count ?? 0) + 1;
+  const invoiceNumber = `INV-${String(sequence).padStart(5, '0')}`;
+  const id            = `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const { error } = await supabase.from('invoices').insert({
+    id,
+    invoice_number:      invoiceNumber,
+    company_id:          data.companyId,
+    company_name:        data.companyName,
+    application_id:      null,
+    candidate_name:      '—',
+    position:            data.position,
+    agreed_salary:       data.priceMmk,
+    commission_rate_pct: 100,
+    commission_fee_mmk:  data.priceMmk,
+    status:              'Draft',
+  });
+  if (error) throw new Error(`Failed to create featured placement invoice: ${error.message}`);
+
+  const invoice = await getInvoiceById(id);
+  if (!invoice) throw new Error('Invoice created but could not be re-fetched.');
+  return invoice;
+}
+
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<void> {
   const { error } = await supabase.from('invoices').update({ status }).eq('id', id);
   if (error) throw new Error(`Failed to update invoice status: ${error.message}`);
