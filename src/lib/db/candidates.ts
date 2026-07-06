@@ -208,11 +208,18 @@ export async function updateCandidateCvUrl(
   applicationId: string,
   cvUrl: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({ google_drive_cv_url: cvUrl })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to update cv_url: ${error.message}`);
+  // See updateCandidateStage's comment: .update() reports no error when zero
+  // rows match, so an applicationId that doesn't exist would otherwise look
+  // like a silent success.
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId}.`);
+  }
 }
 
 export async function updateCandidateStage(
@@ -242,11 +249,15 @@ export async function updateCandidateJob(
   jobTitle: string,
   company: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({ job_id: jobId, job_title: jobTitle, company })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to update candidate job: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId}.`);
+  }
 }
 
 export async function deleteCandidate(applicationId: string): Promise<void> {
@@ -323,7 +334,7 @@ export async function saveAiScore(
   summary: string,
   reasoning: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({
       ai_score:        score,
@@ -331,8 +342,12 @@ export async function saveAiScore(
       ai_reasoning:    reasoning,
       ai_processed_at: new Date().toISOString(),
     })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to save AI score: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId}.`);
+  }
 }
 
 const CANDIDATE_STATUS_SELECT = `
@@ -443,14 +458,18 @@ export async function updateCandidateInterviewDetails(
   interviewLocation:  string,
   interviewerContact: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({
       interview_location:  interviewLocation || null,
       interviewer_contact: interviewerContact || null,
     })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to update interview details: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId}.`);
+  }
 }
 
 export async function getApplicationInterviewLocation(applicationId: string): Promise<string | null> {
@@ -468,9 +487,13 @@ export async function updateCandidateFinalSalary(
   applicationId:     string,
   finalAgreedSalary: number,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({ final_agreed_salary: finalAgreedSalary })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to update final agreed salary: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId}.`);
+  }
 }
