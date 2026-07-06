@@ -90,7 +90,7 @@ export async function runHealthCheck(): Promise<void> {
       return;
     }
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from:    FROM,
       to:      [alertEmail],
       subject: `Lion Jobs Agency — ${problems.length} health check alert(s)`,
@@ -100,6 +100,13 @@ export async function runHealthCheck(): Promise<void> {
   <p style="color:#888;font-size:12px;">Check the System Health dashboard tab for details.</p>
 </div>`,
     });
+    // See portalEmail.ts's assertResendSuccess comment -- the SDK resolves
+    // successfully with { error } on an API-level failure instead of
+    // throwing, so this must be checked explicitly or a real send failure
+    // silently vanishes here too.
+    if (result.error) {
+      throw new Error(`Resend error (${result.error.name}): ${result.error.message}`);
+    }
   } catch (err) {
     await logFailure({
       category: 'cron',

@@ -102,6 +102,15 @@ export async function POST(req: NextRequest) {
       subject: email.subject,
       html:    email.html,
     });
+    // Resend resolves successfully with { error } on an API-level failure
+    // instead of throwing -- without this check, an invalid/unverified
+    // from-address or restricted key would silently report {ok: true} to
+    // the caller with result.data === null (see portalEmail.ts's
+    // assertResendSuccess for the same bug found across every Resend call
+    // site in this repo).
+    if (result.error) {
+      throw new Error(`Resend error (${result.error.name}): ${result.error.message}`);
+    }
     await logAudit({
       action: 'create',
       domain: 'campaigns',
