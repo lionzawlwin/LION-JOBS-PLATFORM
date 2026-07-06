@@ -13,7 +13,11 @@ export async function GET(req: NextRequest) {
   }
 
   const sessionToken = createSessionToken('company', consumed.subjectId);
-  const response = NextResponse.redirect(new URL('/company/portal', req.url));
+  // ?login=success is a one-time signal for CompanyPortalClientImpl.tsx to
+  // fire a GA4 portal_login event and then strip itself from the URL --
+  // distinguishes an actual login from every subsequent page view/refresh
+  // of the same portal session.
+  const response = NextResponse.redirect(new URL('/company/portal?login=success', req.url));
   response.cookies.set(PORTAL_COOKIE_NAMES.company, sessionToken, sessionCookieOptions());
   return response;
 }

@@ -39,7 +39,12 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   // Not in CATEGORIES/the filter dropdown (see VALID_CATEGORIES's comment
   // in the API route) -- kept here only so this Record<FailureCategory,
   // string> stays exhaustive against the type.
-  rate_limit: 'Rate Limit',
+  rate_limit:    'Rate Limit',
+  // Also not in CATEGORIES -- plan-upgrade requests log at level='info'
+  // (a request isn't a failure), which this view's feed never shows
+  // regardless of category (see listSystemEvents()'s level='error' filter).
+  // They're surfaced instead by PlanUpgradeRequestsInbox in the Billing tab.
+  plan_upgrade: 'Plan Upgrade',
 };
 
 function fmtDateTime(iso: string) {

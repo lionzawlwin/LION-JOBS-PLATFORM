@@ -15,6 +15,7 @@ import { CVUpload } from './CVUpload';
 import { SuccessModal } from './SuccessModal';
 import { ScreeningQuestions } from './ScreeningQuestions';
 import { FormStepProgress } from '@/components/ui/FormStepProgress';
+import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -251,6 +252,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
 
       saveProfile({ name: data.fullName, email: data.email ?? '', phone: data.phone });
       setSubmittedEmail(data.email ?? undefined);
+      trackEvent('apply_submitted', jobId ? { job_id: jobId } : undefined);
       reset();
       setActiveTab('personal');
       setSuccessOpen(true);

@@ -90,6 +90,50 @@ export async function createInvoice(data: {
   return invoice;
 }
 
+// Batch 2, Feature 1: a separate creation path from createInvoice() above,
+// deliberately -- that function is the candidate-placement commission
+// flow (applicationId-keyed dedup, commissionRatePct-based fee calc via
+// POST /api/invoices), and this is billing a company for a plan/tier
+// upgrade, a completely different kind of charge. Reusing the same table
+// (rather than a new one) since the shape -- company, amount, status,
+// print/view -- is identical; only the semantics of "position" and
+// "commission" differ, which is why they're plain descriptive text/100%
+// here rather than a real commission calculation.
+export async function createPlanUpgradeInvoice(data: {
+  companyId:   string;
+  companyName: string;
+  planName:    string;
+  priceMmk:    number;
+}): Promise<Invoice> {
+  const { count, error: countError } = await supabase
+    .from('invoices')
+    .select('*', { count: 'exact', head: true });
+  if (countError) throw new Error(`Failed to compute invoice number: ${countError.message}`);
+
+  const sequence      = (count ?? 0) + 1;
+  const invoiceNumber = `INV-${String(sequence).padStart(5, '0')}`;
+  const id            = `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const { error } = await supabase.from('invoices').insert({
+    id,
+    invoice_number:      invoiceNumber,
+    company_id:          data.companyId,
+    company_name:        data.companyName,
+    application_id:      null,
+    candidate_name:      '—',
+    position:            `Plan Upgrade — ${data.planName}`,
+    agreed_salary:       data.priceMmk,
+    commission_rate_pct: 100,
+    commission_fee_mmk:  data.priceMmk,
+    status:              'Draft',
+  });
+  if (error) throw new Error(`Failed to create plan upgrade invoice: ${error.message}`);
+
+  const invoice = await getInvoiceById(id);
+  if (!invoice) throw new Error('Invoice created but could not be re-fetched.');
+  return invoice;
+}
+
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<void> {
   const { error } = await supabase.from('invoices').update({ status }).eq('id', id);
   if (error) throw new Error(`Failed to update invoice status: ${error.message}`);

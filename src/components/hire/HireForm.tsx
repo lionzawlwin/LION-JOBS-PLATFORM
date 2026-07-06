@@ -8,6 +8,7 @@ import { Building2, User, Briefcase, ChevronRight, ChevronLeft, CheckCircle2, Lo
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormStepProgress } from '@/components/ui/FormStepProgress';
+import { trackEvent } from '@/lib/analytics';
 
 const schema = z.object({
   // Company
@@ -104,6 +105,7 @@ export function HireForm() {
         setServerError(j.error ?? 'Something went wrong. Please try again.');
         return;
       }
+      trackEvent('hire_request_submitted', { industry: data.industry });
       setSubmitted(true);
     } catch {
       setServerError('Network error. Please check your connection and try again.');

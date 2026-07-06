@@ -310,7 +310,7 @@ export interface Payment {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {

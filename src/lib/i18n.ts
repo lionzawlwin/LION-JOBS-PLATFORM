@@ -721,6 +721,8 @@ export const translations = {
     bl_claimed_by:        'Claimed by',
     bl_release_claim:     'Release',
     bl_release_claim_title: 'Release this lead back to the shared pool',
+    bl_claim_lead:        'Claim / assign…',
+    bl_claim_lead_title:  'Claim this lead for yourself, or assign it to a CSE rep',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'Job Announcement',
@@ -1555,6 +1557,8 @@ export const translations = {
     bl_claimed_by:        'တာဝန်ယူသူ',
     bl_release_claim:     'လွှတ်ပေးရန်',
     bl_release_claim_title: 'ဤတောင်းဆိုချက်ကို မျှဝေထားသော အုပ်စုသို့ ပြန်လွှတ်ပေးရန်',
+    bl_claim_lead:        'တာဝန်ယူရန် / ခွဲဝေရန်…',
+    bl_claim_lead_title:  'ဤတောင်းဆိုချက်ကို ကိုယ်တိုင်တာဝန်ယူပါ (သို့) CSE တစ်ဦးဦးထံ ခွဲဝေပါ',
 
     // Content Studio tab
     cs_posttype_job_announcement:  'အလုပ် ကြေညာချက်',

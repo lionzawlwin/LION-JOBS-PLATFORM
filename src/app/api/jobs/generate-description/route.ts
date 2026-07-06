@@ -43,11 +43,20 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, draft });
   } catch (err) {
+    // Capture the actual error message/name in context -- Sentry isn't
+    // configured in this environment (SENTRY_DSN unset), so this
+    // system_events row is the only diagnostic trail. Previously this
+    // logged nothing beyond the static label, making a real failure
+    // indistinguishable from any other on System Health.
     await logFailure({
       category: 'ai_scoring',
       route:    '/api/jobs/generate-description',
       message:  'Job description generation failed',
       error:    err,
+      context: {
+        errorName:    err instanceof Error ? err.name : 'unknown',
+        errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+      },
     });
     return NextResponse.json({ error: 'Generation failed. Try again or write the description manually.' }, { status: 502 });
   }

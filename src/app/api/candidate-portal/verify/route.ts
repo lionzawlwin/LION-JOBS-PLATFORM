@@ -13,7 +13,8 @@ export async function GET(req: NextRequest) {
   }
 
   const sessionToken = createSessionToken('candidate', consumed.subjectId);
-  const response = NextResponse.redirect(new URL('/candidate/portal', req.url));
+  // ?login=success -- see company-portal/verify's identical comment.
+  const response = NextResponse.redirect(new URL('/candidate/portal?login=success', req.url));
   response.cookies.set(PORTAL_COOKIE_NAMES.candidate, sessionToken, sessionCookieOptions());
   return response;
 }

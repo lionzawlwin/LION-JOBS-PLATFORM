@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, UserCircle, LogOut, Calendar, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 interface ApplicationSummary {
   id: string;
@@ -29,9 +30,20 @@ const STAGE_STYLE: Record<string, string> = {
 
 export function CandidatePortalClientImpl() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // Fires once per real login (the ?login=success param verify/route.ts
+  // adds), not on every subsequent page view -- stripped from the URL
+  // immediately after so a refresh doesn't re-fire it.
+  useEffect(() => {
+    if (searchParams.get('login') === 'success') {
+      trackEvent('portal_login', { portal: 'candidate' });
+      router.replace('/candidate/portal');
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     let cancelled = false;
