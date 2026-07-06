@@ -178,3 +178,38 @@ export async function sendCandidateStageChangeEmail(opts: {
   });
   assertResendSuccess(result);
 }
+
+// Fast-Track Visibility opt-in campaign (2026-07-07): a one-time backfill
+// email to candidates who applied before the Direct-Contact-Info Upsell
+// Tier's consent checkbox existed on the application form. The magic
+// link is a signed, stateless token (src/lib/consentLinks.ts) -- clicking
+// it grants consent for every application of theirs that doesn't already
+// have it, in one action, via GET /api/consent/direct-contact-unlock.
+export async function sendDirectContactOptInEmail(opts: {
+  to: string;
+  candidateName: string;
+  optInLink: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('[portalEmail] RESEND_API_KEY not set — cannot send direct-contact opt-in email.');
+    return;
+  }
+
+  const result = await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: 'New: get contacted faster by employers (optional)',
+    html: `
+      <p>Hi ${opts.candidateName},</p>
+      <p>We've launched <strong>Fast-Track Visibility</strong> -- employers can now pay a small fee to unlock your
+      direct phone number and email so they can reach you faster, instead of always going through us first.</p>
+      <p>This is completely optional. Lion Jobs Agency still handles your application either way, and this
+      never changes how we work with you -- it just gives employers a faster way to reach you if you'd like that.</p>
+      <p><a href="${opts.optInLink}">Click here to opt in</a> if you'd like employers to be able to unlock your
+      direct contact info. If you'd rather not, you don't need to do anything -- your information stays exactly
+      as private as it is today.</p>
+    `,
+  });
+  assertResendSuccess(result);
+}
