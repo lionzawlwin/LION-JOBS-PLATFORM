@@ -175,6 +175,47 @@ export async function createFeaturedPlacementInvoice(data: {
   return invoice;
 }
 
+// Self-Serve Featured Job Listing Boost: same non-candidate-placement
+// pattern as createFeaturedPlacementInvoice() above. `position` is tagged
+// via jobBoostInvoicePosition() (jobRules.ts), which embeds the jobId and
+// duration -- invoices has no job_id column, so the payments route reads
+// them back with parseJobBoost() to decide which job to activate, and for
+// how long.
+export async function createJobBoostInvoice(data: {
+  companyId:   string;
+  companyName: string;
+  priceMmk:    number;
+  position:    string;
+}): Promise<Invoice> {
+  const { count, error: countError } = await supabase
+    .from('invoices')
+    .select('*', { count: 'exact', head: true });
+  if (countError) throw new Error(`Failed to compute invoice number: ${countError.message}`);
+
+  const sequence      = (count ?? 0) + 1;
+  const invoiceNumber = `INV-${String(sequence).padStart(5, '0')}`;
+  const id            = `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const { error } = await supabase.from('invoices').insert({
+    id,
+    invoice_number:      invoiceNumber,
+    company_id:          data.companyId,
+    company_name:        data.companyName,
+    application_id:      null,
+    candidate_name:      '—',
+    position:            data.position,
+    agreed_salary:       data.priceMmk,
+    commission_rate_pct: 100,
+    commission_fee_mmk:  data.priceMmk,
+    status:              'Draft',
+  });
+  if (error) throw new Error(`Failed to create job boost invoice: ${error.message}`);
+
+  const invoice = await getInvoiceById(id);
+  if (!invoice) throw new Error('Invoice created but could not be re-fetched.');
+  return invoice;
+}
+
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<void> {
   const { error } = await supabase.from('invoices').update({ status }).eq('id', id);
   if (error) throw new Error(`Failed to update invoice status: ${error.message}`);

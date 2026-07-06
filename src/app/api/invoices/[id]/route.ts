@@ -1,5 +1,5 @@
 import { requireTabAccess } from '@/lib/auth';
-import { getInvoiceById, updateInvoiceStatus, activateFeaturedPlacementIfInvoicePaid } from '@/lib/db';
+import { getInvoiceById, updateInvoiceStatus, activateFeaturedPlacementIfInvoicePaid, activateJobBoostIfInvoicePaid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -59,6 +59,17 @@ export async function PATCH(
           category: 'invoicing',
           route:    '/api/invoices/[id]',
           message:  'Invoice marked Paid but featured placement activation failed',
+          error:    activationErr,
+          context:  { invoiceId: id, companyId: invoice.companyId },
+        });
+      }
+      try {
+        await activateJobBoostIfInvoicePaid(invoice);
+      } catch (activationErr) {
+        await logFailure({
+          category: 'invoicing',
+          route:    '/api/invoices/[id]',
+          message:  'Invoice marked Paid but job boost activation failed',
           error:    activationErr,
           context:  { invoiceId: id, companyId: invoice.companyId },
         });

@@ -150,6 +150,23 @@ export async function listFeaturedPlacementRequests(): Promise<SystemEvent[]> {
   return (data ?? []).map(mapToSystemEvent);
 }
 
+// Self-Serve Featured Job Listing Boost -- same inbox pattern as
+// listFeaturedPlacementRequests() above, one category over.
+export async function listJobBoostRequests(): Promise<SystemEvent[]> {
+  const { data, error } = await supabase
+    .from('system_events')
+    .select('*')
+    .eq('category', 'job_boost')
+    .is('resolved_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[db/systemEvents] listJobBoostRequests failed:', error.message);
+    return [];
+  }
+  return (data ?? []).map(mapToSystemEvent);
+}
+
 // First-mover-wins guard (`.is('resolved_at', null)`), matching this
 // repo's established pattern (b2b_leads claiming, portal login tokens) —
 // a second concurrent resolve attempt matches zero rows and silently

@@ -10,6 +10,8 @@ const DEFAULTS: AgencySettings = {
   termsVersion:                'v1',
   featuredPlacementPriceMmk:      50000,
   featuredPlacementDurationDays:  30,
+  jobBoostPriceMmk:               20000,
+  jobBoostDurationDays:           14,
 };
 
 function mapToSettings(row: Record<string, unknown>): AgencySettings {
@@ -22,6 +24,8 @@ function mapToSettings(row: Record<string, unknown>): AgencySettings {
     termsVersion:                (row.terms_version as string) ?? DEFAULTS.termsVersion,
     featuredPlacementPriceMmk:     Number(row.featured_placement_price_mmk ?? DEFAULTS.featuredPlacementPriceMmk),
     featuredPlacementDurationDays: Number(row.featured_placement_duration_days ?? DEFAULTS.featuredPlacementDurationDays),
+    jobBoostPriceMmk:              Number(row.job_boost_price_mmk ?? DEFAULTS.jobBoostPriceMmk),
+    jobBoostDurationDays:          Number(row.job_boost_duration_days ?? DEFAULTS.jobBoostDurationDays),
   };
 }
 
@@ -48,6 +52,8 @@ export async function updateAgencySettings(data: Partial<{
   termsVersion:                string;
   featuredPlacementPriceMmk:     number;
   featuredPlacementDurationDays: number;
+  jobBoostPriceMmk:              number;
+  jobBoostDurationDays:          number;
 }>): Promise<void> {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.defaultCommissionRatePct    !== undefined) update.default_commission_rate_pct = data.defaultCommissionRatePct;
@@ -58,6 +64,8 @@ export async function updateAgencySettings(data: Partial<{
   if (data.termsVersion                !== undefined) update.terms_version = data.termsVersion;
   if (data.featuredPlacementPriceMmk     !== undefined) update.featured_placement_price_mmk = data.featuredPlacementPriceMmk;
   if (data.featuredPlacementDurationDays !== undefined) update.featured_placement_duration_days = data.featuredPlacementDurationDays;
+  if (data.jobBoostPriceMmk              !== undefined) update.job_boost_price_mmk = data.jobBoostPriceMmk;
+  if (data.jobBoostDurationDays          !== undefined) update.job_boost_duration_days = data.jobBoostDurationDays;
 
   const { error } = await supabase.from('agency_settings').update(update).eq('id', 'default');
   if (error) throw new Error(`Failed to update agency settings: ${error.message}`);
