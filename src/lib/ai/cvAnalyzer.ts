@@ -283,10 +283,10 @@ export async function extractTextFromBase64(
         {
           role: 'user',
           content: [
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             {
               type: 'document',
               source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK's public MessageParam content union doesn't yet include the document block type
             } as any,
             { type: 'text', text: 'Extract and return ALL text from this CV/resume. Return only the text.' },
           ],

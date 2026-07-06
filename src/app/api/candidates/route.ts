@@ -1,9 +1,8 @@
 import { requireTabAccess } from '@/lib/auth';
 import { getCandidates } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
-import type { NextRequest } from 'next/server';
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   if (!(await requireTabAccess('candidates', 'view'))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

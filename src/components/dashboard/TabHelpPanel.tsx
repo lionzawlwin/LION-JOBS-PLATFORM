@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Info, ChevronDown, ChevronRight, Lightbulb, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TabDomain } from '@/lib/permissions';
 import { BANNER_KEYS, DASHBOARD_HELP } from '@/lib/dashboardHelp';

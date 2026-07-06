@@ -29,7 +29,6 @@ const URGENCY_KEYS: Record<string, TranslationKey> = {
 };
 
 const STATUS_OPTIONS = ['New', 'In Review', 'Pending', 'Active', 'Interview', 'Placed', 'On Hold', 'Rejected', 'Closed'] as const;
-type LeadStatus = typeof STATUS_OPTIONS[number];
 
 const STATUS_STYLE: Record<string, string> = {
   'New':       'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/30',
@@ -255,7 +254,7 @@ export function B2bLeadsTable() {
   const { cseReps } = useCseReps();
 
   const cseNameById = useMemo(() => new Map(cseReps.map((c) => [c.id, c.name])), [cseReps]);
-  const leads = data ?? [];
+  const leads = useMemo(() => data ?? [], [data]);
 
   // StatusCell's own single-lead PATCH has no toast (just a visual
   // checkmark) -- bulk needs an explicit summary since there's no
