@@ -8,6 +8,24 @@ function getResend(): Resend | null {
   return key ? new Resend(key) : null;
 }
 
+// The Resend SDK does NOT throw on an API-level failure (invalid/
+// unverified from-address, restricted API key, rate limit, etc.) --
+// .emails.send() resolves successfully with { data: null, error: {...} }
+// instead. Every call site in this file used to `await` the send and
+// ignore that return value entirely, so a real Resend error was silently
+// swallowed: the promise "succeeded," the caller's own try/catch never
+// fired, and nothing ever reached logFailure/system_events. Confirmed
+// live -- portal_login_tokens rows were being created (the app logic runs
+// fine) with zero system_events rows for the send step, exactly what this
+// bug produces. This turns that silent failure into a thrown Error so
+// every caller's existing try/catch (all of them already wrap these
+// functions per each function's own doc comment) actually logs it.
+function assertResendSuccess(result: { error: { message: string; name: string } | null }): void {
+  if (result.error) {
+    throw new Error(`Resend error (${result.error.name}): ${result.error.message}`);
+  }
+}
+
 export async function sendPortalLoginEmail(opts: {
   to: string;
   verifyApiPath: '/api/company-portal/verify' | '/api/candidate-portal/verify';
@@ -22,7 +40,7 @@ export async function sendPortalLoginEmail(opts: {
 
   const link = `${SITE_URL}${opts.verifyApiPath}?token=${encodeURIComponent(opts.token)}`;
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `Your ${opts.label} sign-in link`,
@@ -32,6 +50,7 @@ export async function sendPortalLoginEmail(opts: {
       <p>If you didn't request this, you can safely ignore this email.</p>
     `,
   });
+  assertResendSuccess(result);
 }
 
 // Layer 3 of the Company Dashboard roadmap: notify a company contact when
@@ -52,7 +71,7 @@ export async function sendInvoiceIssuedEmail(opts: {
     return;
   }
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `New invoice ${opts.invoiceNumber} for ${opts.position}`,
@@ -66,6 +85,7 @@ export async function sendInvoiceIssuedEmail(opts: {
       <p>You can view this and all your invoices any time in your <a href="${SITE_URL}/company/portal">Company Portal</a>.</p>
     `,
   });
+  assertResendSuccess(result);
 }
 
 // Layer 4 of the Company Dashboard roadmap: notify a company contact when
@@ -106,5 +126,6 @@ export async function sendJobRequestDecisionEmail(opts: {
       <p>You can submit a revised request any time in your <a href="${SITE_URL}/company/portal">Company Portal</a>.</p>
     `;
 
-  await resend.emails.send({ from: FROM, to: opts.to, subject, html });
+  const result = await resend.emails.send({ from: FROM, to: opts.to, subject, html });
+  assertResendSuccess(result);
 }

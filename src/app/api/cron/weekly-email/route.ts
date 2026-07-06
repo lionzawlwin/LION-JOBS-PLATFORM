@@ -56,12 +56,19 @@ export async function GET(req: NextRequest) {
           jobs:           jobBriefs,
           candidateCount: candidates.length,
         });
-        await resend.emails.send({
+        const result = await resend.emails.send({
           from:    FROM,
           to:      [company.email],
           subject: email.subject,
           html:    email.html,
         });
+        // See portalEmail.ts's assertResendSuccess comment -- Resend
+        // resolves successfully with { error } on an API-level failure
+        // instead of throwing; without this check `sent` would count a
+        // failed send as delivered.
+        if (result.error) {
+          throw new Error(`Resend error (${result.error.name}): ${result.error.message}`);
+        }
         sent++;
       } catch (err) {
         errors.push(`${company.name}: ${(err as Error).message}`);

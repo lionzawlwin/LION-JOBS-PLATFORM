@@ -140,7 +140,7 @@ export async function runCrmDigest(): Promise<void> {
 
     const totalCount = sections.reduce((sum, s) => sum + s.problems.length, 0);
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from:    FROM,
       to:      [alertEmail],
       subject: `Lion Jobs Agency — CRM digest: ${totalCount} item(s) need attention`,
@@ -149,6 +149,12 @@ export async function runCrmDigest(): Promise<void> {
   ${sections.map((s) => `<h3>${s.title} (${s.problems.length})</h3><ul>${s.problems.map((p) => `<li>${p}</li>`).join('')}</ul>`).join('')}
 </div>`,
     });
+    // See portalEmail.ts's assertResendSuccess comment -- Resend resolves
+    // successfully with { error } on an API-level failure instead of
+    // throwing.
+    if (result.error) {
+      throw new Error(`Resend error (${result.error.name}): ${result.error.message}`);
+    }
   } catch (err) {
     await logFailure({
       category: 'other',
