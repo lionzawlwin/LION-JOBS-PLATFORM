@@ -197,3 +197,29 @@ editing the already-applied `0005`. **Every `CREATE TABLE` from now on
 must include `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` in the same
 migration** — check `list_tables`'s `rls_enabled` field on the new table
 immediately after applying, every time, not just for staff.
+
+## `0034_scope_feedback_public_read_policy.sql` — written, NOT yet applied (2026-07-07)
+
+CTO Technical Audit Phase 4 (RLS defense-in-depth). Queried `pg_policies`
+directly against production rather than assuming from `rls_enabled`
+alone: 16 tables have RLS enabled with zero policies (Postgres treats
+this as deny-all by default -- already correct, nothing to fix), and of
+the 8 tables with explicit policies, 7 are already correctly scoped.
+The one real gap: `feedback_public_read` has `USING (true)` -- every row
+readable by the anon role, including feedback a candidate never
+consented to feature and rows still pending/rejected in moderation, not
+just the approved+consented subset `getFeaturedTestimonials()` actually
+intends to expose. This app only ever queries via the service-role key
+(bypasses RLS entirely, confirmed by grepping for `NEXT_PUBLIC_SUPABASE`/
+client-side `createClient` calls), so the current live app is completely
+unaffected by this fix either way -- it only matters if the anon key
+is ever used client-side or leaks.
+
+**Not applied for the same reason as `0033`**: applying it directly to
+production was correctly blocked by this session's safety guardrail as
+a live-database change needing explicit authorization beyond a general
+"execute the roadmap" delegation. Unlike `0033`, no application code
+depends on this migration -- it's safe to apply whenever convenient,
+with no corresponding code branch to merge afterward. Apply via
+`supabase db push`, the dashboard SQL editor, or ask Claude to run it
+via the Supabase MCP `apply_migration` tool with explicit authorization.
