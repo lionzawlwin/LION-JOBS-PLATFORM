@@ -3,7 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Printer, FileText, AlertTriangle, Banknote, X } from 'lucide-react';
 import { AccountPlansPanel } from './AccountPlansPanel';
+import { StatusStepper } from '@/components/ui/StatusStepper';
 import type { Invoice, InvoiceStatus, PaymentMethod } from '@/types';
+
+// Stepper sequence for the invoice lifecycle. 'Paid' is shown as the final
+// step so staff can see where an invoice is heading, but clicking it is a
+// no-op -- it's only ever reachable via "Record Payment" (see migration
+// 0026's comment on STATUSES below).
+const INVOICE_STEPS: { value: InvoiceStatus; label: string }[] = [
+  { value: 'Draft', label: 'Draft' },
+  { value: 'Sent',  label: 'Sent' },
+  { value: 'Paid',  label: 'Paid' },
+];
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
   Draft:   'bg-muted text-muted-foreground border-border',
@@ -12,10 +23,11 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   Overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700/30',
 };
 
-// 'Paid' is deliberately not a manual dropdown option -- it can only be
-// reached via "Record Payment", so every Paid invoice always has a backing
-// payment record (amount, method, who confirmed it). See migration 0026.
-const STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Overdue'];
+// Full set, used only for the "All statuses" filter dropdown above the
+// table -- staff filtering the list can still search for Paid invoices,
+// distinct from the per-row editor below (which excludes Paid; see
+// INVOICE_STEPS' comment).
+const FILTER_STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Paid', 'Overdue'];
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'bank_transfer', label: 'Bank Transfer' },
@@ -203,7 +215,7 @@ export function BillingView() {
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
           >
             <option value="">All statuses</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            {FILTER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </div>
@@ -249,14 +261,35 @@ export function BillingView() {
                     {inv.status === 'Paid' ? (
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES.Paid}`}>Paid</span>
                     ) : (
-                      <select
-                        value={inv.status}
-                        onChange={(e) => changeStatus(inv.id, e.target.value as InvoiceStatus)}
-                        disabled={savingId === inv.id}
-                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inv.status]}`}
-                      >
-                        {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <StatusStepper
+                          steps={INVOICE_STEPS}
+                          current={inv.status === 'Overdue' ? 'Sent' : inv.status}
+                          offPath={inv.status === 'Overdue' ? { label: 'Overdue', tone: 'danger' } : null}
+                          onSelect={(s) => {
+                            if (s === 'Paid' || savingId === inv.id) return;
+                            changeStatus(inv.id, s);
+                          }}
+                        />
+                        {inv.status === 'Sent' && (
+                          <button
+                            onClick={() => changeStatus(inv.id, 'Overdue')}
+                            disabled={savingId === inv.id}
+                            className="shrink-0 text-[10px] font-semibold text-muted-foreground underline decoration-dotted hover:text-red-600"
+                          >
+                            Mark overdue
+                          </button>
+                        )}
+                        {inv.status === 'Overdue' && (
+                          <button
+                            onClick={() => changeStatus(inv.id, 'Sent')}
+                            disabled={savingId === inv.id}
+                            className="shrink-0 text-[10px] font-semibold text-muted-foreground underline decoration-dotted hover:text-foreground"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="p-3 text-muted-foreground">{fmtDate(inv.issuedAt)}</td>
