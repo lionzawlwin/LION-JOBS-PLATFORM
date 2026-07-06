@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, UserCircle, LogOut, Calendar, MapPin } from 'lucide-react';
+import { Loader2, UserCircle, LogOut, Calendar, MapPin, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 
 interface ApplicationSummary {
   id: string;
@@ -28,9 +30,17 @@ const STAGE_STYLE: Record<string, string> = {
   Hired:        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
 };
 
+const STAGE_KEYS: Record<string, TranslationKey> = {
+  Applied:     'candp_stage_applied',
+  Shortlisted: 'candp_stage_shortlisted',
+  Interview:   'candp_stage_interview',
+  Hired:       'candp_stage_hired',
+};
+
 export function CandidatePortalClientImpl() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, toggleLang } = useLanguage();
   const [data, setData] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -75,7 +85,7 @@ export function CandidatePortalClientImpl() {
   if (error || !data) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground">Couldn&apos;t load your portal. Please try signing in again.</p>
+        <p className="text-sm text-muted-foreground">{t('cp_load_error')}</p>
       </div>
     );
   }
@@ -88,22 +98,31 @@ export function CandidatePortalClientImpl() {
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white"><UserCircle size={18} /></span>
             <div>
               <h1 className="text-sm font-bold text-foreground">{data.name}</h1>
-              <p className="text-xs text-muted-foreground">My Applications</p>
+              <p className="text-xs text-muted-foreground">{t('candp_applications_title')}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
-          >
-            <LogOut size={13} /> Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLang}
+              aria-label="Switch language"
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <Languages size={13} /> {t('nav_lang_toggle')}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <LogOut size={13} /> {t('cp_sign_out')}
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl space-y-3 px-4 py-8 sm:px-6">
         {data.applications.length === 0 ? (
           <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            No applications found on this account yet.
+            {t('candp_no_applications')}
           </p>
         ) : (
           data.applications.map((app) => (
@@ -114,13 +133,13 @@ export function CandidatePortalClientImpl() {
                   {app.company && <p className="text-xs text-muted-foreground">{app.company}</p>}
                 </div>
                 <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', STAGE_STYLE[app.stage] ?? 'bg-muted text-muted-foreground')}>
-                  {app.stage}
+                  {STAGE_KEYS[app.stage] ? t(STAGE_KEYS[app.stage]) : app.stage}
                 </span>
               </div>
               <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Calendar size={11} /> Applied {new Date(app.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                <span className="flex items-center gap-1"><Calendar size={11} /> {t('candp_applied_on').replace('{date}', new Date(app.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }))}</span>
                 {app.interviewDate && (
-                  <span className="flex items-center gap-1"><Calendar size={11} /> Interview {new Date(app.interviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  <span className="flex items-center gap-1"><Calendar size={11} /> {t('candp_interview_on').replace('{date}', new Date(app.interviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }))}</span>
                 )}
                 {app.interviewLocation && (
                   <span className="flex items-center gap-1"><MapPin size={11} /> {app.interviewLocation}</span>
