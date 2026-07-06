@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
-import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles, Languages } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -62,6 +63,7 @@ interface MeResponse {
 export function CompanyPortalClientImpl() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, toggleLang } = useLanguage();
   const [data, setData] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -133,10 +135,26 @@ export function CompanyPortalClientImpl() {
   if (error || !data) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground">Couldn&apos;t load your portal. Please try signing in again.</p>
+        <p className="text-sm text-muted-foreground">{t('cp_load_error')}</p>
       </div>
     );
   }
+
+  // Raw status strings come from the DB in English (InvoiceStatus/
+  // ContractStatus); these translate them for display without changing
+  // the underlying values anything else compares against.
+  const invoiceStatusLabel: Record<string, string> = {
+    Draft:   t('cp_invoice_status_draft'),
+    Sent:    t('cp_invoice_status_sent'),
+    Paid:    t('cp_invoice_status_paid'),
+    Overdue: t('cp_invoice_status_overdue'),
+  };
+  const contractStatusLabel: Record<string, string> = {
+    Draft:      t('contract_status_draft'),
+    Active:     t('contract_status_active'),
+    Completed:  t('contract_status_completed'),
+    Terminated: t('contract_status_terminated'),
+  };
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -149,12 +167,21 @@ export function CompanyPortalClientImpl() {
               <p className="text-xs text-muted-foreground">{data.company.industry} · {data.company.city}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
-          >
-            <LogOut size={13} /> Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLang}
+              aria-label="Switch language"
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <Languages size={13} /> {t('nav_lang_toggle')}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <LogOut size={13} /> {t('cp_sign_out')}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -166,18 +193,18 @@ export function CompanyPortalClientImpl() {
                 <Sparkles size={18} />
               </span>
               <div>
-                <h2 className="text-sm font-bold text-foreground">Featured Employer Placement</h2>
+                <h2 className="text-sm font-bold text-foreground">{t('cp_featured_title')}</h2>
                 {data.company.isFeatured ? (
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Your company is currently featured
                     {data.company.featuredUntil
-                      ? ` until ${new Date(data.company.featuredUntil).toLocaleDateString()}.`
-                      : '.'}
+                      ? t('cp_featured_active_with_date').replace('{date}', new Date(data.company.featuredUntil).toLocaleDateString())
+                      : t('cp_featured_active_no_date')}
                   </p>
                 ) : (
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Get top placement and a highlighted badge across the job board and your company profile
-                    for {data.company.featuredPlacementDurationDays} days — {data.company.featuredPlacementPriceMmk.toLocaleString()} MMK.
+                    {t('cp_featured_pitch')
+                      .replace('{days}', String(data.company.featuredPlacementDurationDays))
+                      .replace('{price}', data.company.featuredPlacementPriceMmk.toLocaleString())}
                   </p>
                 )}
               </div>
@@ -186,7 +213,7 @@ export function CompanyPortalClientImpl() {
             {!data.company.isFeatured && (
               featuredRequestSent ? (
                 <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  <Check size={13} /> Request sent — we&apos;ll invoice you to activate it.
+                  <Check size={13} /> {t('cp_featured_request_sent')}
                 </span>
               ) : (
                 <button
@@ -195,8 +222,8 @@ export function CompanyPortalClientImpl() {
                   className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:bg-amber-600 disabled:opacity-60 transition-colors"
                 >
                   {requestingFeatured
-                    ? <><Loader2 size={13} className="animate-spin" /> Sending…</>
-                    : <><Sparkles size={13} /> Boost / Feature My Company</>
+                    ? <><Loader2 size={13} className="animate-spin" /> {t('cv_sending')}</>
+                    : <><Sparkles size={13} /> {t('cp_featured_cta')}</>
                   }
                 </button>
               )
@@ -205,31 +232,33 @@ export function CompanyPortalClientImpl() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-foreground">Your Hiring Insights</h2>
+          <h2 className="mb-3 text-sm font-bold text-foreground">{t('cp_insights_title')}</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Jobs Posted</p>
+              <p className="text-xs text-muted-foreground">{t('cp_stat_jobs_posted')}</p>
               <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalJobsPosted}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Job Views</p>
+              <p className="text-xs text-muted-foreground">{t('cp_stat_job_views')}</p>
               <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalViews}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Total Applicants</p>
+              <p className="text-xs text-muted-foreground">{t('cp_stat_total_applicants')}</p>
               <p className="mt-1 text-xl font-bold text-foreground">{data.insights.totalApplicants}</p>
               {data.insights.viewToApplyRate !== null && (
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{Math.round(data.insights.viewToApplyRate * 100)}% of viewers applied</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {t('cp_stat_view_to_apply_pct').replace('{pct}', String(Math.round(data.insights.viewToApplyRate * 100)))}
+                </p>
               )}
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Fill Rate</p>
+              <p className="text-xs text-muted-foreground">{t('cp_stat_fill_rate')}</p>
               <p className="mt-1 text-xl font-bold text-foreground">
                 {data.insights.fillRate !== null ? `${Math.round(data.insights.fillRate * 100)}%` : '—'}
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Avg. Days to First Hire Applying</p>
+              <p className="text-xs text-muted-foreground">{t('cp_stat_avg_days_to_hire')}</p>
               <p className="mt-1 text-xl font-bold text-foreground">
                 {data.insights.avgDaysToFirstApplicantHired !== null ? `${data.insights.avgDaysToFirstApplicantHired}d` : '—'}
               </p>
@@ -238,7 +267,7 @@ export function CompanyPortalClientImpl() {
           <div className="mt-3 flex justify-end">
             {slotRequestSent ? (
               <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                <Check size={13} /> Request sent — your CSE will follow up.
+                <Check size={13} /> {t('cp_slots_request_sent')}
               </span>
             ) : (
               <button
@@ -247,8 +276,8 @@ export function CompanyPortalClientImpl() {
                 className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors disabled:opacity-60"
               >
                 {requestingSlots
-                  ? <><Loader2 size={13} className="animate-spin" /> Sending…</>
-                  : <><ArrowUpCircle size={13} /> Request more job slots</>
+                  ? <><Loader2 size={13} className="animate-spin" /> {t('cv_sending')}</>
+                  : <><ArrowUpCircle size={13} /> {t('cp_request_more_slots')}</>
                 }
               </button>
             )}
@@ -257,11 +286,11 @@ export function CompanyPortalClientImpl() {
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-            <Briefcase size={16} /> Your Open Positions ({data.jobs.length})
+            <Briefcase size={16} /> {t('cp_positions_title')} ({data.jobs.length})
           </h2>
           {data.jobs.length === 0 ? (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              No positions found under this account yet.
+              {t('cp_positions_empty')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -273,11 +302,11 @@ export function CompanyPortalClientImpl() {
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={11} /> {job.location} · {job.type}</p>
                     </div>
                     <div className="flex gap-3 text-center text-xs">
-                      <div><p className="flex items-center justify-center gap-1 font-bold text-foreground"><Eye size={11} className="text-muted-foreground" />{job.viewCount}</p><p className="text-muted-foreground">Views</p></div>
-                      <div><p className="font-bold text-foreground">{job.applicantCounts.Applied}</p><p className="text-muted-foreground">Applied</p></div>
-                      <div><p className="font-bold text-foreground">{job.applicantCounts.Shortlisted}</p><p className="text-muted-foreground">Shortlisted</p></div>
-                      <div><p className="font-bold text-foreground">{job.applicantCounts.Interview}</p><p className="text-muted-foreground">Interview</p></div>
-                      <div><p className="font-bold text-emerald-600">{job.applicantCounts.Hired}</p><p className="text-muted-foreground">Hired</p></div>
+                      <div><p className="flex items-center justify-center gap-1 font-bold text-foreground"><Eye size={11} className="text-muted-foreground" />{job.viewCount}</p><p className="text-muted-foreground">{t('cp_col_views')}</p></div>
+                      <div><p className="font-bold text-foreground">{job.applicantCounts.Applied}</p><p className="text-muted-foreground">{t('ov_stage_applied')}</p></div>
+                      <div><p className="font-bold text-foreground">{job.applicantCounts.Shortlisted}</p><p className="text-muted-foreground">{t('ov_stage_shortlisted')}</p></div>
+                      <div><p className="font-bold text-foreground">{job.applicantCounts.Interview}</p><p className="text-muted-foreground">{t('ov_stage_interview')}</p></div>
+                      <div><p className="font-bold text-emerald-600">{job.applicantCounts.Hired}</p><p className="text-muted-foreground">{t('ov_stage_hired')}</p></div>
                     </div>
                   </div>
                 </div>
@@ -288,22 +317,22 @@ export function CompanyPortalClientImpl() {
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-            <FileText size={16} /> Invoices ({data.invoices.length})
+            <FileText size={16} /> {t('cp_invoices_title')} ({data.invoices.length})
           </h2>
           {data.invoices.length === 0 ? (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              No invoices issued yet.
+              {t('cp_invoices_empty')}
             </p>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
-                    <th className="p-3">Invoice #</th>
-                    <th className="p-3">Position</th>
-                    <th className="p-3">Fee</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Issued</th>
+                    <th className="p-3">{t('cp_col_invoice_number')}</th>
+                    <th className="p-3">{t('cp_col_position')}</th>
+                    <th className="p-3">{t('cp_col_fee')}</th>
+                    <th className="p-3">{t('bl_col_status')}</th>
+                    <th className="p-3">{t('cp_col_issued')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,7 +341,7 @@ export function CompanyPortalClientImpl() {
                       <td className="p-3 font-mono text-xs">{inv.invoiceNumber}</td>
                       <td className="p-3">{inv.position}</td>
                       <td className="p-3">{inv.commissionFeeMmk.toLocaleString()} MMK</td>
-                      <td className="p-3">{inv.status}</td>
+                      <td className="p-3">{invoiceStatusLabel[inv.status] ?? inv.status}</td>
                       <td className="p-3 text-muted-foreground">{new Date(inv.issuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                     </tr>
                   ))}
@@ -324,11 +353,11 @@ export function CompanyPortalClientImpl() {
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-            <FileSignature size={16} /> Contracts ({data.contracts.length})
+            <FileSignature size={16} /> {t('cp_contracts_title')} ({data.contracts.length})
           </h2>
           {data.contracts.length === 0 ? (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-              No contracts on file yet.
+              {t('cp_contracts_empty')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -339,12 +368,12 @@ export function CompanyPortalClientImpl() {
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {c.startDate ? new Date(c.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       {' – '}
-                      {c.endDate ? new Date(c.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ongoing'}
+                      {c.endDate ? new Date(c.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : t('cp_ongoing')}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-foreground">{c.value.toLocaleString()} {c.currency}</p>
-                    <p className="text-xs text-muted-foreground">{c.status}</p>
+                    <p className="text-xs text-muted-foreground">{contractStatusLabel[c.status] ?? c.status}</p>
                   </div>
                 </div>
               ))}
