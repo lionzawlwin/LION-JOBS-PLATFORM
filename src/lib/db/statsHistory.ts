@@ -26,7 +26,11 @@ export async function recordDailySnapshot(): Promise<void> {
     supabase.from('jobs').select('id', { count: 'exact', head: true }),
     supabase.from('candidates').select('id', { count: 'exact', head: true }),
     supabase.from('companies').select('id', { count: 'exact', head: true }),
-    supabase.from('candidates').select('id', { count: 'exact', head: true }).eq('stage', 'Hired'),
+    // 'stage' lives on applications, not candidates (a candidate row has no
+    // stage column -- see src/lib/db/candidates.ts's AppRow/CandidateRow
+    // split) -- confirmed as the live cause of the cron failure via
+    // Supabase Postgres logs: `column candidates.stage does not exist`.
+    supabase.from('applications').select('id', { count: 'exact', head: true }).eq('stage', 'Hired'),
   ]);
 
   const counted = [
