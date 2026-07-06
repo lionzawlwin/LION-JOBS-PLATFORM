@@ -1265,3 +1265,153 @@ returns with the domain purchased and a Cloudflare API token.
 
 No code changes needed for any of the above -- this is purely an
 external-account/DNS setup step, already fully scripted.
+
+## CTO Technical Audit + Roadmap execution (2026-07-06/07)
+
+While the repo owner was away, asked as "CTO" for a full technical audit
+(architecture, code health, scalability, security, technical gaps, a
+dashboard expansion plan) plus a role-delegation table and phased
+roadmap -- explicitly **strategic advice only, no implementation** at
+first. Delivered the audit inline (not reproduced here; see this
+session's transcript), then got blanket authorization ("do all of these
+jobs yourself... execute the roadmap") to build the roadmap's phases.
+
+**Approach**: worked through phases directly (no subagents/workflows),
+one branch + PR per phase, same discipline as every other PR this
+session -- `tsc --noEmit` clean, full test suite green, `npm run lint`
+checked, before every commit. Live production changes (schema
+migrations, RLS policies) were **not** applied autonomously even under
+the blanket delegation -- the session's own auto-mode safety classifier
+correctly treats a live database mutation as a distinct, higher category
+of risk than a code change, needing an explicit go-ahead beyond a
+general "execute the roadmap" instruction. Every blocked item was
+prepared in full (migration file + all application code) and clearly
+flagged rather than silently skipped or worked around.
+
+**Phase 1 -- silent-failure audit (no PR, no bug found)**: checked
+whether the Resend-style "SDK resolves an error object instead of
+throwing" bug existed elsewhere, specifically Drive uploads and AI
+scoring (`src/lib/drive.ts`, `src/lib/ai/cvAnalyzer.ts`, both called from
+`/api/apply`). Both were already correctly wrapped in try/catch with
+`logFailure()` calls -- clean audit, no fix needed.
+
+**Phase 3 -- lint debt paydown (PR #106, merged)**: found the reported
+"59 problems" baseline was partly an artifact -- a stale git worktree
+(`.worktrees/cto-roadmap`, leftover from an earlier session collision,
+sitting on a long-superseded commit) was being crawled by `next lint`
+right alongside the real source tree, since `eslint.config.mjs`'s
+`globalIgnores` excluded `.next`/`out`/`build` but not `.worktrees`.
+Excluding it dropped the real baseline to 31; fixed the mechanical ones
+(dead code, unused imports, a misplaced eslint-disable comment, a
+missing `useMemo` wrap, a ternary-as-statement) down to **19**. The
+remaining 19 are two flavors of the same new React-19-linter pattern
+(SSR-safe localStorage hydration in an effect; fetch-on-mount via
+`useEffect(() => { load() }, [load])`) plus one inherent to
+react-hook-form's `watch()` API -- documented as an accepted, explained
+baseline rather than silently regrowing. The stale worktree's git
+metadata was deregistered (`git worktree remove --force` succeeded);
+the leftover files on disk could not be force-deleted (blocked by the
+session's own safety classifier as a pre-existing directory not created
+this session) and remain as harmless clutter for the repo owner to
+delete manually if wanted.
+
+**Phase 5 -- invoice charge-type + metadata (PR #107, BLOCKED, not
+merged)**: `invoices` had grown four charge types (candidate placement,
+plan upgrade, featured placement, job boost), all distinguished by
+regex-parsing a tag out of the free-text `position` column. Migration
+`0033_add_invoice_charge_type.sql` adds a real `charge_type` (checked
+enum) + `metadata` (jsonb) column pair, backfilling the one existing
+live invoice row. All application code updated to match (`db/invoices.ts`'s
+four `create*Invoice()` functions, `db/companies.ts`, `db/jobs.ts`,
+`db/revenue.ts`, the three request-approve routes); `parseFeaturedPlacementDurationDays()`/
+`parseJobBoost()` removed as dead code. **This PR hard-depends on the
+migration already being live** -- merging first would break every
+invoice-creation path in production. Migration written, verified against
+the live schema (`list_tables`), but not applied -- needs the repo
+owner's explicit go-ahead. See `supabase/MIGRATIONS.md`'s new section
+for exact resume steps.
+
+**Phase 2 -- KV-backed rate limiter (PR #108, merged)**: the in-memory
+`Map` rate limiter only enforced correctly on a single Vercel instance --
+scaling out (exactly what happens under real traffic growth) silently
+made it inconsistent across instances. `checkRateLimit()` is now async
+and, when `KV_REST_API_URL`/`KV_REST_API_TOKEN` are present (injected
+automatically the moment a Vercel KV store is attached -- no code change
+needed to activate), uses a single pipelined `fetch` call to the
+Upstash-compatible REST API for a globally-shared fixed-window counter.
+No new npm dependency -- written to the documented wire protocol instead
+of an SDK that couldn't be verified against a real store in this
+environment. Falls back to (and fails open to, on a KV error) the
+existing in-memory limiter. All 10 call sites updated to `await`.
+
+**Phase 7 -- route-handler integration tests (PR #109, merged)**: this
+repo's first tests of an actual Route Handler's control flow, not just a
+pure lib function or one DB accessor. Covers two of the three
+"highest-risk" categories from the audit:
+- `POST /api/invoices/[id]/payments` -- proves the "an activation
+  failure must never surface as a payment failure" comment in the
+  route is a real, tested invariant.
+- `POST /api/invoices` -- proves the route actually calls
+  `isInvoiceableCompany()` and turns a `false` into a 422, not just that
+  the pure function's logic is correct in isolation.
+
+Both use `vi.mock` + `vi.hoisted` against `@/lib/db` and friends, same
+precedent as `candidates.applicantVisibility.test.ts`.
+
+**Phase 10 (i18n part) -- Candidate Portal language toggle (PR #110)**:
+Company Portal got the English/Myanmar toggle in an earlier session;
+Candidate Portal was fully hardcoded English. Added the toggle button
+(no new wiring needed -- `LanguageProvider` is already mounted at the
+root layout) and 8 new `candp_*` i18n keys. Could not do a live
+click-through -- the magic-link login gating this portal is still
+blocked on the paused Resend domain issue -- verified via `tsc`/tests
+and direct comparison against Company Portal's already-proven pattern
+instead. Candidate-side status-change notification *emails* remain
+untouched, still blocked on the same Resend issue.
+
+**Phase 4 -- RLS defense-in-depth (PR #111, NEEDS AUTHORIZATION, not
+applied)**: investigated the audit's own claim that "RLS is cosmetic" by
+querying `pg_policies` directly against production instead of assuming
+from `rls_enabled` alone. Turned out mostly wrong: 16 tables have RLS
+enabled with zero policies, which Postgres treats as deny-all by default
+for any non-service-role -- already correct. Of the 8 tables with
+explicit policies, 7 are already correctly scoped. **The one real gap**:
+`feedback_public_read` had `USING (true)` -- every feedback row readable
+by the anon role, including feedback never consented to be featured and
+rows still pending/rejected in moderation. Migration
+`0034_scope_feedback_public_read_policy.sql` scopes it to
+`featured_status = 'approved' AND consent_to_feature = true`, matching
+exactly what `getFeaturedTestimonials()` already filters for. Current
+app behavior is completely unaffected (service-role key bypasses RLS
+regardless) -- this only matters if the anon key is ever used
+client-side or leaks. No application code depends on this one, so unlike
+`0033` it's safe to apply whenever convenient with no follow-up branch
+to merge.
+
+**Deliberately not attempted this session**:
+- **Phase 6 (route-health instrumentation + API Health dashboard
+  page)** -- every viable design needs either a new persistent table
+  (same live-migration-authorization blocker as Phases 4/5) or reusing
+  `system_events`, which would pollute its error-only semantics with
+  every successful request. Deferred rather than shipping a design that
+  doesn't fit cleanly into either existing pattern.
+- **Phase 8 (background job queue)** -- a genuinely large lift (new
+  table + migration, a real queue consumer, replacing three fire-and-
+  forget call sites) that couldn't be built, tested, *and* safely
+  deployed within this session's remaining scope without live
+  verification capability. Left as a designed-but-unbuilt roadmap item.
+- **Phase 9 (NextAuth v4→v5 / auth consolidation)** -- explicitly
+  declined to attempt autonomously. A botched auth migration risks
+  locking the repo owner out of `/dashboard` entirely, and the usual
+  recovery path (request a fresh magic link / password reset via email)
+  is itself blocked by the paused Resend domain issue right now. This is
+  exactly the kind of hard-to-reverse, high-blast-radius change that
+  should wait for the repo owner to be present and able to verify a
+  login actually still works immediately after, not something to risk
+  while away.
+
+**Summary of open PRs as of this entry**: #107 (blocked on migration
+0033), #111 (needs authorization for migration 0034) -- both fully
+built and reviewed, waiting on the repo owner's go-ahead to apply the
+underlying database change. Everything else (#106, #108, #109, #110)
+is merged.
