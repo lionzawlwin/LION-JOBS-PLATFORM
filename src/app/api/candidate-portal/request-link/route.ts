@@ -21,7 +21,7 @@ const GENERIC_RESPONSE = {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const ipLimit = checkRateLimit(`candidate-portal-request-link:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const ipLimit = await checkRateLimit(`candidate-portal-request-link:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!ipLimit.allowed) {
     await logRateLimitHit('/api/candidate-portal/request-link');
     return NextResponse.json(
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
   const email = parsed.data.email;
 
-  const emailLimit = checkRateLimit(`candidate-portal-request-link-email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const emailLimit = await checkRateLimit(`candidate-portal-request-link-email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!emailLimit.allowed) {
     await logRateLimitHit('/api/candidate-portal/request-link');
     return NextResponse.json(GENERIC_RESPONSE);

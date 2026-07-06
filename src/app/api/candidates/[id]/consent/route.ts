@@ -24,7 +24,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`candidate-consent:${ip}`, 10, 60);
+  const rl = await checkRateLimit(`candidate-consent:${ip}`, 10, 60);
   if (!rl.allowed) {
     await logRateLimitHit('/api/candidates/[id]/consent');
     return Response.json({ error: 'Too many requests. Please wait a minute.' }, { status: 429 });

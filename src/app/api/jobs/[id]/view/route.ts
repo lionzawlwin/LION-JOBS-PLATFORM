@@ -15,7 +15,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`job-view:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const rl = await checkRateLimit(`job-view:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
     await logRateLimitHit('/api/jobs/[id]/view');
     return NextResponse.json({ ok: false }, { status: 429 });

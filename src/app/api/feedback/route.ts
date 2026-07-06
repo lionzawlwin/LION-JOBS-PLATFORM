@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 // POST /api/feedback — submit interview feedback
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`feedback:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const rl = await checkRateLimit(`feedback:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
     await logRateLimitHit('/api/feedback');
     return NextResponse.json(
