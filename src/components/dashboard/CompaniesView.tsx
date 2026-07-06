@@ -34,6 +34,7 @@ export function CompaniesView() {
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | ''>('');
   const [showInternal, setShowInternal]       = useState(false);
+  const [familyFilter, setFamilyFilter]       = useState('');
   const [emailSending, setEmailSending]       = useState<string | null>(null);
   const [emailType, setEmailType]             = useState<'welcome' | 'outreach'>('welcome');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -96,6 +97,15 @@ export function CompaniesView() {
     setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, isInternal } : c));
   }
 
+  async function setParent(id: string, parentAccountId: string | null) {
+    await fetch(`/api/companies/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parentAccountId }),
+    });
+    setCompanies((prev) => prev.map((c) => c.id === id ? { ...c, parentAccountId } : c));
+  }
+
   async function handleDelete(id: string) {
     setDeletingId(id);
     try {
@@ -130,11 +140,23 @@ export function CompaniesView() {
     }
   }
 
+  const companyById = new Map(companies.map((c) => [c.id, c]));
+  const childIds = new Set(companies.filter((c) => c.parentAccountId).map((c) => c.parentAccountId as string));
+  // Layer 12: only companies with at least one child are offered as a
+  // "family" to filter/group by -- a company nobody has joined isn't a
+  // family yet.
+  const familyOptions = companies.filter((c) => childIds.has(c.id));
+
   const filtered = companies.filter((c) => {
     const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || c.status === statusFilter;
     const matchInternal = showInternal || !c.isInternal;
-    return matchSearch && matchStatus && matchInternal;
+    const matchFamily = familyFilter === ''
+      ? true
+      : familyFilter === '__standalone__'
+        ? !c.parentAccountId && !childIds.has(c.id)
+        : c.id === familyFilter || c.parentAccountId === familyFilter;
+    return matchSearch && matchStatus && matchInternal && matchFamily;
   });
 
   const stats = { total: companies.length, leads: companies.filter((c) => c.status === 'Lead').length, clients: companies.filter((c) => c.status === 'Active' || c.status === 'In-Contract').length };
@@ -183,6 +205,19 @@ export function CompaniesView() {
             />
             Show internal
           </label>
+          {familyOptions.length > 0 && (
+            <select
+              value={familyFilter}
+              onChange={(e) => setFamilyFilter(e.target.value)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+            >
+              <option value="">All accounts</option>
+              <option value="__standalone__">Standalone only</option>
+              {familyOptions.map((f) => (
+                <option key={f.id} value={f.id}>Family: {f.name}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex gap-2 items-center">
           <select
@@ -261,6 +296,11 @@ export function CompaniesView() {
                   <div>
                     <p className="font-semibold text-foreground text-sm leading-tight">{co.name}</p>
                     {co.contactPerson && <p className="text-xs text-muted-foreground">{co.contactPerson}</p>}
+                    {co.parentAccountId && companyById.get(co.parentAccountId) && (
+                      <p className="text-[11px] text-brand-600 dark:text-brand-300">
+                        Part of {companyById.get(co.parentAccountId)!.name}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -326,6 +366,22 @@ export function CompaniesView() {
                 {co.city    && <p className="flex items-center gap-1.5"><MapPin size={11} /> {co.city} · {co.industry}</p>}
                 {co.notes   && <p className="mt-2 text-xs italic text-muted-foreground/70 line-clamp-2">{co.notes}</p>}
               </div>
+
+              <label className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                Group under
+                <select
+                  value={co.parentAccountId ?? ''}
+                  onChange={(e) => setParent(co.id, e.target.value || null)}
+                  className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                >
+                  <option value="">— standalone —</option>
+                  {companies
+                    .filter((other) => other.id !== co.id && other.parentAccountId !== co.id)
+                    .map((other) => (
+                      <option key={other.id} value={other.id}>{other.name}</option>
+                    ))}
+                </select>
+              </label>
 
               {co.email && (
                 <button

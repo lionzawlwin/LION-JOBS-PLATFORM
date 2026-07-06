@@ -11,7 +11,8 @@ import { ShareButton } from '@/components/jobs/ShareButton';
 import { SimilarJobs } from '@/components/jobs/SimilarJobs';
 import { TrackJobView } from '@/components/jobs/TrackJobView';
 import { JoinCommunity } from '@/components/JoinCommunity';
-import { getJobs } from '@/lib/db';
+import { VerifiedEmployerBadge } from '@/components/jobs/VerifiedEmployerBadge';
+import { getJobs, getCompanyHealthBand } from '@/lib/db';
 import { buildJobSlug, formatSalary, timeAgo, cn } from '@/lib/utils';
 
 // Pre-render all known job slugs at build time; new jobs fall back to SSR
@@ -69,6 +70,7 @@ export default async function JobDetailPage(
 
   if (!job) notFound();
 
+  const healthBand = job.companyId ? await getCompanyHealthBand(job.companyId) : null;
   const jobUrl  = `${SITE_URL}/jobs/${slug}`;
   const related = jobs
     .filter((j) => j.category === job.category && j.id !== job.id)
@@ -115,7 +117,10 @@ export default async function JobDetailPage(
             <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
               {job.title}
             </h1>
-            <p className="mt-1 text-base font-semibold text-muted-foreground">{job.company}</p>
+            <p className="mt-1 flex items-center gap-2 text-base font-semibold text-muted-foreground">
+              {job.company}
+              <VerifiedEmployerBadge band={healthBand} />
+            </p>
 
             {/* Meta row */}
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">

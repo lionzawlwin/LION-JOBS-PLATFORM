@@ -50,7 +50,43 @@ export async function GET() {
     if (counts && STAGES.includes(candidate.stage)) counts[candidate.stage]++;
   }
 
+  // Layer 14 (Client ROI Dashboard). Aggregate-only, same applicant-detail
+  // boundary as above -- no candidate names/contacts, just counts and
+  // averages computed from data already fetched for the applicant-count
+  // aggregation. avgDaysToFirstApplicantHired is an approximation (days
+  // between the job's posted_at and the eventual hire's applied_at, not a
+  // true stage-transition-to-Hired timestamp -- that would need
+  // stage_updated_at added to getCandidates()'s query, a broader change
+  // than this pass's scope) -- labelled as such in the UI, not overclaimed.
+  const jobPostedAtById = new Map(companyJobs.map((j) => [j.id, j.postedAt]));
+  const companyApplicants = allCandidates.filter((c) => c.jobId && companyJobIds.has(c.jobId));
+  const hiredApplicants = companyApplicants.filter((c) => c.stage === 'Hired');
+  const scoredApplicants = companyApplicants.filter((c) => c.matchScore > 0);
+
+  const daysToFillSamples = hiredApplicants
+    .map((c) => {
+      const postedAt = c.jobId ? jobPostedAtById.get(c.jobId) : undefined;
+      if (!postedAt) return null;
+      const days = Math.floor((new Date(c.appliedAt).getTime() - new Date(postedAt).getTime()) / (1000 * 60 * 60 * 24));
+      return days >= 0 ? days : null;
+    })
+    .filter((d): d is number => d !== null);
+
+  const insights = {
+    totalJobsPosted: companyJobs.length,
+    totalApplicants: companyApplicants.length,
+    hiredCount: hiredApplicants.length,
+    fillRate: companyJobs.length > 0 ? hiredApplicants.length / companyJobs.length : null,
+    avgMatchScore: scoredApplicants.length > 0
+      ? Math.round(scoredApplicants.reduce((sum, c) => sum + c.matchScore, 0) / scoredApplicants.length)
+      : null,
+    avgDaysToFirstApplicantHired: daysToFillSamples.length > 0
+      ? Math.round(daysToFillSamples.reduce((sum, d) => sum + d, 0) / daysToFillSamples.length)
+      : null,
+  };
+
   return NextResponse.json({
+    insights,
     company: {
       id: company.id,
       name: company.name,

@@ -26,6 +26,7 @@ export async function PATCH(
     });
     await logAudit({ action: 'update', domain: 'enterprise', entityType: 'contract', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
+    revalidateTag('client-health', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });
@@ -44,6 +45,7 @@ export async function DELETE(
     await deleteContract(id);
     await logAudit({ action: 'delete', domain: 'enterprise', entityType: 'contract', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
+    revalidateTag('client-health', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

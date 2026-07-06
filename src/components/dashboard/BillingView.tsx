@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Printer, FileText, AlertTriangle } from 'lucide-react';
+import { AccountPlansPanel } from './AccountPlansPanel';
 import type { Invoice, InvoiceStatus } from '@/types';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
@@ -74,6 +75,8 @@ export function BillingView() {
 
   return (
     <div className="space-y-6">
+      <AccountPlansPanel />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-bold text-foreground">Invoices</h3>
         <div className="flex gap-2">

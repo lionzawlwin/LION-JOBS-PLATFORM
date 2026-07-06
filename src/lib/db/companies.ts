@@ -19,6 +19,8 @@ function mapToCompany(row: Record<string, unknown>): Company {
     lastContacted: (row.last_contacted as string) ?? '',
     createdAt:     row.created_at as string,
     isInternal:    (row.is_internal as boolean) ?? false,
+    parentAccountId: (row.parent_account_id as string) ?? null,
+    planId:          (row.plan_id as string) ?? null,
   };
 }
 
@@ -99,6 +101,28 @@ export async function updateCompanyIsInternal(id: string, isInternal: boolean): 
     .update({ is_internal: isInternal })
     .eq('id', id);
   if (error) throw new Error(`Failed to update company internal flag: ${error.message}`);
+}
+
+// Layer 12 (Multi-Brand Account Grouping). parentAccountId: null clears the
+// grouping back to standalone. The self-reference and existence checks are
+// enforced by the DB (companies_parent_account_id_not_self CHECK + FK) --
+// not duplicated here.
+export async function updateCompanyParent(id: string, parentAccountId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ parent_account_id: parentAccountId })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update company parent account: ${error.message}`);
+}
+
+// Layer 13 (Plan Tiers & Usage Metering). planId: null unassigns the plan,
+// returning the account to unmetered (today's default) behavior.
+export async function updateCompanyPlan(id: string, planId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ plan_id: planId })
+    .eq('id', id);
+  if (error) throw new Error(`Failed to update company plan: ${error.message}`);
 }
 
 export async function deleteCompany(id: string): Promise<void> {

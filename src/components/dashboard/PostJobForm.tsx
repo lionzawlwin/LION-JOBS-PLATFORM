@@ -14,7 +14,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 // ── Constants ────────────────────────────────────────────────────
 const CATEGORIES = [
   'Engineering', 'Design', 'Marketing', 'Sales', 'Finance',
-  'Operations', 'Customer Service', 'Healthcare', 'Education', 'Other',
+  'Operations', 'Customer Service', 'Healthcare', 'Education',
+  'Logistics & Distribution', 'Other',
 ] as const;
 
 const TYPES = ['Full-time', 'Part-time', 'Contract', 'Remote', 'Hybrid'] as const;

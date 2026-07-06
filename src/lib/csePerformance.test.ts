@@ -32,7 +32,7 @@ describe('computeCsePerformance', () => {
     });
     expect(rows).toEqual([{
       cseRepId: 'cse-1', name: 'Alice', activeContractsCount: 2, activeContractValue: 1200,
-      assignedCompaniesCount: 1, claimedLeadsCount: 0,
+      assignedCompaniesCount: 1, claimedLeadsCount: 0, atRiskAccountsCount: 0,
     }]);
   });
 
@@ -83,5 +83,18 @@ describe('computeCsePerformance', () => {
 
   it('returns an empty array for no reps', () => {
     expect(computeCsePerformance({ cseReps: [], contracts: [], leads: [] })).toEqual([]);
+  });
+
+  it('counts only red-band assigned companies as at-risk', () => {
+    const rows = computeCsePerformance({
+      cseReps: [cseRep()],
+      contracts: [contract({ companyId: 'co-1' }), contract({ id: 'ct-2', companyId: 'co-2' })],
+      leads: [],
+      healthAccounts: [
+        { companyId: 'co-1', companyName: 'Red Co', band: 'red', daysSinceLastContact: 40 },
+        { companyId: 'co-2', companyName: 'Green Co', band: 'green', daysSinceLastContact: 2 },
+      ],
+    });
+    expect(rows[0].atRiskAccountsCount).toBe(1);
   });
 });

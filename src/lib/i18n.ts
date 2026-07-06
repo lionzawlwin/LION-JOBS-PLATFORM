@@ -317,6 +317,10 @@ export const translations = {
     ent_kpi_active_count: 'Active Contracts',
     ent_kpi_account_count:'Enterprise Accounts',
     ent_kpi_top_cse:      'Top CSE',
+    ent_kpi_accounts_at_risk: 'Accounts at Risk',
+    ent_health_badge_green:   'Healthy',
+    ent_health_badge_yellow:  'Watch',
+    ent_health_badge_red:     'At risk',
     // Enterprise — toolbar
     ent_filter_all_status: 'All Status',
     ent_filter_all_cse:    'All CSEs',
@@ -1092,6 +1096,10 @@ export const translations = {
     ent_kpi_active_count: 'အသက်ဝင်နေသော စာချုပ်များ',
     ent_kpi_account_count:'လုပ်ငန်းကြီး အကောင့်များ',
     ent_kpi_top_cse:      'ထိပ်တန်း ရောင်းချသူ',
+    ent_kpi_accounts_at_risk: 'အန္တရာယ်ရှိသော အကောင့်များ',
+    ent_health_badge_green:   'ကျန်းမာသည်',
+    ent_health_badge_yellow:  'စောင့်ကြည့်ရန်',
+    ent_health_badge_red:     'အန္တရာယ်ရှိသည်',
     // Enterprise — toolbar
     ent_filter_all_status: 'အခြေအနေ အားလုံး',
     ent_filter_all_cse:    'ရောင်းချသူ အားလုံး',

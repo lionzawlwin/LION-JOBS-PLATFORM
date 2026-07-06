@@ -8,7 +8,8 @@ import { LION_LINKS } from '@/lib/deepLink';
 
 const CATEGORIES = [
   'All Categories', 'Engineering', 'Design', 'Marketing', 'Sales',
-  'Finance', 'Operations', 'Customer Service', 'Healthcare', 'Education', 'Other',
+  'Finance', 'Operations', 'Customer Service', 'Healthcare', 'Education',
+  'Logistics & Distribution', 'Other',
 ] as const;
 
 const KEY = 'lion_alert_category';

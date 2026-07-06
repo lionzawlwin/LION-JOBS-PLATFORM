@@ -7,6 +7,7 @@ import { useContracts } from '@/hooks/useContracts';
 import { useInteractions } from '@/hooks/useInteractions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
+import { computeHealthBand } from '@/lib/clientHealth';
 import type {
   Company,
   CompanyStatus,
@@ -14,7 +15,19 @@ import type {
   ContractType,
   ContractStatus,
   InteractionType,
+  HealthBand,
 } from '@/types';
+
+const HEALTH_DOT_STYLES: Record<HealthBand, string> = {
+  green:  'bg-brand-500',
+  yellow: 'bg-gold-500',
+  red:    'bg-red-500',
+};
+const HEALTH_BADGE_KEYS: Record<HealthBand, TranslationKey> = {
+  green:  'ent_health_badge_green',
+  yellow: 'ent_health_badge_yellow',
+  red:    'ent_health_badge_red',
+};
 
 const STATUS_STYLES: Record<CompanyStatus, string> = {
   Lead:          'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700/30',
@@ -76,6 +89,11 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
   const lastContact = interactions[0]?.occurredAt ?? null;
   const assignedCseId = activeContracts.find((c) => c.cseId)?.cseId ?? null;
   const assignedCseName = cseReps.find((r) => r.id === assignedCseId)?.name ?? '—';
+  const healthBand = computeHealthBand({
+    status: company.status,
+    lastContactedAt: lastContact,
+    hasActiveContract: activeContracts.length > 0,
+  });
 
   async function handleAddContract(e: React.FormEvent) {
     e.preventDefault();
@@ -152,7 +170,15 @@ export function EnterpriseAccountRow({ company, cseReps, onStatusChange, onDelet
             {company.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-foreground text-sm truncate">{company.name}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-foreground text-sm truncate">{company.name}</p>
+              {healthBand && (
+                <span
+                  title={t(HEALTH_BADGE_KEYS[healthBand])}
+                  className={cn('h-2 w-2 shrink-0 rounded-full', HEALTH_DOT_STYLES[healthBand])}
+                />
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">{assignedCseName}</p>
           </div>
         </div>

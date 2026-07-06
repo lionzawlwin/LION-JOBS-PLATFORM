@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, AlertTriangle, History, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, History, Download, ShieldOff } from 'lucide-react';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import type { TabDomain } from '@/lib/permissions';
 import type { AuditAction } from '@/types';
@@ -32,7 +32,7 @@ export function ActivityLog() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
-  const { entries, loading, error, hasMore, loadMore, exportCsvUrl } = useAuditLog({
+  const { entries, loading, error, hasMore, loadMore, exportCsvUrl, exportRedactedCsvUrl } = useAuditLog({
     domain: domainFilter || undefined,
     action: (actionFilter || undefined) as AuditAction | undefined,
     actorEmail: actorFilter || undefined,
@@ -47,12 +47,21 @@ export function ActivityLog() {
         <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
           <History size={15} /> Audit Log
         </h3>
-        <a
-          href={exportCsvUrl()}
-          className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
-        >
-          <Download size={12} /> Export CSV
-        </a>
+        <div className="flex gap-2">
+          <a
+            href={exportCsvUrl()}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+          >
+            <Download size={12} /> Export CSV
+          </a>
+          <a
+            href={exportRedactedCsvUrl()}
+            title="Actor identities replaced with role#n -- safe to share with an external party (e.g. enterprise procurement/security review)"
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+          >
+            <ShieldOff size={12} /> Export Redacted CSV
+          </a>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

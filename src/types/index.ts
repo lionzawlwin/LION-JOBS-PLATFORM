@@ -8,6 +8,10 @@ export type JobCategory =
   | 'Customer Service'
   | 'Healthcare'
   | 'Education'
+  // Layer 16b: added for the Vietnam-Myanmar import/distribution venture's
+  // warehouse/logistics hiring -- rides the existing job posting/filtering
+  // pipeline rather than a parallel intake system.
+  | 'Logistics & Distribution'
   | 'Other';
 
 export type JobType = 'Full-time' | 'Part-time' | 'Contract' | 'Remote' | 'Hybrid';
@@ -135,6 +139,38 @@ export interface Company {
   createdAt:     string;
   isInternal:    boolean;
   commissionRatePct?: number | null;
+  // Layer 12 (Multi-Brand Account Grouping). Null = standalone account,
+  // exactly today's behavior for every pre-existing row.
+  parentAccountId: string | null;
+  // Layer 13 (Plan Tiers & Usage Metering). Null = no plan assigned, which
+  // means unmetered/no gating -- exactly today's behavior for every
+  // pre-existing row until a plan is deliberately assigned.
+  planId: string | null;
+}
+
+// Layer 13 (Plan Tiers & Usage Metering).
+export interface AccountPlan {
+  id:               string;
+  name:             string;
+  jobSlotLimit:     number | null; // null = unlimited
+  cseHoursIncluded: number | null;
+  priceMmk:         number | null;
+}
+
+export interface PlanUsage {
+  plan:        AccountPlan | null;
+  jobSlotsUsed: number;
+  atCapacity:  boolean;
+}
+
+export interface CompanyPlanUsageRow {
+  companyId:    string;
+  companyName:  string;
+  planId:       string | null;
+  planName:     string | null;
+  jobSlotLimit: number | null;
+  jobSlotsUsed: number;
+  atCapacity:   boolean;
 }
 
 export interface ApplicationPayload {
@@ -203,6 +239,24 @@ export interface EnterpriseStats {
   activeContractsCount:     number;
   enterpriseAccountsCount:  number;
   topCse: { id: string; name: string; value: number } | null;
+}
+
+// Layer 11 (Client Health Score). Only computed for accounts with an active
+// commercial relationship ('Active'/'In-Contract') -- Leads haven't started
+// engaging yet and Inactive accounts are already churned, so neither is
+// "at risk" in the sense this exists to catch.
+export type HealthBand = 'green' | 'yellow' | 'red';
+
+export interface ClientHealthAccount {
+  companyId:   string;
+  companyName: string;
+  band:        HealthBand;
+  daysSinceLastContact: number | null;
+}
+
+export interface ClientHealthSummary {
+  accounts: ClientHealthAccount[];
+  counts: Record<HealthBand, number>;
 }
 
 export interface AgencySettings {
@@ -338,4 +392,8 @@ export interface CsePerformanceRow {
   activeContractValue: number;
   assignedCompaniesCount: number;
   claimedLeadsCount: number;
+  // Layer 16: count of this rep's assigned companies currently in the red
+  // health band (Layer 11) -- surfaces overloaded/neglected books of
+  // business before they churn, not just deal volume.
+  atRiskAccountsCount: number;
 }

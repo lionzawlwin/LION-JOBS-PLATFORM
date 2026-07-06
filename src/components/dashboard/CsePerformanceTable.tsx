@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, AlertTriangle, Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useCsePerformance } from '@/hooks/useCsePerformance';
 
 export function CsePerformanceTable() {
@@ -40,6 +41,7 @@ export function CsePerformanceTable() {
               <th className="px-4 py-2">Contract Value</th>
               <th className="px-4 py-2">Companies</th>
               <th className="px-4 py-2">Leads Claimed</th>
+              <th className="px-4 py-2">At Risk</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -50,6 +52,9 @@ export function CsePerformanceTable() {
                 <td className="px-4 py-2.5 text-muted-foreground">{r.activeContractValue.toLocaleString()} MMK</td>
                 <td className="px-4 py-2.5 text-muted-foreground">{r.assignedCompaniesCount}</td>
                 <td className="px-4 py-2.5 text-muted-foreground">{r.claimedLeadsCount}</td>
+                <td className={cn('px-4 py-2.5 font-semibold', r.atRiskAccountsCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground')}>
+                  {r.atRiskAccountsCount}
+                </td>
               </tr>
             ))}
           </tbody>

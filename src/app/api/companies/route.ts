@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     });
     await logAudit({ action: 'create', domain: 'companies', entityType: 'company', entityId: id });
     revalidateTag('enterprise-stats', { expire: 0 });
+    revalidateTag('client-health', { expire: 0 });
     return Response.json({ ok: true, id }, { status: 201 });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

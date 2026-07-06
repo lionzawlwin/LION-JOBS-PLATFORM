@@ -14,7 +14,8 @@ import type { JobCategory, JobFilters, JobType } from '@/types';
 
 const CATEGORIES: JobCategory[] = [
   'Engineering', 'Design', 'Marketing', 'Sales',
-  'Finance', 'Operations', 'Customer Service', 'Healthcare', 'Education', 'Other',
+  'Finance', 'Operations', 'Customer Service', 'Healthcare', 'Education',
+  'Logistics & Distribution', 'Other',
 ];
 
 const TYPES: JobType[] = ['Full-time', 'Part-time', 'Contract', 'Remote', 'Hybrid'];

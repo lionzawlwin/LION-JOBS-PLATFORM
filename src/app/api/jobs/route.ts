@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { getJobsPaginated, appendJob } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { secureCompare } from '@/lib/apiSecurity';
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
   }
 
   await logAudit({ action: 'create', domain: 'post-job', entityType: 'job', entityId: jobId });
+  revalidateTag('plan-usage-summary', { expire: 0 });
 
   const PUBLISH_SECRET = process.env.PUBLISH_WEBHOOK_SECRET;
   const SITE_URL = process.env.SITE_URL ?? 'https://lion-jobs-platform.vercel.app';
