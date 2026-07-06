@@ -297,36 +297,44 @@ export function CompaniesView() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((co) => (
             <div key={co.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3">
+              {/* Header row: identity (left) + status (right) -- kept to just
+                  these two so neither competes for space with the action
+                  buttons below. */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white font-bold text-sm">
                     {co.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm leading-tight">{co.name}</p>
-                    {co.contactPerson && <p className="text-xs text-muted-foreground">{co.contactPerson}</p>}
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-foreground text-sm leading-tight">{co.name}</p>
+                    {co.contactPerson && <p className="truncate text-xs text-muted-foreground">{co.contactPerson}</p>}
                     {co.parentAccountId && companyById.get(co.parentAccountId) && (
-                      <p className="text-[11px] text-brand-600 dark:text-brand-300">
+                      <p className="truncate text-[11px] text-brand-600 dark:text-brand-300">
                         Part of {companyById.get(co.parentAccountId)!.name}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Status dropdown */}
-                  <div className="relative group">
-                    <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
-                      {t(STATUS_KEYS[co.status])} <ChevronDown size={10} />
-                    </button>
-                    <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
-                      {STATUSES.map((s) => (
-                        <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
-                          {t(STATUS_KEYS[s])}
-                        </button>
-                      ))}
-                    </div>
+                <div className="relative group shrink-0">
+                  <button className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', STATUS_STYLES[co.status])}>
+                    {t(STATUS_KEYS[co.status])} <ChevronDown size={10} />
+                  </button>
+                  <div className="absolute right-0 top-full z-10 mt-1 hidden group-hover:block rounded-xl border border-border bg-card shadow-lg">
+                    {STATUSES.map((s) => (
+                      <button key={s} onClick={() => changeStatus(co.id, s)} className={cn('block w-full px-4 py-2 text-xs text-left hover:bg-accent first:rounded-t-xl last:rounded-b-xl', s === co.status && 'font-semibold')}>
+                        {t(STATUS_KEYS[s])}
+                      </button>
+                    ))}
                   </div>
-                  {/* Featured toggle */}
+                </div>
+              </div>
+
+              {/* Action bar: its own row with breathing room, separated from
+                  the header by a divider -- toggles grouped on the left,
+                  destructive action pinned to the right so it's never
+                  mistaken for a peer of the other two. */}
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggleFeatured(co.id, !co.isFeatured)}
                     title={co.isFeatured ? 'Remove from Featured Employers' : 'Mark as Featured Employer'}
@@ -339,12 +347,11 @@ export function CompaniesView() {
                   >
                     <Star size={12} fill={co.isFeatured ? 'currentColor' : 'none'} />
                   </button>
-                  {/* Internal toggle */}
                   <button
                     onClick={() => toggleInternal(co.id, !co.isInternal)}
                     title={co.isInternal ? 'Mark as external client' : 'Mark as internal (group brand)'}
                     className={cn(
-                      'rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
+                      'whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
                       co.isInternal
                         ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700/30 dark:bg-amber-900/20 dark:text-amber-300'
                         : 'border-border text-muted-foreground hover:bg-accent',
@@ -352,34 +359,34 @@ export function CompaniesView() {
                   >
                     {co.isInternal ? 'Internal' : 'Mark internal'}
                   </button>
-                  {/* Delete button */}
-                  {confirmDeleteId === co.id ? (
-                    <div className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1">
-                      <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
-                      <button
-                        onClick={() => handleDelete(co.id)}
-                        disabled={deletingId === co.id}
-                        className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-                      >
-                        {deletingId === co.id ? <Loader2 size={10} className="animate-spin" /> : t('ent_row_confirm_yes')}
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
-                      >
-                        {t('ent_row_confirm_no')}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteId(co.id)}
-                      title={t('cv_delete_company_title')}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  )}
                 </div>
+
+                {confirmDeleteId === co.id ? (
+                  <div className="flex shrink-0 items-center gap-1 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-900/20 px-2 py-1">
+                    <AlertTriangle size={11} className="text-red-600 dark:text-red-400 shrink-0" />
+                    <button
+                      onClick={() => handleDelete(co.id)}
+                      disabled={deletingId === co.id}
+                      className="rounded-lg bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    >
+                      {deletingId === co.id ? <Loader2 size={10} className="animate-spin" /> : t('ent_row_confirm_yes')}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="rounded-lg border border-border bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-accent transition-colors"
+                    >
+                      {t('ent_row_confirm_no')}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteId(co.id)}
+                    title={t('cv_delete_company_title')}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-400 transition-colors dark:border-red-800/40 dark:hover:bg-red-900/20"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
               </div>
 
               <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
