@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
-import { getJobById, getApplicantsForJob } from '@/lib/db';
+import { getJobById, getApplicantsForJob, getAgencySettings } from '@/lib/db';
 import { canViewJobApplicants } from '@/lib/companyRules';
 import type { NextRequest } from 'next/server';
 
@@ -28,6 +28,12 @@ export async function GET(
     return NextResponse.json({ error: 'Job not found.' }, { status: 404 });
   }
 
-  const applicants = await getApplicantsForJob(jobId);
-  return NextResponse.json(applicants, { headers: { 'Cache-Control': 'no-store' } });
+  const [applicants, settings] = await Promise.all([
+    getApplicantsForJob(jobId, companyId),
+    getAgencySettings(),
+  ]);
+  return NextResponse.json(
+    { applicants, contactUnlockPriceMmk: settings.contactUnlockPriceMmk },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }

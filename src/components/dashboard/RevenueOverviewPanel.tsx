@@ -19,13 +19,14 @@ export function RevenueOverviewPanel() {
     return <div className="mb-6 flex justify-center rounded-2xl border border-border bg-card p-8"><Loader2 size={20} className="animate-spin text-muted-foreground" /></div>;
   }
 
-  const pendingTotal = summary.pendingRequests.planUpgrade + summary.pendingRequests.featuredPlacement + summary.pendingRequests.jobBoost;
+  const pendingTotal = summary.pendingRequests.planUpgrade + summary.pendingRequests.featuredPlacement + summary.pendingRequests.jobBoost + summary.pendingRequests.contactUnlock;
 
   const lines = [
     { label: 'Candidate Placements', value: summary.byLine.candidatePlacementMmk },
     { label: 'Plan Upgrades',        value: summary.byLine.planUpgradeMmk },
     { label: 'Featured Placements',  value: summary.byLine.featuredPlacementMmk },
     { label: 'Job Boosts',           value: summary.byLine.jobBoostMmk },
+    { label: 'Contact Unlocks',      value: summary.byLine.contactUnlockMmk },
   ];
 
   return (
@@ -37,7 +38,7 @@ export function RevenueOverviewPanel() {
         All-time collected revenue (Paid invoices only), broken down by product line, plus what&apos;s currently live and awaiting your review.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="rounded-2xl border border-border bg-background p-4 sm:col-span-2 lg:col-span-1">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Collected</p>
           <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-foreground tabular-nums">{mmk(summary.totalPaidMmk)}</p>

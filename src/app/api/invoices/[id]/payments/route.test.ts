@@ -18,6 +18,7 @@ const {
   mockRecordInvoicePayment,
   mockActivateFeaturedPlacementIfPaid,
   mockActivateJobBoostIfPaid,
+  mockActivateContactUnlockIfPaid,
   mockLogAudit,
   mockLogFailure,
   mockGetServerSession,
@@ -28,6 +29,7 @@ const {
   mockRecordInvoicePayment:             vi.fn(),
   mockActivateFeaturedPlacementIfPaid:  vi.fn(),
   mockActivateJobBoostIfPaid:           vi.fn(),
+  mockActivateContactUnlockIfPaid:      vi.fn(),
   mockLogAudit:                         vi.fn(),
   mockLogFailure:                       vi.fn(),
   mockGetServerSession:                 vi.fn(),
@@ -40,6 +42,7 @@ vi.mock('@/lib/db', () => ({
   recordInvoicePayment:                  mockRecordInvoicePayment,
   activateFeaturedPlacementIfInvoicePaid: mockActivateFeaturedPlacementIfPaid,
   activateJobBoostIfInvoicePaid:          mockActivateJobBoostIfPaid,
+  activateContactUnlockIfInvoicePaid:     mockActivateContactUnlockIfPaid,
 }));
 vi.mock('@/lib/audit', () => ({ logAudit: mockLogAudit }));
 vi.mock('@/lib/observability', () => ({ logFailure: mockLogFailure }));
@@ -68,6 +71,7 @@ beforeEach(() => {
   mockGetServerSession.mockResolvedValue({ user: { email: 'staff@lionjobs.test' } });
   mockActivateFeaturedPlacementIfPaid.mockResolvedValue(undefined);
   mockActivateJobBoostIfPaid.mockResolvedValue(undefined);
+  mockActivateContactUnlockIfPaid.mockResolvedValue(undefined);
 });
 
 describe('POST /api/invoices/[id]/payments', () => {
@@ -102,7 +106,7 @@ describe('POST /api/invoices/[id]/payments', () => {
     expect(mockRecordInvoicePayment).not.toHaveBeenCalled();
   });
 
-  it('records the payment and runs both activation side effects on success', async () => {
+  it('records the payment and runs all activation side effects on success', async () => {
     const res = await POST(makeRequest(VALID_BODY), CONTEXT);
     const json = await res.json();
 
@@ -113,6 +117,7 @@ describe('POST /api/invoices/[id]/payments', () => {
     );
     expect(mockActivateFeaturedPlacementIfPaid).toHaveBeenCalledWith(SAMPLE_INVOICE);
     expect(mockActivateJobBoostIfPaid).toHaveBeenCalledWith(SAMPLE_INVOICE);
+    expect(mockActivateContactUnlockIfPaid).toHaveBeenCalledWith(SAMPLE_INVOICE);
     expect(mockLogAudit).toHaveBeenCalled();
   });
 
