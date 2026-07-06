@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useLocalStorageValue, useHasHydrated } from './useLocalStorageValue';
 
 export interface UserProfile {
   name: string;
@@ -11,20 +11,11 @@ export interface UserProfile {
 }
 
 const STORAGE_KEY = 'lion_profile';
+const DEFAULT_PROFILE: UserProfile | null = null;
 
 export function useProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setProfile(JSON.parse(raw) as UserProfile);
-    } catch {
-      // ignore parse errors
-    }
-    setHydrated(true);
-  }, []);
+  const [profile, setProfile] = useLocalStorageValue<UserProfile | null>(STORAGE_KEY, DEFAULT_PROFILE);
+  const hydrated = useHasHydrated();
 
   function saveProfile(p: Partial<UserProfile>) {
     const merged: UserProfile = {
@@ -36,18 +27,10 @@ export function useProfile() {
       ...p,
       lastApplied: new Date().toISOString(),
     };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      setProfile(merged);
-    } catch {
-      // ignore storage errors (e.g. private browsing quota)
-    }
+    setProfile(merged);
   }
 
   function clearProfile() {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {}
     setProfile(null);
   }
 

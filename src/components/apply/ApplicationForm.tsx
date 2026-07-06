@@ -194,6 +194,7 @@ export function ApplicationForm({ jobId, defaultPosition = '', screeningQuestion
     } as FormData,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() returns a fresh function on every call by design; nothing in this file can change that, it's the library's own public API surface.
   const cvFileName       = watch('cvFileName' as keyof FormData) as string | undefined;
   const watchedPosition  = watch('position');
   const errs = errors as Record<string, { message?: string }>;
