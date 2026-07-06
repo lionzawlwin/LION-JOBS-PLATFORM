@@ -4,11 +4,14 @@ import { grantDirectContactConsentForAllApplications } from '@/lib/db';
 import { logFailure } from '@/lib/observability';
 
 // GET /api/consent/direct-contact-unlock?token=... -- the Fast-Track
-// Visibility campaign email's one-click link. Public, no session
-// required (same posture as the portal verify routes) -- the signed
-// token itself is the proof of identity. Idempotent: clicking twice (or
-// a link already fully consented) just redirects to the same success
-// page rather than erroring.
+// Visibility campaign email's one-click link.
+// PUBLIC ROUTE: intentionally has no session/staff auth check -- this is
+// an unauthenticated candidate clicking an emailed link, same posture as
+// the portal verify routes (candidate-portal/verify, company-portal/verify).
+// verifyDirectContactOptInToken()'s HMAC signature check is the proof of
+// identity here, equivalent to those routes' consumeLoginToken() call.
+// Idempotent: clicking twice (or a link already fully consented) just
+// redirects to the same success page rather than erroring.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   const candidateId = verifyDirectContactOptInToken(token);
