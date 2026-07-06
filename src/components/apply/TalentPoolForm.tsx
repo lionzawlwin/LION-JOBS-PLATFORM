@@ -69,7 +69,6 @@ export function TalentPoolForm() {
           email:           email || undefined,
           phone,
           position:        desiredTitle,
-          jobId:           'GENERAL-POOL',
           mode:            'cv',
           cvBase64,
           cvFileName,
