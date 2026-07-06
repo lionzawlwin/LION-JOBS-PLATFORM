@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { Plus, Building2, Loader2, Users2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useEnterpriseAccounts } from '@/hooks/useEnterpriseAccounts';
 import { useEnterpriseStats } from '@/hooks/useEnterpriseStats';
+import { useClientHealth } from '@/hooks/useClientHealth';
 import { useCseReps } from '@/hooks/useCseReps';
 import { useAllContracts } from '@/hooks/useContracts';
 import { EnterpriseAccountRow } from './EnterpriseAccountRow';
@@ -29,6 +31,7 @@ const INDUSTRY_KEYS: Record<string, TranslationKey> = {
 export function EnterpriseView() {
   const { accounts, loading, updateStatus, addAccount, deleteAccount } = useEnterpriseAccounts();
   const { stats } = useEnterpriseStats();
+  const { summary: healthSummary } = useClientHealth();
   const { cseReps } = useCseReps();
   const { contracts: allContracts } = useAllContracts();
   const { t } = useLanguage();
@@ -90,6 +93,15 @@ export function EnterpriseView() {
           <p className="text-xs font-medium text-muted-foreground">{t('ent_kpi_top_cse')}</p>
           <p className="mt-1 text-2xl font-bold text-brand-700 dark:text-brand-200 truncate">
             {stats.topCse ? stats.topCse.name : '—'}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">{t('ent_kpi_accounts_at_risk')}</p>
+          <p className={cn(
+            'mt-1 text-2xl font-bold',
+            healthSummary.counts.red > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground',
+          )}>
+            {healthSummary.counts.red}
           </p>
         </div>
       </div>

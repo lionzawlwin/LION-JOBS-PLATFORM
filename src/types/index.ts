@@ -205,6 +205,24 @@ export interface EnterpriseStats {
   topCse: { id: string; name: string; value: number } | null;
 }
 
+// Layer 11 (Client Health Score). Only computed for accounts with an active
+// commercial relationship ('Active'/'In-Contract') -- Leads haven't started
+// engaging yet and Inactive accounts are already churned, so neither is
+// "at risk" in the sense this exists to catch.
+export type HealthBand = 'green' | 'yellow' | 'red';
+
+export interface ClientHealthAccount {
+  companyId:   string;
+  companyName: string;
+  band:        HealthBand;
+  daysSinceLastContact: number | null;
+}
+
+export interface ClientHealthSummary {
+  accounts: ClientHealthAccount[];
+  counts: Record<HealthBand, number>;
+}
+
 export interface AgencySettings {
   defaultCommissionRatePct: number;
   defaultGuaranteeDays: number;

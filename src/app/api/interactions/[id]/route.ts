@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { requireTabAccess } from '@/lib/auth';
 import { deleteInteraction } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
@@ -14,6 +15,7 @@ export async function DELETE(
   try {
     await deleteInteraction(id);
     await logAudit({ action: 'delete', domain: 'enterprise', entityType: 'interaction', entityId: id });
+    revalidateTag('client-health', { expire: 0 });
     return Response.json({ ok: true });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 502 });

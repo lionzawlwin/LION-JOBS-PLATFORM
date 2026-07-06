@@ -17,3 +17,4 @@ export * from './statsHistory';
 export * from './rolePermissions';
 export * from './auditLog';
 export * from './jobRequests';
+export * from './clientHealth';
