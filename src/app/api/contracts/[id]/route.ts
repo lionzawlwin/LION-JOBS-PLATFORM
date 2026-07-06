@@ -1,8 +1,24 @@
 import { revalidateTag } from 'next/cache';
-import { requireTabAccess } from '@/lib/auth';
-import { updateContract, deleteContract } from '@/lib/db';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
+import { updateContract, deleteContract, getContracts } from '@/lib/db';
+import { deriveActiveCseByCompany } from '@/lib/cseScope';
 import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
+
+// Layer 24 (AppSec review): PATCH/DELETE here operate on an existing
+// contract by id with no ownership check at all -- the "companies" GET
+// route already only ever shows a CSE their own book, so a CSE session
+// mutating/deleting a contract belonging to a company outside that book
+// should be blocked the same way. Returns true (allow) if the contract
+// can't be found -- the mutation itself will 404/error, this check's only
+// job is to block cross-book access.
+async function cseMayMutateContract(cseRepId: string | null, contractId: string): Promise<boolean> {
+  const contracts = await getContracts();
+  const contract = contracts.find((c) => c.id === contractId);
+  if (!contract) return true;
+  const owner = deriveActiveCseByCompany(contracts).get(contract.companyId);
+  return !owner || owner === cseRepId;
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -12,6 +28,12 @@ export async function PATCH(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
+
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse' && !(await cseMayMutateContract(scope.cseRepId, id))) {
+    return Response.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   try {
     await updateContract(id, {
@@ -41,6 +63,12 @@ export async function DELETE(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
+
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse' && !(await cseMayMutateContract(scope.cseRepId, id))) {
+    return Response.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+
   try {
     await deleteContract(id);
     await logAudit({ action: 'delete', domain: 'enterprise', entityType: 'contract', entityId: id });

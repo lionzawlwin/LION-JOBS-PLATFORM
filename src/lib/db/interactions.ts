@@ -53,3 +53,17 @@ export async function deleteInteraction(id: string): Promise<void> {
   const { error } = await supabase.from('interactions').delete().eq('id', id);
   if (error) throw new Error(`Failed to delete interaction: ${error.message}`);
 }
+
+// Layer 24 (AppSec review): lets DELETE /api/interactions/[id] check CSE
+// ownership before deleting -- the row only carries company_id, not the
+// full Interaction shape, so this is cheaper than fetching everything.
+export async function getInteractionCompanyId(id: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('interactions')
+    .select('company_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data.company_id as string;
+}

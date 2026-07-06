@@ -1,9 +1,24 @@
 import { revalidateTag } from 'next/cache';
-import { requireTabAccess } from '@/lib/auth';
-import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, updateCompanyPlan, deleteCompany } from '@/lib/db';
+import { requireTabAccess, getSessionScope } from '@/lib/auth';
+import { updateCompanyStatus, updateCompanyTier, updateCompanyCommissionRate, updateCompanyIsInternal, updateCompanyParent, updateCompanyPlan, deleteCompany, getContracts } from '@/lib/db';
+import { deriveActiveCseByCompany } from '@/lib/cseScope';
 import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 import type { CompanyStatus, CompanyTier } from '@/types';
+
+// Layer 24 (AppSec review): the companies GET route already row-scopes to
+// a CSE's own book (filterCompaniesForCse); PATCH/DELETE below had no
+// equivalent check, so a cse-role session could mutate or delete ANY
+// company by id. Unlike contracts' write path, an unowned company (no
+// Active contract yet) is blocked here too, not just a conflicting
+// owner -- matching the read-side model exactly: a CSE's Companies view
+// never shows them a company that isn't already theirs, so there's no
+// legitimate "claim it by editing" flow to preserve here.
+async function cseMayMutateCompany(cseRepId: string | null, companyId: string): Promise<boolean> {
+  const contracts = await getContracts();
+  const owner = deriveActiveCseByCompany(contracts).get(companyId);
+  return !!owner && owner === cseRepId;
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -13,6 +28,11 @@ export async function PATCH(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
+
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse' && !(await cseMayMutateCompany(scope.cseRepId, id))) {
+    return Response.json({ error: 'Unauthorised' }, { status: 401 });
+  }
   const body = await req.json().catch(() => ({})) as {
     status?:            CompanyStatus;
     notes?:             string;
@@ -60,6 +80,12 @@ export async function DELETE(
     return Response.json({ error: 'Unauthorised' }, { status: 401 });
   }
   const { id } = await params;
+
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse' && !(await cseMayMutateCompany(scope.cseRepId, id))) {
+    return Response.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+
   try {
     await deleteCompany(id);
     await logAudit({ action: 'delete', domain: 'companies', entityType: 'company', entityId: id });

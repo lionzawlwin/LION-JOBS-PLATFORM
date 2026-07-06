@@ -1,9 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { requireStaff } from '@/lib/auth';
+import { requireStaff, getSessionScope } from '@/lib/auth';
 import { hasAccess } from '@/lib/permissions';
-import { getCandidates, getCompanies, getJobs, getB2bLeads, listAllJobRequests } from '@/lib/db';
+import { getCandidates, getCompanies, getContracts, getJobs, getB2bLeads, listAllJobRequests } from '@/lib/db';
+import { filterCompaniesForCse } from '@/lib/cseScope';
 import { buildSearchResults } from '@/lib/search';
 import type { Candidate, Company, Job, B2bLead, JobRequest, StaffRole } from '@/types';
 
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     hasAccess(role, 'b2b-leads', 'view'),
   ]);
 
-  const [candidates, companies, jobs, leads, jobRequests]: [Candidate[], Company[], Job[], B2bLead[], JobRequest[]] =
+  const [candidates, companiesRaw, jobs, leads, jobRequests]: [Candidate[], Company[], Job[], B2bLead[], JobRequest[]] =
     await Promise.all([
       canCandidates ? getCandidates() : Promise.resolve([]),
       canCompanies ? getCompanies() : Promise.resolve([]),
@@ -35,6 +36,16 @@ export async function GET(req: NextRequest) {
       canB2bLeads ? getB2bLeads() : Promise.resolve([]),
       canManageJobs ? listAllJobRequests() : Promise.resolve([]),
     ]);
+
+  // Layer 24 (AppSec review): /api/companies row-scopes to a CSE's own
+  // book (filterCompaniesForCse), but this search endpoint returned every
+  // company's name+email to a cse-role session regardless -- the command
+  // palette was a back door around the exact restriction the Companies
+  // tab enforces.
+  const scope = await getSessionScope();
+  const companies = scope?.role === 'cse'
+    ? filterCompaniesForCse(companiesRaw, await getContracts(), scope.cseRepId)
+    : companiesRaw;
 
   const results = buildSearchResults(q, { candidates, companies, jobs, leads, jobRequests });
 

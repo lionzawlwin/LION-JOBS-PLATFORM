@@ -356,7 +356,7 @@ export function ContentStudio() {
       )}
 
       <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-        <p><Hash size={11} className="inline mr-1" />{t('cs_footer_prefix')}<strong>Make.com</strong>{t('cs_footer_suffix')}<code className="font-mono bg-muted px-1 rounded">MAKE_PUBLISH_WEBHOOK_URL</code>{t('cs_footer_suffix2')}</p>
+        <p><Hash size={11} className="inline mr-1" />{t('cs_footer_prefix')}{t('cs_footer_suffix')}{t('cs_footer_suffix2')}</p>
       </div>
     </div>
   );

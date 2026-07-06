@@ -8,6 +8,8 @@ import { SocialFloatWidget } from '@/components/ui/SocialFloatWidget';
 import { PWARegister } from '@/components/PWARegister';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/next';
+import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
+import { MarketingAnalytics } from '@/components/providers/MarketingAnalytics';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
@@ -46,12 +48,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} ${padauk.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <OrganizationSchema />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SessionProviderWrapper>
           <LanguageProvider>
             {children}
             <SocialFloatWidget />
             <Analytics />
+            <MarketingAnalytics />
             <PWARegister />
             <Toaster
               position="bottom-right"

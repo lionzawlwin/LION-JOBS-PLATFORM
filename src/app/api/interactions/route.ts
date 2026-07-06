@@ -35,6 +35,19 @@ export async function POST(req: NextRequest) {
   if (!body?.companyId || !body?.type || !body?.note) {
     return Response.json({ error: 'companyId, type, and note are required.' }, { status: 422 });
   }
+
+  // Layer 24 (AppSec review): same write-side gap as contracts/route.ts --
+  // GET row-scopes to the CSE's own companies, POST didn't. Blocks only on
+  // a conflicting existing owner, matching the same reasoning.
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse') {
+    const existingContracts = await getContracts();
+    const owner = deriveActiveCseByCompany(existingContracts).get(String(body.companyId));
+    if (owner && owner !== scope.cseRepId) {
+      return Response.json({ error: 'Unauthorised' }, { status: 401 });
+    }
+  }
+
   try {
     const id = await appendInteraction({
       companyId:     String(body.companyId),
