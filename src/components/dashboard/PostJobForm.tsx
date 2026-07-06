@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   PlusCircle, ChevronDown, ChevronUp, Send,
-  CheckCircle2, AlertCircle, Loader2, KeyRound,
+  CheckCircle2, AlertCircle, Loader2, KeyRound, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -79,11 +79,15 @@ export function PostJobForm() {
   const [socialPostingQueued, setSocialPostingQueued] = useState(false);
   const { t } = useLanguage();
 
+  const [aiStatus,  setAiStatus]  = useState<'idle' | 'loading' | 'error'>('idle');
+  const [aiMessage, setAiMessage] = useState('');
+
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -153,6 +157,41 @@ export function PostJobForm() {
     } catch {
       setStatus('error');
       setMessage(t('pj_msg_network_error'));
+    }
+  }
+
+  async function handleGenerateWithAi() {
+    const { title, company, location, category, type } = getValues();
+    if (!title || !company || !location) {
+      setAiStatus('error');
+      setAiMessage(t('pj_ai_needs_fields'));
+      return;
+    }
+
+    setAiStatus('loading');
+    setAiMessage('');
+
+    try {
+      const res = await fetch('/api/jobs/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, category, type, location, companyName: company }),
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setAiStatus('error');
+        setAiMessage(json.error ?? t('pj_ai_error'));
+        return;
+      }
+
+      setValue('description', json.draft.description);
+      setValue('requirements', json.draft.requirements.join('\n'));
+      setValue('benefits', json.draft.benefits.join('\n'));
+      setAiStatus('idle');
+    } catch {
+      setAiStatus('error');
+      setAiMessage(t('pj_ai_error'));
     }
   }
 
@@ -313,7 +352,27 @@ export function PostJobForm() {
 
               {/* Description */}
               <div>
-                <Label required>{t('pj_description_label')}</Label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <Label required>{t('pj_description_label')}</Label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateWithAi}
+                    disabled={aiStatus === 'loading'}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg border border-brand-600/30 bg-brand-600/10 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400',
+                      'hover:bg-brand-600/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+                    )}
+                  >
+                    {aiStatus === 'loading' ? (
+                      <><Loader2 size={12} className="animate-spin" /> {t('pj_ai_generating')}</>
+                    ) : (
+                      <><Sparkles size={12} /> {t('pj_ai_generate')}</>
+                    )}
+                  </button>
+                </div>
+                {aiStatus === 'error' && (
+                  <p className="mb-1.5 text-xs text-red-500">{aiMessage}</p>
+                )}
                 <textarea
                   rows={5}
                   placeholder={t('pj_description_placeholder')}
