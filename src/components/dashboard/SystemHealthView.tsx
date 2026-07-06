@@ -299,7 +299,12 @@ export function SystemHealthView() {
                     </span>
                   </td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">{ev.route}</td>
-                  <td className="p-3 text-muted-foreground">{ev.message}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {ev.message}
+                    {typeof ev.context?.errorMessage === 'string' && (
+                      <p className="mt-0.5 font-mono text-[11px] text-red-600/80 dark:text-red-400/80">{ev.context.errorMessage}</p>
+                    )}
+                  </td>
                   <td className="p-3 text-muted-foreground">{fmtDateTime(ev.createdAt)}</td>
                   <td className="p-3">
                     {ev.resolvedAt ? (

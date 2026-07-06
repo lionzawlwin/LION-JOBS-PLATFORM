@@ -65,7 +65,18 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (err) {
-    await logFailure({ category: 'other', route: '/api/company-portal/request-link', message: 'Failed to issue/send portal login link', error: err });
+    // SENTRY_DSN is unset in this deployment (confirmed via find_organizations/
+    // search_issues turning up nothing), so system_events is the only place
+    // this error is actually visible -- include the message in context so
+    // System Health / a direct query shows *why* the send failed, not just
+    // that it did.
+    await logFailure({
+      category: 'other',
+      route:    '/api/company-portal/request-link',
+      message:  'Failed to issue/send portal login link',
+      error:    err,
+      context:  { errorMessage: err instanceof Error ? err.message : String(err) },
+    });
     // Still fall through to the generic response below -- don't leak
     // internal failures to the caller.
   }
