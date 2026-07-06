@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Printer, FileText, AlertTriangle, Banknote, X } from 'lucide-react';
+import { RevenueOverviewPanel } from './RevenueOverviewPanel';
 import { AccountPlansPanel } from './AccountPlansPanel';
 import { PlanUpgradeRequestsInbox } from './PlanUpgradeRequestsInbox';
 import { FeaturedPlacementRequestsInbox } from './FeaturedPlacementRequestsInbox';
@@ -201,6 +202,7 @@ export function BillingView() {
 
   return (
     <div className="space-y-6">
+      <RevenueOverviewPanel />
       <PlanUpgradeRequestsInbox />
       <FeaturedPlacementSettingsPanel />
       <FeaturedPlacementRequestsInbox />

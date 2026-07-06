@@ -315,6 +315,31 @@ export interface Invoice {
   createdAt: string;
 }
 
+// Commercial/Revenue Overview dashboard (Billing tab). Paid-invoice totals
+// bucketed by product line -- each line is identified by parsing the same
+// Invoice.position tags each creation path already writes (see
+// companyRules.ts/jobRules.ts and the 'Plan Upgrade — ' prefix), not a new
+// invoice.type column. activeFeaturedCompanies/activeBoostedJobs count
+// companies.is_featured/jobs.is_featured currently true (whether set via a
+// paid placement or a manual staff toggle) -- what's actually live on the
+// public site right now, not just the paid subset.
+export interface RevenueSummary {
+  totalPaidMmk: number;
+  byLine: {
+    candidatePlacementMmk: number;
+    planUpgradeMmk: number;
+    featuredPlacementMmk: number;
+    jobBoostMmk: number;
+  };
+  activeFeaturedCompanies: number;
+  activeBoostedJobs: number;
+  pendingRequests: {
+    planUpgrade: number;
+    featuredPlacement: number;
+    jobBoost: number;
+  };
+}
+
 export type PaymentMethod = 'bank_transfer' | 'kbzpay' | 'wavepay' | 'cash' | 'other';
 
 export interface Payment {
