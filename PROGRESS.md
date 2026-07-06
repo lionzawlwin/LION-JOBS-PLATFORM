@@ -1220,12 +1220,48 @@ security-sensitive column whitelist). Flagged as an open item below.
    request decisions, weekly digests, health/CRM alerts) can reach
    anyone except the Resend account's own registered address. This is
    the single remaining blocker on real employer/candidate portal usage.
-2. **Manual click-through of PR #101** once at a computer (or once the
-   Supabase MCP connector is confirmed back up): expand a real job's
-   "View Applicants" list in `/company/portal` and confirm it shows the
-   right candidate(s) with genuinely zero contact info visible. This is
-   the one verification step this session couldn't complete itself.
+   **Status as of 2026-07-06 (see "Domain decision" below): PAUSED,
+   waiting on the repo owner to complete a domain purchase.**
+2. ~~Manual click-through of PR #101~~ -- superseded. PR #103 (same
+   session) replaced this with 9 automated Vitest tests instead (the
+   repo owner explicitly required automated coverage over a manual
+   step): `canViewJobApplicants` (ownership check, 4 tests) and
+   `getApplicantsForJob` (column whitelist, 5 tests, including one that
+   feeds it a row with fake email/phone/salary/notes/ai_score/linkedin
+   fields and proves none of it leaks through). No manual verification
+   needed.
 3. Candidate-side status-change notification emails (Applied →
    Shortlisted/Interview/Hired) remain unbuilt -- flagged during the CTO
    review as a smaller, non-urgent gap. Natural next step once item 1
    above is resolved, since it depends on email actually working.
+
+## Domain decision + Resend setup -- PAUSED (2026-07-06)
+
+Repo owner reviewed a domain availability check (via the Vercel MCP
+domain-price tool -- 10 Lion-Jobs-related candidates checked, 7
+available) and **chose `lionjobsagency.com`** ($11.25/yr at time of
+check). **Not yet purchased** -- blocked on the repo owner's own payment
+card, to be completed later. Explicitly asked to pause here and pick up
+once that's done -- no further action on this item until the repo owner
+returns with the domain purchased and a Cloudflare API token.
+
+**To resume, exactly this**:
+1. Confirm `lionjobsagency.com` is purchased and its DNS is on
+   Cloudflare (or wherever the repo owner set it up).
+2. Run `scripts/verify-resend-domain.mjs` (already committed, PR #104):
+   ```
+   RESEND_API_KEY=<from Vercel env> DOMAIN_NAME=lionjobsagency.com \
+   CLOUDFLARE_API_TOKEN=<repo owner will provide> CLOUDFLARE_ZONE_ID=<repo owner will provide> \
+   node scripts/verify-resend-domain.mjs
+   ```
+3. Once Resend confirms verified, update `RESEND_FROM_EMAIL` (both
+   `production` and `preview` Vercel environments) to something like
+   `Lion Jobs Agency <noreply@lionjobsagency.com>`, then redeploy --
+   env var changes don't apply to already-running serverless functions
+   (same rotation lesson as `CRON_SECRET` in `CTO_HANDOVER.md`).
+4. Confirm end-to-end: request a real Company Portal magic link to an
+   email address other than the Resend account's own, and confirm it
+   actually arrives.
+
+No code changes needed for any of the above -- this is purely an
+external-account/DNS setup step, already fully scripted.
