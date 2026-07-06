@@ -3,6 +3,7 @@ import {
   isInvoiceableCompany,
   featuredPlacementInvoicePosition,
   parseFeaturedPlacementDurationDays,
+  canViewJobApplicants,
 } from './companyRules';
 import type { Company } from '@/types';
 
@@ -35,5 +36,30 @@ describe('featured placement invoice tagging', () => {
   it('does not misclassify a candidate-placement or plan-upgrade invoice position', () => {
     expect(parseFeaturedPlacementDurationDays('Senior Software Engineer')).toBeNull();
     expect(parseFeaturedPlacementDurationDays('Plan Upgrade — Gold')).toBeNull();
+  });
+});
+
+// Employer Applicant Visibility's real enforcement boundary (see
+// GET /api/company-portal/jobs/[jobId]/applicants). This is the one
+// automated check standing in for the manual click-through: it proves a
+// company can never be handed another company's applicant list, which is
+// the actual security property that matters here -- the column whitelist
+// enforced separately in candidates.test.ts covers the other half (what
+// fields are visible at all).
+describe('canViewJobApplicants', () => {
+  it('allows a company to view applicants for its own job', () => {
+    expect(canViewJobApplicants({ companyId: 'co-1' }, 'co-1')).toBe(true);
+  });
+
+  it('rejects a company requesting a job owned by a different company', () => {
+    expect(canViewJobApplicants({ companyId: 'co-1' }, 'co-2')).toBe(false);
+  });
+
+  it('fails closed for a job with no companyId at all', () => {
+    expect(canViewJobApplicants({ companyId: null }, 'co-1')).toBe(false);
+  });
+
+  it('fails closed when the job does not exist', () => {
+    expect(canViewJobApplicants(null, 'co-1')).toBe(false);
   });
 });
