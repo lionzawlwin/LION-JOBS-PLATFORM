@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin } from 'lucide-react';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -56,6 +56,8 @@ export function CompanyPortalClientImpl() {
   const [data, setData] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [requestingSlots, setRequestingSlots] = useState(false);
+  const [slotRequestSent, setSlotRequestSent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +76,16 @@ export function CompanyPortalClientImpl() {
     })();
     return () => { cancelled = true; };
   }, [router]);
+
+  async function handleRequestMoreSlots() {
+    setRequestingSlots(true);
+    try {
+      const res = await fetch('/api/company-portal/plan-upgrade-request', { method: 'POST' });
+      if (res.ok) setSlotRequestSent(true);
+    } finally {
+      setRequestingSlots(false);
+    }
+  }
 
   async function handleLogout() {
     await fetch('/api/company-portal/logout', { method: 'POST' });
@@ -136,6 +148,24 @@ export function CompanyPortalClientImpl() {
                 {data.insights.avgDaysToFirstApplicantHired !== null ? `${data.insights.avgDaysToFirstApplicantHired}d` : '—'}
               </p>
             </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            {slotRequestSent ? (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <Check size={13} /> Request sent — your CSE will follow up.
+              </span>
+            ) : (
+              <button
+                onClick={handleRequestMoreSlots}
+                disabled={requestingSlots}
+                className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors disabled:opacity-60"
+              >
+                {requestingSlots
+                  ? <><Loader2 size={13} className="animate-spin" /> Sending…</>
+                  : <><ArrowUpCircle size={13} /> Request more job slots</>
+                }
+              </button>
+            )}
           </div>
         </section>
 
