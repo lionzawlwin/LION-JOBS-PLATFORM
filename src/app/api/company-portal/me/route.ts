@@ -101,6 +101,8 @@ export async function GET() {
       industry: company.industry,
       city: company.city,
       tier: company.tier,
+      isFeatured: company.isFeatured,
+      featuredUntil: company.featuredUntil,
     },
     jobs: companyJobs.map((j) => ({
       id: j.id,

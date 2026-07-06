@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { recordDailySnapshot } from '@/lib/db';
+import { recordDailySnapshot, expireFeaturedPlacements } from '@/lib/db';
 import { logFailure, logCronSuccess } from '@/lib/observability';
 
 export const dynamic = 'force-dynamic';
@@ -13,10 +13,25 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Piggybacked, not a separate cron slot -- same pattern as job-alerts
+  // running the health check and CRM digest. Isolated in its own try/catch
+  // so a failure here never blocks the actual daily snapshot below.
+  let expiredCount = 0;
+  try {
+    expiredCount = await expireFeaturedPlacements();
+  } catch (err) {
+    await logFailure({
+      category: 'cron',
+      route:    ROUTE,
+      message:  'Failed to expire featured placements',
+      error:    err,
+    });
+  }
+
   try {
     await recordDailySnapshot();
-    await logCronSuccess(ROUTE, 'Daily stats snapshot recorded');
-    return NextResponse.json({ ok: true });
+    await logCronSuccess(ROUTE, `Daily stats snapshot recorded (expired ${expiredCount} featured placement${expiredCount === 1 ? '' : 's'})`);
+    return NextResponse.json({ ok: true, expiredFeaturedPlacements: expiredCount });
   } catch (err) {
     await logFailure({
       category: 'cron',

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
-import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye } from 'lucide-react';
+import { FEATURED_PLACEMENT_PRICE_MMK, FEATURED_PLACEMENT_DURATION_DAYS } from '@/lib/companyRules';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -48,7 +49,10 @@ interface InsightsSummary {
 }
 
 interface MeResponse {
-  company: { id: string; name: string; industry: string; city: string; tier: string };
+  company: {
+    id: string; name: string; industry: string; city: string; tier: string;
+    isFeatured: boolean; featuredUntil: string | null;
+  };
   insights: InsightsSummary;
   jobs: JobSummary[];
   invoices: InvoiceSummary[];
@@ -63,6 +67,8 @@ export function CompanyPortalClientImpl() {
   const [error, setError] = useState(false);
   const [requestingSlots, setRequestingSlots] = useState(false);
   const [slotRequestSent, setSlotRequestSent] = useState(false);
+  const [requestingFeatured, setRequestingFeatured] = useState(false);
+  const [featuredRequestSent, setFeaturedRequestSent] = useState(false);
 
   // Fires once per real login (the ?login=success param verify/route.ts
   // adds), not on every subsequent page view of the same session --
@@ -99,6 +105,19 @@ export function CompanyPortalClientImpl() {
       if (res.ok) setSlotRequestSent(true);
     } finally {
       setRequestingSlots(false);
+    }
+  }
+
+  async function handleRequestFeatured() {
+    setRequestingFeatured(true);
+    try {
+      const res = await fetch('/api/company-portal/featured-placement-request', { method: 'POST' });
+      if (res.ok) {
+        setFeaturedRequestSent(true);
+        trackEvent('featured_placement_requested');
+      }
+    } finally {
+      setRequestingFeatured(false);
     }
   }
 
@@ -140,6 +159,51 @@ export function CompanyPortalClientImpl() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
+        <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50/40 p-5 dark:border-amber-700/30 dark:from-amber-950/20 dark:to-orange-950/10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/30">
+                <Sparkles size={18} />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-foreground">Featured Employer Placement</h2>
+                {data.company.isFeatured ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Your company is currently featured
+                    {data.company.featuredUntil
+                      ? ` until ${new Date(data.company.featuredUntil).toLocaleDateString()}.`
+                      : '.'}
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Get top placement and a highlighted badge across the job board and your company profile
+                    for {FEATURED_PLACEMENT_DURATION_DAYS} days — {FEATURED_PLACEMENT_PRICE_MMK.toLocaleString()} MMK.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {!data.company.isFeatured && (
+              featuredRequestSent ? (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <Check size={13} /> Request sent — we&apos;ll invoice you to activate it.
+                </span>
+              ) : (
+                <button
+                  onClick={handleRequestFeatured}
+                  disabled={requestingFeatured}
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:bg-amber-600 disabled:opacity-60 transition-colors"
+                >
+                  {requestingFeatured
+                    ? <><Loader2 size={13} className="animate-spin" /> Sending…</>
+                    : <><Sparkles size={13} /> Boost / Feature My Company</>
+                  }
+                </button>
+              )
+            )}
+          </div>
+        </section>
+
         <section>
           <h2 className="mb-3 text-sm font-bold text-foreground">Your Hiring Insights</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

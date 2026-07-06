@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { Company, CompanyStatus, CompanyTier } from '@/types';
+import type { Company, CompanyStatus, CompanyTier, Invoice } from '@/types';
+import { isFeaturedPlacementInvoicePosition, FEATURED_PLACEMENT_DURATION_DAYS } from '@/lib/companyRules';
 
 function mapToCompany(row: Record<string, unknown>): Company {
   return {
@@ -22,6 +23,7 @@ function mapToCompany(row: Record<string, unknown>): Company {
     parentAccountId: (row.parent_account_id as string) ?? null,
     planId:          (row.plan_id as string) ?? null,
     isFeatured:      (row.is_featured as boolean) ?? false,
+    featuredUntil:   (row.featured_until as string) ?? null,
   };
 }
 
@@ -132,6 +134,46 @@ export async function updateCompanyFeatured(id: string, isFeatured: boolean): Pr
     .update({ is_featured: isFeatured })
     .eq('id', id);
   if (error) throw new Error(`Failed to update featured flag: ${error.message}`);
+}
+
+// Self-Serve Featured Placement Upsell: called once an invoice tagged as a
+// featured-placement charge (see companyRules.ts) is marked Paid. Sets
+// featured_until so expireFeaturedPlacements() below knows when to turn it
+// back off -- distinct from updateCompanyFeatured() above, which a staff
+// member can still use to feature a company manually with no expiry.
+export async function activateFeaturedPlacement(companyId: string, durationDays: number): Promise<void> {
+  const featuredUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('companies')
+    .update({ is_featured: true, featured_until: featuredUntil })
+    .eq('id', companyId);
+  if (error) throw new Error(`Failed to activate featured placement: ${error.message}`);
+}
+
+// Single choke point both "mark invoice Paid" routes call (the payments
+// route's recordInvoicePayment path, and the PATCH status route's manual
+// dropdown fallback) so activation happens identically regardless of
+// which path actually flipped the invoice to Paid. A no-op for every
+// invoice that isn't a featured-placement charge or has no companyId.
+export async function activateFeaturedPlacementIfInvoicePaid(invoice: Invoice): Promise<void> {
+  if (!invoice.companyId || !isFeaturedPlacementInvoicePosition(invoice.position)) return;
+  await activateFeaturedPlacement(invoice.companyId, FEATURED_PLACEMENT_DURATION_DAYS);
+}
+
+// Daily sweep (piggybacked on the snapshot-stats cron, same "piggyback,
+// don't add a cron slot" pattern as Phase 6/7's health check + CRM digest
+// on job-alerts). Only ever matches a row with a real featured_until, so a
+// manually-toggled (featured_until IS NULL) company is never touched.
+// Returns the count purely for cron-success logging.
+export async function expireFeaturedPlacements(): Promise<number> {
+  const { data, error } = await supabase
+    .from('companies')
+    .update({ is_featured: false, featured_until: null })
+    .eq('is_featured', true)
+    .lt('featured_until', new Date().toISOString())
+    .select('id');
+  if (error) throw new Error(`Failed to expire featured placements: ${error.message}`);
+  return data?.length ?? 0;
 }
 
 // Public-safe subset for the job board's "Featured Employers" spotlight —

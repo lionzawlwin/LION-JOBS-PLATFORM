@@ -147,9 +147,13 @@ export interface Company {
   // means unmetered/no gating -- exactly today's behavior for every
   // pre-existing row until a plan is deliberately assigned.
   planId: string | null;
-  // Featured Employer Placement (technical capability only, same pattern as
-  // jobs.isFeatured -- staff-toggled, no pricing logic in code).
+  // Featured Employer Placement -- staff-toggled (updateCompanyFeatured) or
+  // set by a paid, timed placement (activateFeaturedPlacement). featuredUntil
+  // is null for both "never featured" and "featured manually, no expiry";
+  // it's only set for a paid placement, so the expiry cron only ever
+  // touches those.
   isFeatured: boolean;
+  featuredUntil: string | null;
 }
 
 // Layer 13 (Plan Tiers & Usage Metering).
@@ -310,7 +314,7 @@ export interface Payment {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade' | 'featured_placement';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {

@@ -45,6 +45,9 @@ const CATEGORY_LABELS: Record<FailureCategory, string> = {
   // regardless of category (see listSystemEvents()'s level='error' filter).
   // They're surfaced instead by PlanUpgradeRequestsInbox in the Billing tab.
   plan_upgrade: 'Plan Upgrade',
+  // Same reasoning as plan_upgrade above -- surfaced by
+  // FeaturedPlacementRequestsInbox in the Billing tab instead.
+  featured_placement: 'Featured Placement',
 };
 
 function fmtDateTime(iso: string) {
