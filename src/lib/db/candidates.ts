@@ -219,11 +219,21 @@ export async function updateCandidateStage(
   applicationId: string,
   stage: ApplicationStatus,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('applications')
     .update({ stage, stage_updated_at: new Date().toISOString() })
-    .eq('id', applicationId);
+    .eq('id', applicationId)
+    .select('id');
   if (error) throw new Error(`Failed to update stage: ${error.message}`);
+  // getCandidates() synthesizes a fake application id (= candidate id) for a
+  // candidate with zero real applications (e.g. a Talent Pool submission
+  // whose application insert failed) so it still renders in the board. A
+  // stage change against that fake id matches no real row here -- .update()
+  // reports no error for that, so without this check the caller sees a
+  // silent, wrongly-reported success instead of "there's nothing to update."
+  if (!data || data.length === 0) {
+    throw new Error(`No application found with id ${applicationId} -- this candidate may not be connected to a job.`);
+  }
 }
 
 export async function updateCandidateJob(
