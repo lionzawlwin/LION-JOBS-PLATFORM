@@ -216,10 +216,23 @@ This document was originally written at Phase 10. Significant additions since:
 - **Layer 6 Dynamic RBAC** — DB-backed `role_permissions` table
   (`0017_add_role_permissions.sql`) with async `getAccessLevel()`;
   hardcoded matrix as fail-closed fallback.
+- **Commercial upsells (2026-07-06, PRs #91–#101)** — Featured Placement
+  Upsell and Featured Job Listing Boost, both with owner-editable pricing
+  panels; a Commercial Revenue Overview dashboard tying all Billing-tab
+  revenue products together; Employer Applicant Visibility (name + resume
+  only, no contact info — an explicit repo-owner decision, see
+  `PROGRESS.md`'s entry for the three options presented); a systemic fix
+  for every Resend integration silently swallowing real send failures;
+  and a Company Portal English/Myanmar language toggle. See `PROGRESS.md`
+  for the full write-up — this was a long single-session build with
+  several rounds of "found a bug mid-testing, fixed it, kept going."
 
 See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
-commit hashes. Open PRs as of 2026-07-05: #70 (snapshot-stats health
-monitoring fix), and `feat/audit-log` branch (migration `0021`).
+commit hashes. No open PRs as of 2026-07-06 — everything through #101 is
+merged and deployed. **Known open item**: the Resend account has no
+verified sending domain, so no transactional email can currently reach
+anyone except the account's own registered address — see PROGRESS.md's
+"Open items for the repo owner" for the fix.
 
 ## Where to find more history
 

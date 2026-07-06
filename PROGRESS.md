@@ -1143,3 +1143,89 @@ confirming both the grid and the audit panel reflect it.
   live via Supabase MCP `apply_migration`; both verified read-only
   afterward (seed bit-for-bit matched against `permissions.ts` via a
   pivoted query; function existence/arity confirmed via `pg_proc`).
+
+---
+
+# Extended Session: Featured Placement Upsell → Job Boost → Revenue
+# Overview → Employer Applicant Visibility (2026-07-06)
+
+Context: single long same-day session, later than the Layer 6 work above.
+Started from a CTO-review request ("what's the next highest-priority
+revenue-driving feature"), built the full Featured Placement Upsell
+end-to-end on explicit approval, then continued through several rounds of
+"you have my full approval, go build the next thing" as bugs were found
+mid-testing and new features were greenlit. 11 PRs merged and deployed,
+#91 through #101, all with CI green before merge.
+
+## What shipped, in order
+
+| PR | What | Notes |
+|---|---|---|
+| #91 | Hotfix: `'plan_upgrade'` never added to `system_events_category_check` | P0 -- Batch 2's Plan Upgrade Request Inbox had been silently failing every request since its own merge earlier the same day. Found during a routine CTO health-check of just-shipped work, not reported by the user. |
+| #92 | Hotfix: Talent Pool form hardcoded a fake `jobId: 'GENERAL-POOL'` | Every Drop CV / Talent Pool submission had been silently failing to connect to any job since the feature existed. Root-caused from the user's own bug report ("hired one candidate but not showing in billing"). Also hardened `updateCandidateStage()` against zero-rows-matched silent success, and merged 3 duplicate orphaned candidate records for "La Min Ko Ko" into one, linked to a real job. |
+| #93 | **Featured Placement Upsell** (Self-Serve, Batch 3) | Full portal-request → staff-inbox → approve-and-invoice → paid-triggers-activation → auto-expire flow for featuring a company. Migration `0030`. Price/duration launched as hardcoded constants (50,000 MMK / 30 days) -- explicitly flagged as a guess needing owner confirmation, not an owner-given number. |
+| #94 | Featured Placement pricing made owner-editable | Follow-up requested immediately after #93 shipped. Migration `0031` moves price/duration into `agency_settings`, adds `FeaturedPlacementSettingsPanel` to the Billing tab. `parseFeaturedPlacementDurationDays()` replaces a boolean predicate so a later price edit never retroactively changes an already-issued invoice's activation. |
+| #95 | **Systemic fix**: every Resend send silently swallowed real API-level errors | Found while investigating the user's report that Company Portal magic-link emails never arrived. Root cause: the Resend SDK resolves with `{ error }` on failure instead of throwing -- none of 6 call sites across the codebase checked it. Confirmed live: `portal_login_tokens` rows were being created correctly with zero `system_events` rows for the send step -- proof the failure was real but invisible. Does not by itself fix the underlying Resend account issue. |
+| #96 | Follow-up: surface the actual Resend error text | After #95 deployed, retested and found the failure was now logged but only with a generic caller message, not Resend's own error text. Root cause of *that*: no `SENTRY_DSN` configured in this deployment at all (confirmed via the Sentry API -- zero data), so `system_events` is the only real error-visibility channel here. Added `context.errorMessage` to both magic-link routes' failure logging and rendered it in System Health. Retesting after this shipped surfaced the real cause: **Resend account is in sandbox/test mode -- no verified sending domain, so it can only deliver to the account's own registered email.** This is an owner-side action item (verify a domain at resend.com/domains + update `RESEND_FROM_EMAIL`), not yet done as of this entry. |
+| #97 | Company Portal English/Myanmar language toggle | The portal had never been wired into the app's existing i18n system at all. ~34 new `cp_*` translation keys, reusing existing keys where an exact match already existed (`ov_stage_*`, `contract_status_*`, `bl_col_status`, `cv_sending`) rather than duplicating. |
+| #98 | Hardening pass: 5 more candidate-mutation functions | Follow-up on the gap #92 explicitly deferred. `updateCandidateCvUrl`, `updateCandidateJob`, `saveAiScore`, `updateCandidateInterviewDetails`, `updateCandidateFinalSalary` all now check rows-affected and throw instead of silently succeeding on a zero-match `.eq()`. Confirmed `deleteCandidate`/`deleteCandidateWithDriveFile` were already safe via `.single()`. |
+| #99 | **Featured Job Listing Boost** | Same pattern as #93, one entity down -- boosts a single job posting instead of a whole company. `invoices` has no `job_id` column, so the job id/title/duration are encoded in `Invoice.position` (new `jobRules.ts`) rather than a schema change. Migration `0032`. Independently priced from Featured Placement (20,000 MMK / 14 days default). |
+| #100 | **Commercial Revenue Overview dashboard** | Closes the loop on #93/#94/#99: a single Billing-tab panel showing Total Collected revenue by product line (parsed from the same `Invoice.position` tags each product already writes), Active Featured Companies, Active Boosted Jobs, and Pending Requests across all three inboxes. Pure read-only aggregation, no schema changes. |
+| #101 | **Employer Applicant Visibility** | The other CTO recommendation from the same review that produced #100. Repo owner chose Option B of three presented (name + resume/CV only, zero contact info -- the agency stays the required intermediary for actual outreach) specifically to avoid picking a real business/privacy decision unilaterally while the owner was away. New `EmployerVisibleApplicant` type kept deliberately separate from `Candidate` (not a filtered API-route subset) so this employer-facing surface can't leak a sensitive field through a future refactor; `getApplicantsForJob()`'s own column whitelist enforces it at the query layer, job-ownership check enforces it at the route layer. |
+
+## Data/config changes along the way (not code, but real)
+
+- Manually swapped Lion Communication Co.'s portal email to
+  `lionzawlwin@gmail.com` and back, to let the repo owner test the
+  Company Portal UI live despite the Resend sandbox restriction (only
+  that address can currently receive real sends) -- explicitly requested,
+  reverted immediately after confirmed.
+- Inserted one dummy `featured_placement` system_events row (explicitly
+  requested test data) so the repo owner could exercise the Billing tab's
+  Approve & Invoice flow before any real employer had submitted a request.
+  This became the one real Paid invoice in production once the owner
+  completed the flow for real (Lion Communication Co., 50,000 MMK).
+
+## Migrations applied live this session
+
+`0029` (plan_upgrade category fix), `0030` (Featured Placement), `0031`
+(Featured Placement pricing settings), `0032` (Job Boost). All applied
+via Supabase MCP `execute_sql`, all verified live (column/constraint
+existence, or a rolled-back test transaction proving the full
+request→invoice→paid→activate→expire lifecycle with zero residue left in
+production data).
+
+## Verification posture
+
+Every PR: `npx tsc --noEmit` clean, full test suite passing (grew from
+134 to 139 tests across the session), `npm run lint` showing no new
+issues beyond this repo's existing baseline pattern. Every money-moving
+change (Featured Placement, Job Boost) was additionally proven against
+live production data via rolled-back SQL transactions before shipping --
+insert, verify, roll back, re-verify zero residue -- not just unit tests.
+
+**One exception, noted honestly**: PR #101's live-database join sanity
+check could not be completed -- the Supabase MCP connector itself had a
+genuine outage near the end of the session (repeated Cloudflare 502s on
+even a trivial `SELECT 1`, confirmed external, not specific to any query
+this session ran). Shipped on static verification alone for that one PR
+(tsc clean, tests passing, and a direct code re-read confirming the
+security-sensitive column whitelist). Flagged as an open item below.
+
+## Open items for the repo owner
+
+1. **Verify a Resend sending domain** at resend.com/domains and update
+   `RESEND_FROM_EMAIL` to an address on it, then redeploy. Until this is
+   done, no transactional email (magic links, invoice notices, job
+   request decisions, weekly digests, health/CRM alerts) can reach
+   anyone except the Resend account's own registered address. This is
+   the single remaining blocker on real employer/candidate portal usage.
+2. **Manual click-through of PR #101** once at a computer (or once the
+   Supabase MCP connector is confirmed back up): expand a real job's
+   "View Applicants" list in `/company/portal` and confirm it shows the
+   right candidate(s) with genuinely zero contact info visible. This is
+   the one verification step this session couldn't complete itself.
+3. Candidate-side status-change notification emails (Applied →
+   Shortlisted/Interview/Hired) remain unbuilt -- flagged during the CTO
+   review as a smaller, non-urgent gap. Natural next step once item 1
+   above is resolved, since it depends on email actually working.
