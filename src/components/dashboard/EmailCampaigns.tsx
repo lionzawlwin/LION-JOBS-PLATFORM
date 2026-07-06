@@ -58,13 +58,19 @@ export function EmailCampaigns() {
   const [customNote,   setCustomNote]   = useState('');
   const [showPreview,  setShowPreview]  = useState(false);
   const [editedBody,   setEditedBody]   = useState(EMAIL_TYPES[0].preview);
+  const [lastEmailType, setLastEmailType] = useState(emailType);
   const { t } = useLanguage();
 
-  // Reset editable body whenever template type changes
-  useEffect(() => {
+  // Reset editable body whenever template type changes -- React's own
+  // documented "adjust state during render" pattern (a conditional
+  // setState call during the render phase itself, not in an effect) for
+  // "this piece of state should reset to a value derived from a prop/
+  // other-state change, but the user can still freely edit it afterward."
+  if (emailType !== lastEmailType) {
+    setLastEmailType(emailType);
     const found = EMAIL_TYPES.find((e) => e.value === emailType);
-    if (found) setEditedBody(found.preview);
-  }, [emailType]);
+    setEditedBody(found ? found.preview : '');
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,6 +90,7 @@ export function EmailCampaigns() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount via a local load()/useState pair; a proper fix means migrating this panel to SWR (as used elsewhere, e.g. useJobs.ts) -- a larger, separately-scoped refactor, not a one-line change.
     load();
     const onRevalidate = () => load();
     window.addEventListener('companies:revalidate', onRevalidate);

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Bell, BellRing, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalStorageValue } from '@/hooks/useLocalStorageValue';
 import { LION_LINKS } from '@/lib/deepLink';
 
 const CATEGORIES = [
@@ -24,27 +25,25 @@ function TelegramIcon() {
 
 export function JobAlerts() {
   const { t } = useLanguage();
-  const [selected, setSelected] = useState<string>('All Categories');
-  const [subscribed, setSubscribed] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(KEY);
-    if (saved) {
-      setSelected(saved);
-      setSubscribed(true);
-    }
-  }, []);
+  // Two-stage: `draftCategory` is the dropdown's own local state before
+  // the visitor has subscribed (never persisted); once `savedCategory` is
+  // non-null they've subscribed and every further dropdown change writes
+  // straight through to storage instead.
+  const [savedCategory, setSavedCategory] = useLocalStorageValue<string | null>(KEY, null);
+  const [draftCategory, setDraftCategory] = useState('All Categories');
+  const subscribed = savedCategory !== null;
+  const selected = savedCategory ?? draftCategory;
 
   function handleSubscribe() {
-    localStorage.setItem(KEY, selected);
-    setSubscribed(true);
+    setSavedCategory(draftCategory);
     window.open(LION_LINKS.telegramChannel.webUrl, '_blank', 'noopener,noreferrer');
   }
 
   function handleChange(cat: string) {
-    setSelected(cat);
     if (subscribed) {
-      localStorage.setItem(KEY, cat);
+      setSavedCategory(cat);
+    } else {
+      setDraftCategory(cat);
     }
   }
 

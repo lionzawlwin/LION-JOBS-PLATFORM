@@ -36,6 +36,7 @@ export function FeaturedPlacementRequestsInbox() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount via a local load()/useState pair; a proper fix means migrating this panel to SWR (as used elsewhere, e.g. useJobs.ts) -- a larger, separately-scoped refactor, not a one-line change.
   useEffect(() => { load(); }, [load]);
 
   async function handleApprove(req: SystemEvent) {

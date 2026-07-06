@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, X, Search, Building2, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalStorageValue } from '@/hooks/useLocalStorageValue';
 import type { TabDomain } from '@/lib/permissions';
 
 const STORAGE_KEY = 'lion_dashboard_sidebar_collapsed';
@@ -28,29 +28,20 @@ interface Props {
 }
 
 export function Sidebar({ tabs, activeTab, onSelect, variant = 'rail', onClose }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
   const isDrawer = variant === 'drawer';
   const { t, toggleLang } = useLanguage();
 
-  // Same pattern as LanguageContext's persisted toggle: default first,
-  // then read localStorage in an effect (avoids SSR/client hydration
-  // mismatch — localStorage doesn't exist on the server). Collapse state
-  // is a rail-only concept; the drawer variant never reads/writes it.
-  useEffect(() => {
-    if (isDrawer) return;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'true') setCollapsed(true);
-  }, [isDrawer]);
+  // Collapse state is a rail-only concept -- the drawer variant never
+  // reads/writes it, hence `collapsed` (not `storedCollapsed` directly)
+  // gating every read below.
+  const [storedCollapsed, setStoredCollapsed] = useLocalStorageValue<boolean>(STORAGE_KEY, false);
+  const collapsed = !isDrawer && storedCollapsed;
 
   function toggle() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(STORAGE_KEY, String(next));
-      return next;
-    });
+    setStoredCollapsed(!storedCollapsed);
   }
 
-  const collapsedRail = !isDrawer && collapsed;
+  const collapsedRail = collapsed;
 
   return (
     <aside

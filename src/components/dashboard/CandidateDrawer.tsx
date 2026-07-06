@@ -97,6 +97,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
   useEffect(() => {
     if (candidate) {
       document.body.style.overflow = 'hidden';
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets ~10 fields whenever a new candidate is opened. The React-recommended fix (key the drawer's content by candidate.id to force a remount) would break the slide-out close animation, since this component stays mounted with candidate=null during that transition -- not a safe drop-in change without a broader animation-aware state restructure.
       setLinkJobId('');
       setJobEditMode(false);
       setConfirmDelete(false);
@@ -128,6 +129,7 @@ export function CandidateDrawer({ candidate, onClose, onStageChange, onDelete }:
       const match = companiesForInvoice.find(
         (c) => c.name.toLowerCase() === candidate.company?.toLowerCase() && isInvoiceableCompany(c),
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-fills the invoice-company dropdown once companiesForInvoice (an SWR fetch) resolves; genuinely depends on that async data arriving after mount, not something computable during render.
       if (match) setInvoiceCompanyId(match.id);
     }
   }, [candidate, companiesForInvoice, invoiceCompanyId]);

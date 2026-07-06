@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useCallback } from 'react';
 import { translations, type Lang, type TranslationKey } from '@/lib/i18n';
+import { useLocalStorageValue } from '@/hooks/useLocalStorageValue';
 
 interface LanguageContextValue {
   lang: Lang;
@@ -15,21 +16,14 @@ const LanguageContext = createContext<LanguageContextValue>({
   t: (k) => translations.en[k],
 });
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>('en');
+const DEFAULT_LANG: Lang = 'en';
 
-  useEffect(() => {
-    const saved = localStorage.getItem('lion_lang') as Lang | null;
-    if (saved === 'en' || saved === 'my') setLang(saved);
-  }, []);
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLang] = useLocalStorageValue<Lang>('lion_lang', DEFAULT_LANG);
 
   const toggleLang = useCallback(() => {
-    setLang((prev) => {
-      const next: Lang = prev === 'en' ? 'my' : 'en';
-      localStorage.setItem('lion_lang', next);
-      return next;
-    });
-  }, []);
+    setLang(lang === 'en' ? 'my' : 'en');
+  }, [lang, setLang]);
 
   const t = useCallback((key: TranslationKey): string => translations[lang][key], [lang]);
 
