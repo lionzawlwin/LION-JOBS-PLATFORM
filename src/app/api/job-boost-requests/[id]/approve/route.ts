@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
 import { createJobBoostInvoice, resolveSystemEvent, getAgencySettings } from '@/lib/db';
-import { jobBoostInvoicePosition } from '@/lib/jobRules';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -45,8 +44,10 @@ export async function POST(
     const invoice = await createJobBoostInvoice({
       companyId,
       companyName,
-      priceMmk: settings.jobBoostPriceMmk,
-      position: jobBoostInvoicePosition(jobId, jobTitle, settings.jobBoostDurationDays),
+      priceMmk:     settings.jobBoostPriceMmk,
+      jobId,
+      jobTitle,
+      durationDays: settings.jobBoostDurationDays,
     });
 
     await resolveSystemEvent(id, resolvedBy);

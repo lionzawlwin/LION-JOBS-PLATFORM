@@ -20,28 +20,15 @@ export function isInvoiceableCompany(company: Company): boolean {
 // isInvoiceableCompany's comment) -- callers fetch the live settings via
 // getAgencySettings() and pass the duration in here.
 
-// The marker this flow tags its invoices with (Invoice.position), the
-// same "encode the type in a descriptive text field" trick
-// createPlanUpgradeInvoice() uses -- avoids a schema change to invoices
-// for a second non-candidate-placement charge type. The duration is
-// embedded in the tag itself (not looked up again later) so a price/
-// duration change in Settings never retroactively changes what an
-// already-issued invoice activates for -- parseFeaturedPlacementDurationDays()
-// reads back exactly what was invoiced.
+// The human-readable line-item text this flow tags its invoices with
+// (Invoice.position). The actual activation duration is read from
+// Invoice.metadata (migration 0033), captured at invoice-creation time --
+// not looked up again later -- so a price/duration change in Settings
+// never retroactively changes what an already-issued invoice activates for.
 const FEATURED_PLACEMENT_POSITION_PREFIX = 'Featured Placement — ';
-const FEATURED_PLACEMENT_POSITION_PATTERN = /^Featured Placement — (\d+) days$/;
 
 export function featuredPlacementInvoicePosition(durationDays: number): string {
   return `${FEATURED_PLACEMENT_POSITION_PREFIX}${durationDays} days`;
-}
-
-// Returns the invoiced duration in days if `position` is a featured-
-// placement charge, or null otherwise -- doubles as the "is this a
-// featured-placement invoice" check (the payments route's paid-invoice
-// activation trigger uses this instead of a fresh string comparison).
-export function parseFeaturedPlacementDurationDays(position: string): number | null {
-  const match = FEATURED_PLACEMENT_POSITION_PATTERN.exec(position);
-  return match ? Number(match[1]) : null;
 }
 
 // Employer Applicant Visibility's real enforcement boundary, extracted as
