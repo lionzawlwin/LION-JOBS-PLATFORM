@@ -222,10 +222,27 @@ export async function updateCandidateCvUrl(
   }
 }
 
+export interface StageChangeResult {
+  previousStage: ApplicationStatus;
+  candidateName: string;
+  candidateEmail: string | null;
+  jobTitle: string;
+}
+
 export async function updateCandidateStage(
   applicationId: string,
   stage: ApplicationStatus,
-): Promise<void> {
+): Promise<StageChangeResult | null> {
+  // Read the pre-update row so the caller can tell whether this is a real
+  // transition (and has the candidate's name/email/job title to notify
+  // them) -- the .update().select() below returns the row post-update, so
+  // stage there is always the new value, not useful for a before/after diff.
+  const { data: before } = await supabase
+    .from('applications')
+    .select('stage, job_title, candidates ( full_name, email )')
+    .eq('id', applicationId)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from('applications')
     .update({ stage, stage_updated_at: new Date().toISOString() })
@@ -241,6 +258,16 @@ export async function updateCandidateStage(
   if (!data || data.length === 0) {
     throw new Error(`No application found with id ${applicationId} -- this candidate may not be connected to a job.`);
   }
+
+  if (!before) return null;
+  const candidate = before.candidates as unknown as { full_name: string; email: string | null } | { full_name: string; email: string | null }[] | null;
+  const candidateInfo = Array.isArray(candidate) ? candidate[0] : candidate;
+  return {
+    previousStage:  before.stage as ApplicationStatus,
+    candidateName:  candidateInfo?.full_name ?? 'Candidate',
+    candidateEmail: candidateInfo?.email ?? null,
+    jobTitle:       before.job_title,
+  };
 }
 
 export async function updateCandidateJob(

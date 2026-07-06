@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPortalSubjectId } from '@/lib/portalAuth';
 import { getCompanyById, getJobs, getCandidates, getInvoices, getContracts, getAgencySettings } from '@/lib/db';
+import { cumulativeFunnelCounts, computeHiringFunnel } from '@/lib/portalAnalytics';
 import type { ApplicationStatus } from '@/types';
 
 const STAGES: ApplicationStatus[] = ['Applied', 'Shortlisted', 'Interview', 'Hired'];
@@ -75,7 +76,21 @@ export async function GET() {
 
   const totalViews = companyJobs.reduce((sum, j) => sum + (j.viewCount ?? 0), 0);
 
+  // Item #3 of the 2026-07-07 CTO Big Upgrades Portfolio: a real hiring
+  // funnel (Views -> Applied -> Shortlisted -> Interview -> Hired) instead
+  // of just flat totals. Aggregate the per-job stage counts already built
+  // above rather than re-scanning companyApplicants a second time.
+  const aggregateStageCounts = { Applied: 0, Shortlisted: 0, Interview: 0, Hired: 0 };
+  for (const counts of applicantCountsByJob.values()) {
+    aggregateStageCounts.Applied     += counts.Applied;
+    aggregateStageCounts.Shortlisted += counts.Shortlisted;
+    aggregateStageCounts.Interview   += counts.Interview;
+    aggregateStageCounts.Hired       += counts.Hired;
+  }
+  const funnel = computeHiringFunnel(cumulativeFunnelCounts(totalViews, aggregateStageCounts));
+
   const insights = {
+    funnel,
     totalJobsPosted: companyJobs.length,
     totalViews,
     totalApplicants: companyApplicants.length,
