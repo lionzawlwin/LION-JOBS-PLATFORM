@@ -228,10 +228,16 @@ This document was originally written at Phase 10. Significant additions since:
   several rounds of "found a bug mid-testing, fixed it, kept going."
 
 See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
-commit hashes. No open PRs as of 2026-07-06 — everything through #104 is
-merged and deployed (PRs #102-104 added session documentation, automated
-Employer Applicant Visibility test coverage, and a Resend domain
-verification script, respectively).
+commit hashes. As of 2026-07-07: PRs #106, #108, #109, #110 merged
+(lint debt paydown, KV-backed rate limiter, route-handler integration
+tests, Candidate Portal i18n). **Two PRs open and blocked on the repo
+owner's explicit authorization to apply a live-database change**: #107
+(invoice `charge_type`/`metadata` columns — application code hard-depends
+on the migration already being live, do not merge before applying it)
+and #111 (an RLS policy fix — safe to apply any time, no app code
+depends on it). Both are fully built, reviewed, and waiting only on a
+go-ahead; see `PROGRESS.md`'s "CTO Technical Audit + Roadmap execution"
+entry and `supabase/MIGRATIONS.md` for exact resume steps.
 
 **Known open item, currently PAUSED**: the Resend account has no
 verified sending domain, so no transactional email can currently reach
