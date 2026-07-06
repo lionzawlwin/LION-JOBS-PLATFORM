@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getCompanies, getCandidates } from '@/lib/db';
 
+// PUBLIC ROUTE: only returns two aggregate counts (companies/candidates by
+// non-sensitive boolean flags) for the homepage StatsBar -- no PII, same
+// public/no-auth posture as /api/testimonials' unscoped GET.
+//
 // Public, real homepage trust-signal numbers (Layer 18 follow-on) --
 // StatsBar.tsx previously hardcoded "Successful Placements: 200" and
 // "Partner Companies: 50" as fixed constants, the same fabricated-social-proof
