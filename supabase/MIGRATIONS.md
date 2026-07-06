@@ -197,3 +197,32 @@ editing the already-applied `0005`. **Every `CREATE TABLE` from now on
 must include `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` in the same
 migration** — check `list_tables`'s `rls_enabled` field on the new table
 immediately after applying, every time, not just for staff.
+
+## `0033_add_invoice_charge_type.sql` — written, NOT yet applied (2026-07-06)
+
+Part of the CTO Technical Audit's Phase 5 (invoice schema cleanup). Adds
+`invoices.charge_type` (enum-style CHECK) + `invoices.metadata` (jsonb),
+backfills the one existing live row from its `position` text, and all
+application code (`db/invoices.ts`, `db/companies.ts`, `db/jobs.ts`,
+`db/revenue.ts`, the three request-approve routes) has been updated on
+branch `feat/invoice-charge-type` to read/write the new columns instead of
+regex-parsing `position`.
+
+**This migration has deliberately NOT been applied to production and the
+branch has NOT been merged.** Applying a schema-altering, data-backfilling
+migration directly to a live database was correctly blocked by this
+session's own safety guardrail as a hard-to-reverse, shared-resource
+action needing an explicit go-ahead beyond a general "do the roadmap"
+delegation — the same category of decision as a `git push --force` or
+`rm -rf` on a repo the agent didn't create. The code changes on that
+branch also **hard-depend on this migration already being live**
+(`mapToInvoice` reads `row.charge_type`, every `create*Invoice` writes
+it) — merging the branch before the migration runs would break every
+invoice-creation path in production the moment it deployed.
+
+**To finish this**: apply `0033_add_invoice_charge_type.sql` (via
+`supabase db push`, the Supabase dashboard SQL editor, or ask Claude to
+run it via the Supabase MCP `apply_migration` tool with explicit
+authorization this time), confirm via `list_tables` that `invoices` now
+has both columns and the one live row backfilled to `charge_type =
+'featured_placement'`, then merge `feat/invoice-charge-type` and deploy.

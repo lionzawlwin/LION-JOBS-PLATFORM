@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { requireTabAccess } from '@/lib/auth';
 import { createFeaturedPlacementInvoice, resolveSystemEvent, getAgencySettings } from '@/lib/db';
-import { featuredPlacementInvoicePosition } from '@/lib/companyRules';
 import { logAudit } from '@/lib/audit';
 import { logFailure } from '@/lib/observability';
 import type { NextRequest } from 'next/server';
@@ -44,8 +43,8 @@ export async function POST(
     const invoice = await createFeaturedPlacementInvoice({
       companyId,
       companyName,
-      priceMmk: settings.featuredPlacementPriceMmk,
-      position: featuredPlacementInvoicePosition(settings.featuredPlacementDurationDays),
+      priceMmk:     settings.featuredPlacementPriceMmk,
+      durationDays: settings.featuredPlacementDurationDays,
     });
 
     await resolveSystemEvent(id, resolvedBy);

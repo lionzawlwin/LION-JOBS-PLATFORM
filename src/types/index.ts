@@ -315,6 +315,25 @@ export interface ConsentRecord {
 
 export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue';
 
+// CTO Technical Audit Phase 5: a real discriminator + structured payload
+// for the four charge types invoices now covers, replacing the old
+// "parse a tag out of `position`" convention (companyRules.ts/jobRules.ts's
+// former parse*() functions, migration 0033). `position` itself is kept --
+// it's still the human-readable line-item text -- charge_type/metadata
+// are what code should branch on now.
+export type InvoiceChargeType = 'candidate_placement' | 'plan_upgrade' | 'featured_placement' | 'job_boost';
+
+export interface PlanUpgradeInvoiceMetadata {
+  planName: string;
+}
+export interface FeaturedPlacementInvoiceMetadata {
+  durationDays: number;
+}
+export interface JobBoostInvoiceMetadata {
+  jobId: string;
+  durationDays: number;
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -329,6 +348,8 @@ export interface Invoice {
   status: InvoiceStatus;
   issuedAt: string;
   createdAt: string;
+  chargeType: InvoiceChargeType;
+  metadata: PlanUpgradeInvoiceMetadata | FeaturedPlacementInvoiceMetadata | JobBoostInvoiceMetadata | null;
 }
 
 // Commercial/Revenue Overview dashboard (Billing tab). Paid-invoice totals

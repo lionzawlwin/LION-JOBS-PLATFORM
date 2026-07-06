@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { Job, JobCategory, JobType, Invoice } from '@/types';
+import type { Job, JobCategory, JobType, Invoice, JobBoostInvoiceMetadata } from '@/types';
 import { getCompanyByName } from './companies';
-import { parseJobBoost } from '@/lib/jobRules';
 
 export async function getJobs(): Promise<Job[]> {
   try {
@@ -237,14 +236,13 @@ export async function activateJobBoost(jobId: string, durationDays: number): Pro
 
 // Single choke point both "mark invoice Paid" routes call, same pattern
 // as activateFeaturedPlacementIfInvoicePaid in companies.ts. Duration
-// comes from the invoice's own tagged position, not the current
-// agency_settings value, for the same reason: a later price/duration
-// edit must never retroactively change what an already-issued invoice
-// activates for.
+// comes from the invoice's own metadata, not the current agency_settings
+// value, for the same reason: a later price/duration edit must never
+// retroactively change what an already-issued invoice activates for.
 export async function activateJobBoostIfInvoicePaid(invoice: Invoice): Promise<void> {
-  const boost = parseJobBoost(invoice.position);
-  if (!boost) return;
-  await activateJobBoost(boost.jobId, boost.durationDays);
+  if (invoice.chargeType !== 'job_boost') return;
+  const { jobId, durationDays } = invoice.metadata as JobBoostInvoiceMetadata;
+  await activateJobBoost(jobId, durationDays);
 }
 
 // Daily sweep, piggybacked on the snapshot-stats cron alongside

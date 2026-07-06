@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import type { Invoice, InvoiceStatus } from '@/types';
+import { featuredPlacementInvoicePosition } from '@/lib/companyRules';
+import { jobBoostInvoicePosition } from '@/lib/jobRules';
+import type { Invoice, InvoiceStatus, InvoiceChargeType } from '@/types';
 
 function mapToInvoice(row: Record<string, unknown>): Invoice {
   return {
@@ -16,6 +18,8 @@ function mapToInvoice(row: Record<string, unknown>): Invoice {
     status:            row.status as InvoiceStatus,
     issuedAt:          row.issued_at as string,
     createdAt:         row.created_at as string,
+    chargeType:        (row.charge_type as InvoiceChargeType) ?? 'candidate_placement',
+    metadata:          (row.metadata as Invoice['metadata']) ?? null,
   };
 }
 
@@ -82,6 +86,7 @@ export async function createInvoice(data: {
     commission_rate_pct: data.commissionRatePct,
     commission_fee_mmk:  commissionFeeMmk,
     status:              'Draft',
+    charge_type:         'candidate_placement',
   });
   if (error) throw new Error(`Failed to create invoice: ${error.message}`);
 
@@ -126,6 +131,8 @@ export async function createPlanUpgradeInvoice(data: {
     commission_rate_pct: 100,
     commission_fee_mmk:  data.priceMmk,
     status:              'Draft',
+    charge_type:         'plan_upgrade',
+    metadata:            { planName: data.planName },
   });
   if (error) throw new Error(`Failed to create plan upgrade invoice: ${error.message}`);
 
@@ -135,16 +142,16 @@ export async function createPlanUpgradeInvoice(data: {
 }
 
 // Self-Serve Featured Placement Upsell: same non-candidate-placement
-// pattern as createPlanUpgradeInvoice() above. `position` is tagged via
-// featuredPlacementInvoicePosition() (companyRules.ts) -- the payments
-// route reads it back with parseFeaturedPlacementDurationDays() to decide
-// whether a paid invoice should flip the company's featured flag on, and
-// for how long.
+// pattern as createPlanUpgradeInvoice() above. `position` is the human-
+// readable line item (featuredPlacementInvoicePosition(), companyRules.ts);
+// charge_type/metadata (migration 0033) are what the payments route
+// actually reads to decide whether a paid invoice should flip the
+// company's featured flag on, and for how long.
 export async function createFeaturedPlacementInvoice(data: {
-  companyId:   string;
-  companyName: string;
-  priceMmk:    number;
-  position:    string;
+  companyId:    string;
+  companyName:  string;
+  priceMmk:     number;
+  durationDays: number;
 }): Promise<Invoice> {
   const { count, error: countError } = await supabase
     .from('invoices')
@@ -162,11 +169,13 @@ export async function createFeaturedPlacementInvoice(data: {
     company_name:        data.companyName,
     application_id:      null,
     candidate_name:      '—',
-    position:            data.position,
+    position:            featuredPlacementInvoicePosition(data.durationDays),
     agreed_salary:       data.priceMmk,
     commission_rate_pct: 100,
     commission_fee_mmk:  data.priceMmk,
     status:              'Draft',
+    charge_type:         'featured_placement',
+    metadata:            { durationDays: data.durationDays },
   });
   if (error) throw new Error(`Failed to create featured placement invoice: ${error.message}`);
 
@@ -176,16 +185,18 @@ export async function createFeaturedPlacementInvoice(data: {
 }
 
 // Self-Serve Featured Job Listing Boost: same non-candidate-placement
-// pattern as createFeaturedPlacementInvoice() above. `position` is tagged
-// via jobBoostInvoicePosition() (jobRules.ts), which embeds the jobId and
-// duration -- invoices has no job_id column, so the payments route reads
-// them back with parseJobBoost() to decide which job to activate, and for
-// how long.
+// pattern as createFeaturedPlacementInvoice() above. `position` is the
+// human-readable line item (jobBoostInvoicePosition(), jobRules.ts);
+// charge_type/metadata (migration 0033) are what the payments route
+// actually reads to decide which job to activate, and for how long --
+// invoices has no job_id column, so jobId lives in metadata instead.
 export async function createJobBoostInvoice(data: {
-  companyId:   string;
-  companyName: string;
-  priceMmk:    number;
-  position:    string;
+  companyId:    string;
+  companyName:  string;
+  priceMmk:     number;
+  jobId:        string;
+  jobTitle:     string;
+  durationDays: number;
 }): Promise<Invoice> {
   const { count, error: countError } = await supabase
     .from('invoices')
@@ -203,11 +214,13 @@ export async function createJobBoostInvoice(data: {
     company_name:        data.companyName,
     application_id:      null,
     candidate_name:      '—',
-    position:            data.position,
+    position:            jobBoostInvoicePosition(data.jobId, data.jobTitle, data.durationDays),
     agreed_salary:       data.priceMmk,
     commission_rate_pct: 100,
     commission_fee_mmk:  data.priceMmk,
     status:              'Draft',
+    charge_type:         'job_boost',
+    metadata:            { jobId: data.jobId, durationDays: data.durationDays },
   });
   if (error) throw new Error(`Failed to create job boost invoice: ${error.message}`);
 

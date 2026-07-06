@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   isInvoiceableCompany,
   featuredPlacementInvoicePosition,
-  parseFeaturedPlacementDurationDays,
   canViewJobApplicants,
 } from './companyRules';
 import type { Company } from '@/types';
@@ -27,15 +26,10 @@ describe('isInvoiceableCompany', () => {
   });
 });
 
-describe('featured placement invoice tagging', () => {
-  it('round-trips: a generated position yields back the exact duration it was tagged with', () => {
-    expect(parseFeaturedPlacementDurationDays(featuredPlacementInvoicePosition(30))).toBe(30);
-    expect(parseFeaturedPlacementDurationDays(featuredPlacementInvoicePosition(90))).toBe(90);
-  });
-
-  it('does not misclassify a candidate-placement or plan-upgrade invoice position', () => {
-    expect(parseFeaturedPlacementDurationDays('Senior Software Engineer')).toBeNull();
-    expect(parseFeaturedPlacementDurationDays('Plan Upgrade — Gold')).toBeNull();
+describe('featured placement invoice position text', () => {
+  it('embeds the duration in the human-readable line item', () => {
+    expect(featuredPlacementInvoicePosition(30)).toBe('Featured Placement — 30 days');
+    expect(featuredPlacementInvoicePosition(90)).toBe('Featured Placement — 90 days');
   });
 });
 
