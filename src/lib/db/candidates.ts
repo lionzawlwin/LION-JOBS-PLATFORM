@@ -325,31 +325,54 @@ export async function saveAiScore(
   if (error) throw new Error(`Failed to save AI score: ${error.message}`);
 }
 
+const CANDIDATE_STATUS_SELECT = `
+  id, full_name, email, phone,
+  city_location, education, experience_years,
+  current_company, current_salary, languages, skills,
+  portfolio_url, source, created_at,
+  applications (
+    id, job_id, job_title, company, stage, applied_at,
+    notes, salary_expected, interview_date, interview_location, interviewer_contact, final_agreed_salary,
+    google_drive_cv_url, linkedin_url,
+    ai_score, ai_summary, ai_reasoning, ai_processed_at
+  )
+`;
+
+// Layer 24 (AppSec review) fixed two issues in the previous implementation:
+// (1) it built the PostgREST filter with raw string interpolation
+// (`.or(\`email.ilike.%${query}%,...\`)`) -- user input containing a comma
+// or parenthesis can alter the filter's structure, since `.or()` parses its
+// argument as a filter expression rather than treating it as a literal
+// value. Using `.ilike()`/`.eq()` as builder-method arguments (below) lets
+// supabase-js encode the value safely instead.
+// (2) `%query%` was a substring match on an unauthenticated, public
+// endpoint -- `q=gmail.com` (5+ chars) would return every candidate on
+// that email provider, along with their current employer and application
+// stage. Candidates checking their own status know their exact email or
+// phone, so this now requires an exact (still case-insensitive for email)
+// match on either field -- same intended UX, no enumeration surface.
 export async function getCandidatesByEmailOrPhone(
   query: string,
 ): Promise<Candidate[]> {
-  const { data, error } = await supabase
-    .from('candidates')
-    .select(`
-      id, full_name, email, phone,
-      city_location, education, experience_years,
-      current_company, current_salary, languages, skills,
-      portfolio_url, source, created_at,
-      applications (
-        id, job_id, job_title, company, stage, applied_at,
-        notes, salary_expected, interview_date, interview_location, interviewer_contact, final_agreed_salary,
-        google_drive_cv_url, linkedin_url,
-        ai_score, ai_summary, ai_reasoning, ai_processed_at
-      )
-    `)
-    .or(`email.ilike.%${query}%,phone.ilike.%${query}%`);
+  const normalized = query.trim();
+  if (!normalized) return [];
 
-  if (error) {
-    console.error('[db/candidates] getCandidatesByEmailOrPhone error:', error.message);
-    return [];
-  }
+  const [byEmail, byPhone] = await Promise.all([
+    supabase.from('candidates').select(CANDIDATE_STATUS_SELECT).ilike('email', normalized),
+    supabase.from('candidates').select(CANDIDATE_STATUS_SELECT).eq('phone', normalized),
+  ]);
 
-  return (data as CandidateRow[]).flatMap((candidate) => {
+  if (byEmail.error) console.error('[db/candidates] getCandidatesByEmailOrPhone (email) error:', byEmail.error.message);
+  if (byPhone.error) console.error('[db/candidates] getCandidatesByEmailOrPhone (phone) error:', byPhone.error.message);
+
+  const seen = new Set<string>();
+  const rows = [...(byEmail.data ?? []), ...(byPhone.data ?? [])].filter((row) => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  }) as CandidateRow[];
+
+  return rows.flatMap((candidate) => {
     const apps = candidate.applications ?? [];
     if (apps.length === 0) return [];
     return apps.map((app) => mapToCandidate(candidate, app));

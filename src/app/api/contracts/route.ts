@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { requireTabAccess, getSessionScope } from '@/lib/auth';
 import { getContracts, appendContract } from '@/lib/db';
+import { deriveActiveCseByCompany } from '@/lib/cseScope';
 import { logAudit } from '@/lib/audit';
 import type { NextRequest } from 'next/server';
 
@@ -23,6 +24,24 @@ export async function POST(req: NextRequest) {
   if (!body?.companyId || body?.value === undefined) {
     return Response.json({ error: 'companyId and value are required.' }, { status: 422 });
   }
+
+  // Layer 24 (AppSec review): GET already row-scopes contracts to a CSE's
+  // own companies; POST had no equivalent check, so a cse-role session
+  // (which passes the requireTabAccess check above the same as owner/admin)
+  // could write a contract against ANY companyId, not just ones they own.
+  // Blocks only on a *conflicting* existing owner -- a company with no
+  // Active contract yet has no owner in this map, and a CSE onboarding a
+  // brand-new client is exactly how ownership gets established in the
+  // first place, so that path stays open.
+  const scope = await getSessionScope();
+  if (scope?.role === 'cse') {
+    const existingContracts = await getContracts();
+    const owner = deriveActiveCseByCompany(existingContracts).get(String(body.companyId));
+    if (owner && owner !== scope.cseRepId) {
+      return Response.json({ error: 'Unauthorised' }, { status: 401 });
+    }
+  }
+
   try {
     const id = await appendContract({
       companyId:    String(body.companyId),
