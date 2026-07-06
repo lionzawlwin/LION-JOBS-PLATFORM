@@ -20,3 +20,4 @@ export * from './jobRequests';
 export * from './clientHealth';
 export * from './accountPlans';
 export * from './payments';
+export * from './revenue';
