@@ -6,6 +6,14 @@ import type { SearchResult } from '@/types';
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
 
+// Stable reference for the short-query case -- a fresh `[]` literal on every
+// call makes `results` a new object identity each render, which breaks any
+// caller that resets state by comparing `results` against a previous
+// render's value (see CommandPalette.tsx), triggering React error #301
+// ("Too many re-renders") the moment something re-renders it with an empty
+// query. Reusing one constant array keeps that comparison stable.
+const EMPTY_RESULTS: SearchResult[] = [];
+
 // Debounce via setTimeout inside useEffect, setState only in the timeout
 // callback -- the documented escape hatch for react-hooks/set-state-in-effect
 // (an external-timer callback, not a synchronous effect-body setState call).
@@ -39,7 +47,7 @@ export function useSearch(query: string) {
   }, [query]);
 
   return {
-    results: isShortQuery ? [] : results,
+    results: isShortQuery ? EMPTY_RESULTS : results,
     loading: isShortQuery ? false : loading,
   };
 }
