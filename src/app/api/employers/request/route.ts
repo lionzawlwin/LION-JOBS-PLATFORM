@@ -32,7 +32,7 @@ const leadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`employers-request:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const rl = await checkRateLimit(`employers-request:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
     await logRateLimitHit('/api/employers/request');
     return NextResponse.json(

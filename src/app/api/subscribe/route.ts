@@ -12,7 +12,7 @@ const RATE_LIMIT_MAX      = 3;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`subscribe:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const rl = await checkRateLimit(`subscribe:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
 
   if (!rl.allowed) {
     await logRateLimitHit('/api/subscribe');
