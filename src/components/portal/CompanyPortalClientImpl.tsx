@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
-import { FEATURED_PLACEMENT_PRICE_MMK, FEATURED_PLACEMENT_DURATION_DAYS } from '@/lib/companyRules';
 import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles } from 'lucide-react';
 
 interface JobSummary {
@@ -52,6 +51,7 @@ interface MeResponse {
   company: {
     id: string; name: string; industry: string; city: string; tier: string;
     isFeatured: boolean; featuredUntil: string | null;
+    featuredPlacementPriceMmk: number; featuredPlacementDurationDays: number;
   };
   insights: InsightsSummary;
   jobs: JobSummary[];
@@ -177,7 +177,7 @@ export function CompanyPortalClientImpl() {
                 ) : (
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Get top placement and a highlighted badge across the job board and your company profile
-                    for {FEATURED_PLACEMENT_DURATION_DAYS} days — {FEATURED_PLACEMENT_PRICE_MMK.toLocaleString()} MMK.
+                    for {data.company.featuredPlacementDurationDays} days — {data.company.featuredPlacementPriceMmk.toLocaleString()} MMK.
                   </p>
                 )}
               </div>

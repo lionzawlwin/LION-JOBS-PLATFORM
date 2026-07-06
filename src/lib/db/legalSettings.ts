@@ -8,6 +8,8 @@ const DEFAULTS: AgencySettings = {
   antiBypassPenaltyMmk:        500000,
   antiBypassRestrictionMonths: 12,
   termsVersion:                'v1',
+  featuredPlacementPriceMmk:      50000,
+  featuredPlacementDurationDays:  30,
 };
 
 function mapToSettings(row: Record<string, unknown>): AgencySettings {
@@ -18,6 +20,8 @@ function mapToSettings(row: Record<string, unknown>): AgencySettings {
     antiBypassPenaltyMmk:        Number(row.anti_bypass_penalty_mmk ?? DEFAULTS.antiBypassPenaltyMmk),
     antiBypassRestrictionMonths: Number(row.anti_bypass_restriction_months ?? DEFAULTS.antiBypassRestrictionMonths),
     termsVersion:                (row.terms_version as string) ?? DEFAULTS.termsVersion,
+    featuredPlacementPriceMmk:     Number(row.featured_placement_price_mmk ?? DEFAULTS.featuredPlacementPriceMmk),
+    featuredPlacementDurationDays: Number(row.featured_placement_duration_days ?? DEFAULTS.featuredPlacementDurationDays),
   };
 }
 
@@ -42,6 +46,8 @@ export async function updateAgencySettings(data: Partial<{
   antiBypassPenaltyMmk:        number;
   antiBypassRestrictionMonths: number;
   termsVersion:                string;
+  featuredPlacementPriceMmk:     number;
+  featuredPlacementDurationDays: number;
 }>): Promise<void> {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.defaultCommissionRatePct    !== undefined) update.default_commission_rate_pct = data.defaultCommissionRatePct;
@@ -50,6 +56,8 @@ export async function updateAgencySettings(data: Partial<{
   if (data.antiBypassPenaltyMmk        !== undefined) update.anti_bypass_penalty_mmk = data.antiBypassPenaltyMmk;
   if (data.antiBypassRestrictionMonths !== undefined) update.anti_bypass_restriction_months = data.antiBypassRestrictionMonths;
   if (data.termsVersion                !== undefined) update.terms_version = data.termsVersion;
+  if (data.featuredPlacementPriceMmk     !== undefined) update.featured_placement_price_mmk = data.featuredPlacementPriceMmk;
+  if (data.featuredPlacementDurationDays !== undefined) update.featured_placement_duration_days = data.featuredPlacementDurationDays;
 
   const { error } = await supabase.from('agency_settings').update(update).eq('id', 'default');
   if (error) throw new Error(`Failed to update agency settings: ${error.message}`);
