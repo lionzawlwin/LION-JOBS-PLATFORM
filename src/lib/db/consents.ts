@@ -52,6 +52,37 @@ export async function getDirectContactConsentedApplicationIds(
   return new Set(data.map((r) => r.application_id as string));
 }
 
+// Fast-Track Visibility opt-in campaign (2026-07-07): consent is scoped
+// per-application (matching how directContactConsent is computed
+// elsewhere), but a candidate's magic-link click is a single "yes" for
+// themselves, not a per-job decision -- this grants it for every
+// application of theirs that doesn't already have it, in one action.
+export async function grantDirectContactConsentForAllApplications(
+  candidateId: string,
+): Promise<number> {
+  const { data: apps, error: appsError } = await supabase
+    .from('applications')
+    .select('id')
+    .eq('candidate_id', candidateId);
+  if (appsError || !apps || apps.length === 0) return 0;
+
+  const applicationIds = apps.map((a) => a.id as string);
+  const alreadyConsented = await getDirectContactConsentedApplicationIds(applicationIds);
+  const toGrant = applicationIds.filter((id) => !alreadyConsented.has(id));
+  if (toGrant.length === 0) return 0;
+
+  const rows = toGrant.map((applicationId) => ({
+    id: `cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    application_id: applicationId,
+    consent_type:   'direct_contact_unlock',
+    terms_version:  'v1',
+  }));
+  const { error } = await supabase.from('candidate_consents').insert(rows);
+  if (error) throw new Error(`Failed to grant direct contact consent: ${error.message}`);
+
+  return toGrant.length;
+}
+
 export async function getConsentForApplication(applicationId: string): Promise<ConsentRecord | null> {
   const { data, error } = await supabase
     .from('candidate_consents')
