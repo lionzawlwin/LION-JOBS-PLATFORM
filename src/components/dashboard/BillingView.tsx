@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Printer, FileText, AlertTriangle } from 'lucide-react';
+import { Loader2, Printer, FileText, AlertTriangle, Banknote, X } from 'lucide-react';
 import { AccountPlansPanel } from './AccountPlansPanel';
-import type { Invoice, InvoiceStatus } from '@/types';
+import type { Invoice, InvoiceStatus, PaymentMethod } from '@/types';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
   Draft:   'bg-muted text-muted-foreground border-border',
@@ -12,7 +12,115 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   Overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700/30',
 };
 
-const STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Paid', 'Overdue'];
+// 'Paid' is deliberately not a manual dropdown option -- it can only be
+// reached via "Record Payment", so every Paid invoice always has a backing
+// payment record (amount, method, who confirmed it). See migration 0026.
+const STATUSES: InvoiceStatus[] = ['Draft', 'Sent', 'Overdue'];
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'kbzpay',        label: 'KBZPay' },
+  { value: 'wavepay',       label: 'WavePay' },
+  { value: 'cash',          label: 'Cash' },
+  { value: 'other',         label: 'Other' },
+];
+
+function RecordPaymentModal({
+  invoice, onClose, onRecorded,
+}: {
+  invoice: Invoice;
+  onClose: () => void;
+  onRecorded: () => void;
+}) {
+  const [amountMmk, setAmountMmk] = useState(invoice.commissionFeeMmk);
+  const [method, setMethod]       = useState<PaymentMethod>('bank_transfer');
+  const [paidAt, setPaidAt]       = useState(new Date().toISOString().slice(0, 10));
+  const [notes, setNotes]         = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+
+  async function submit() {
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ amountMmk, method, paidAt, notes: notes || undefined }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setError(json.error ?? 'Could not record payment.');
+        return;
+      }
+      onRecorded();
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h4 className="text-sm font-bold text-foreground">Record Payment — {invoice.invoiceNumber}</h4>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">Amount (MMK)</label>
+            <input
+              type="number" min={1} value={amountMmk}
+              onChange={(e) => setAmountMmk(Number(e.target.value))}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">Method</label>
+            <select
+              value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">Date Received</label>
+            <input
+              type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground uppercase">Notes (optional)</label>
+            <input
+              type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500}
+              placeholder="Reference number, bank name, etc."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent">
+            Cancel
+          </button>
+          <button
+            onClick={submit} disabled={saving || amountMmk <= 0}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+            Confirm Paid
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -25,6 +133,7 @@ export function BillingView() {
   const [statusFilter, setStatusFilter]   = useState<InvoiceStatus | ''>('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [savingId, setSavingId]   = useState<string | null>(null);
+  const [paymentModalInvoice, setPaymentModalInvoice] = useState<Invoice | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,31 +246,58 @@ export function BillingView() {
                   <td className="p-3 text-muted-foreground">{inv.candidateName} · {inv.position}</td>
                   <td className="p-3 text-muted-foreground">{inv.commissionFeeMmk.toLocaleString()}</td>
                   <td className="p-3">
-                    <select
-                      value={inv.status}
-                      onChange={(e) => changeStatus(inv.id, e.target.value as InvoiceStatus)}
-                      disabled={savingId === inv.id}
-                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inv.status]}`}
-                    >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    {inv.status === 'Paid' ? (
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES.Paid}`}>Paid</span>
+                    ) : (
+                      <select
+                        value={inv.status}
+                        onChange={(e) => changeStatus(inv.id, e.target.value as InvoiceStatus)}
+                        disabled={savingId === inv.id}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inv.status]}`}
+                      >
+                        {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    )}
                   </td>
                   <td className="p-3 text-muted-foreground">{fmtDate(inv.issuedAt)}</td>
                   <td className="p-3">
-                    <a
-                      href={`/dashboard/billing/invoice/${inv.id}/print`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-                    >
-                      <Printer size={12} /> Print
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`/dashboard/billing/invoice/${inv.id}/print`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                      >
+                        <Printer size={12} /> Print
+                      </a>
+                      {inv.status !== 'Paid' && (
+                        <button
+                          onClick={() => setPaymentModalInvoice(inv)}
+                          className="flex w-fit items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700/30 dark:bg-emerald-900/20 dark:text-emerald-400"
+                        >
+                          <Banknote size={12} /> Record Payment
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {paymentModalInvoice && (
+        <RecordPaymentModal
+          invoice={paymentModalInvoice}
+          onClose={() => setPaymentModalInvoice(null)}
+          onRecorded={() => {
+            setInvoices((prev) => prev.map((inv) =>
+              inv.id === paymentModalInvoice.id ? { ...inv, status: 'Paid' } : inv,
+            ));
+            setPaymentModalInvoice(null);
+          }}
+        />
       )}
     </div>
   );

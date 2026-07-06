@@ -293,6 +293,19 @@ export interface Invoice {
   createdAt: string;
 }
 
+export type PaymentMethod = 'bank_transfer' | 'kbzpay' | 'wavepay' | 'cash' | 'other';
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  amountMmk: number;
+  method: PaymentMethod;
+  paidAt: string;
+  recordedBy: string;
+  notes: string | null;
+  createdAt: string;
+}
+
 export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit';
 export type EventLevel = 'error' | 'info';
 
