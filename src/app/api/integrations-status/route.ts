@@ -50,6 +50,12 @@ export async function GET() {
       optional: true,
       detail: 'ALERT_EMAIL — optional, unset = check silently no-ops',
     },
+    {
+      name: 'Marketing analytics (GA4)',
+      configured: !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+      optional: true,
+      detail: 'NEXT_PUBLIC_GA_MEASUREMENT_ID — optional, unset = MarketingAnalytics.tsx renders nothing',
+    },
   ];
 
   return Response.json({ integrations }, { headers: { 'Cache-Control': 'no-store' } });
