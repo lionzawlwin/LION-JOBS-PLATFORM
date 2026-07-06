@@ -21,7 +21,7 @@ const GENERIC_RESPONSE = {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const ipLimit = checkRateLimit(`company-portal-request-link:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const ipLimit = await checkRateLimit(`company-portal-request-link:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!ipLimit.allowed) {
     await logRateLimitHit('/api/company-portal/request-link');
     return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   // IP -- stops someone spamming one victim's inbox from many different
   // IPs. Still returns the generic response either way, so this can't be
   // used to distinguish "rate limited" from "no account" either.
-  const emailLimit = checkRateLimit(`company-portal-request-link-email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const emailLimit = await checkRateLimit(`company-portal-request-link-email:${email.toLowerCase()}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!emailLimit.allowed) {
     await logRateLimitHit('/api/company-portal/request-link');
     return NextResponse.json(GENERIC_RESPONSE);
