@@ -198,31 +198,31 @@ must include `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` in the same
 migration** — check `list_tables`'s `rls_enabled` field on the new table
 immediately after applying, every time, not just for staff.
 
-## `0033_add_invoice_charge_type.sql` — written, NOT yet applied (2026-07-06)
+## `0033_add_invoice_charge_type.sql` and `0034_scope_feedback_public_read_policy.sql` — both applied (2026-07-07)
 
-Part of the CTO Technical Audit's Phase 5 (invoice schema cleanup). Adds
-`invoices.charge_type` (enum-style CHECK) + `invoices.metadata` (jsonb),
-backfills the one existing live row from its `position` text, and all
-application code (`db/invoices.ts`, `db/companies.ts`, `db/jobs.ts`,
-`db/revenue.ts`, the three request-approve routes) has been updated on
-branch `feat/invoice-charge-type` to read/write the new columns instead of
-regex-parsing `position`.
+Both written during the same CTO Technical Audit session and initially
+held back pending the repo owner's explicit authorization (a live-
+database change is a distinct, higher-risk category than a code change,
+correctly blocked by this session's safety guardrail from running on a
+general "execute the roadmap" delegation alone). The repo owner
+returned, reviewed both, and explicitly authorized applying them.
 
-**This migration has deliberately NOT been applied to production and the
-branch has NOT been merged.** Applying a schema-altering, data-backfilling
-migration directly to a live database was correctly blocked by this
-session's own safety guardrail as a hard-to-reverse, shared-resource
-action needing an explicit go-ahead beyond a general "do the roadmap"
-delegation — the same category of decision as a `git push --force` or
-`rm -rf` on a repo the agent didn't create. The code changes on that
-branch also **hard-depend on this migration already being live**
-(`mapToInvoice` reads `row.charge_type`, every `create*Invoice` writes
-it) — merging the branch before the migration runs would break every
-invoice-creation path in production the moment it deployed.
-
-**To finish this**: apply `0033_add_invoice_charge_type.sql` (via
-`supabase db push`, the Supabase dashboard SQL editor, or ask Claude to
-run it via the Supabase MCP `apply_migration` tool with explicit
-authorization this time), confirm via `list_tables` that `invoices` now
-has both columns and the one live row backfilled to `charge_type =
-'featured_placement'`, then merge `feat/invoice-charge-type` and deploy.
+- **`0033`** (Phase 5, invoice schema cleanup): adds `invoices.charge_type`
+  (checked enum) + `invoices.metadata` (jsonb), replacing the old
+  "regex-parse a tag out of `position`" convention across
+  `db/invoices.ts`, `db/companies.ts`, `db/jobs.ts`, `db/revenue.ts`, and
+  the three request-approve routes. Applied via the Supabase MCP
+  `apply_migration` tool; verified live via `list_tables` (both columns
+  present, correct CHECK constraint) and a direct `SELECT` confirming the
+  one existing invoice backfilled to `charge_type = 'featured_placement'`,
+  `metadata = {"durationDays": 30}`. Merged via PR #107.
+- **`0034`** (Phase 4, RLS defense-in-depth): `feedback_public_read` had
+  `USING (true)` — every feedback row readable by the anon role,
+  including feedback never consented to be featured and rows still
+  pending/rejected in moderation. Scoped to
+  `featured_status = 'approved' AND consent_to_feature = true`, matching
+  what `getFeaturedTestimonials()` already filters for. Applied via the
+  Supabase MCP `apply_migration` tool; verified live via `pg_policies`
+  (`qual` now shows the scoped condition). Merged via PR #111. Current
+  app behavior was unaffected either way — this app only ever queries
+  via the service-role key, which bypasses RLS entirely.
