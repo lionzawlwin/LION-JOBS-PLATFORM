@@ -228,11 +228,20 @@ This document was originally written at Phase 10. Significant additions since:
   several rounds of "found a bug mid-testing, fixed it, kept going."
 
 See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
-commit hashes. No open PRs as of 2026-07-06 — everything through #101 is
-merged and deployed. **Known open item**: the Resend account has no
+commit hashes. No open PRs as of 2026-07-06 — everything through #104 is
+merged and deployed (PRs #102-104 added session documentation, automated
+Employer Applicant Visibility test coverage, and a Resend domain
+verification script, respectively).
+
+**Known open item, currently PAUSED**: the Resend account has no
 verified sending domain, so no transactional email can currently reach
-anyone except the account's own registered address — see PROGRESS.md's
-"Open items for the repo owner" for the fix.
+anyone except the account's own registered address. Repo owner has
+**chosen `lionjobsagency.com`** as the sending domain but has not yet
+purchased it (blocked on their own payment card — to be completed
+later). `scripts/verify-resend-domain.mjs` is already written and
+committed; resuming this needs only the domain purchase + a Cloudflare
+API token from the repo owner, no further code changes. Full resume
+steps in PROGRESS.md's "Domain decision + Resend setup — PAUSED" entry.
 
 ## Where to find more history
 
