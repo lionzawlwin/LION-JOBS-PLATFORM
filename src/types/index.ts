@@ -135,6 +135,9 @@ export interface Company {
   createdAt:     string;
   isInternal:    boolean;
   commissionRatePct?: number | null;
+  // Layer 12 (Multi-Brand Account Grouping). Null = standalone account,
+  // exactly today's behavior for every pre-existing row.
+  parentAccountId: string | null;
 }
 
 export interface ApplicationPayload {
