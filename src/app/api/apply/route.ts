@@ -48,7 +48,7 @@ const applySchema = z
 export async function POST(req: NextRequest) {
   // ── Rate limit: 5 applications per IP per 10 minutes ─────────────
   const ip  = getClientIp(req);
-  const rl  = checkRateLimit(`apply:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
+  const rl  = await checkRateLimit(`apply:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
   if (!rl.allowed) {
     await logRateLimitHit('/api/apply');
     return Response.json(

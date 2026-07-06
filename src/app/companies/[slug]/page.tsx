@@ -7,7 +7,6 @@ import { Footer } from '@/components/layout/Footer';
 import { JobCard } from '@/components/jobs/JobCard';
 import { VerifiedEmployerBadge } from '@/components/jobs/VerifiedEmployerBadge';
 import { getJobs, getCompanyFeedback, getCompanyByName, getCompanyHealthBand } from '@/lib/db';
-import { buildJobSlug } from '@/lib/utils';
 
 export const revalidate = 3600;
 

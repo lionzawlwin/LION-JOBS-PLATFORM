@@ -875,6 +875,16 @@ export const translations = {
     cp_contracts_title:          'Contracts',
     cp_contracts_empty:          'No contracts on file yet.',
     cp_ongoing:                  'ongoing',
+
+    // Candidate Portal
+    candp_applications_title: 'My Applications',
+    candp_no_applications:    'No applications found on this account yet.',
+    candp_applied_on:         'Applied {date}',
+    candp_interview_on:       'Interview {date}',
+    candp_stage_applied:     'Applied',
+    candp_stage_shortlisted: 'Shortlisted',
+    candp_stage_interview:   'Interview',
+    candp_stage_hired:       'Hired',
   },
 
   my: {
@@ -1751,6 +1761,16 @@ export const translations = {
     cp_contracts_title:          'စာချုပ်များ',
     cp_contracts_empty:          'စာချုပ် မရှိသေးပါ။',
     cp_ongoing:                  'ဆက်လက်လုပ်ဆောင်နေဆဲ',
+
+    // Candidate Portal
+    candp_applications_title: 'ကျွန်ုပ်၏ လျှောက်လွှာများ',
+    candp_no_applications:    'ဤအကောင့်တွင် လျှောက်လွှာများ မတွေ့ရသေးပါ။',
+    candp_applied_on:         'လျှောက်ထားသည့်ရက် {date}',
+    candp_interview_on:       'အင်တာဗျူးရက် {date}',
+    candp_stage_applied:     'လျှောက်ထားပြီး',
+    candp_stage_shortlisted: 'ရွေးချယ်ခံရ',
+    candp_stage_interview:   'အင်တာဗျူး',
+    candp_stage_hired:       'ခန့်အပ်ပြီး',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
