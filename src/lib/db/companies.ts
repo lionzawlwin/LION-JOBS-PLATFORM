@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Company, CompanyStatus, CompanyTier, Invoice } from '@/types';
-import { parseFeaturedPlacementDurationDays } from '@/lib/companyRules';
+import type { Company, CompanyStatus, CompanyTier, Invoice, FeaturedPlacementInvoiceMetadata } from '@/types';
 
 function mapToCompany(row: Record<string, unknown>): Company {
   return {
@@ -155,13 +154,13 @@ export async function activateFeaturedPlacement(companyId: string, durationDays:
 // dropdown fallback) so activation happens identically regardless of
 // which path actually flipped the invoice to Paid. A no-op for every
 // invoice that isn't a featured-placement charge or has no companyId.
-// Duration comes from the invoice's own tagged position, not the current
+// Duration comes from the invoice's own metadata, not the current
 // agency_settings value -- an owner editing the price/duration later must
 // never retroactively change what an already-issued invoice activates for.
 export async function activateFeaturedPlacementIfInvoicePaid(invoice: Invoice): Promise<void> {
   if (!invoice.companyId) return;
-  const durationDays = parseFeaturedPlacementDurationDays(invoice.position);
-  if (durationDays === null) return;
+  if (invoice.chargeType !== 'featured_placement') return;
+  const { durationDays } = invoice.metadata as FeaturedPlacementInvoiceMetadata;
   await activateFeaturedPlacement(invoice.companyId, durationDays);
 }
 

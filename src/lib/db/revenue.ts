@@ -1,24 +1,17 @@
 import { supabase } from '@/lib/supabase';
-import type { RevenueSummary } from '@/types';
-import { parseFeaturedPlacementDurationDays } from '@/lib/companyRules';
-import { parseJobBoost } from '@/lib/jobRules';
+import type { RevenueSummary, InvoiceChargeType } from '@/types';
 import { listPlanUpgradeRequests, listFeaturedPlacementRequests, listJobBoostRequests } from './systemEvents';
-
-const PLAN_UPGRADE_PREFIX = 'Plan Upgrade — ';
 
 // Commercial/Revenue Overview (Billing tab). Every figure here is derived
 // from data that already exists for other reasons (Paid invoices, the
 // is_featured flags, the three pending-request inboxes) -- this is a
 // read-only aggregation, not a new source of truth. Paid-invoice totals
-// are bucketed by product line the same way activateFeaturedPlacementIfInvoicePaid/
-// activateJobBoostIfInvoicePaid already identify a charge type: parsing
-// the tag back out of Invoice.position, since invoices has no `type`
-// column. Anything not recognized as one of the three upsell tags is
-// counted as a candidate-placement fee (the original, still-primary
-// revenue line).
+// are bucketed by product line via invoices.charge_type (migration 0033) --
+// previously this parsed a tag back out of Invoice.position, since
+// invoices had no `type` column.
 export async function getRevenueSummary(): Promise<RevenueSummary> {
   const [invoicesResult, featuredCountResult, boostedCountResult, planUpgradeRequests, featuredPlacementRequests, jobBoostRequests] = await Promise.all([
-    supabase.from('invoices').select('position, commission_fee_mmk').eq('status', 'Paid'),
+    supabase.from('invoices').select('charge_type, commission_fee_mmk').eq('status', 'Paid'),
     supabase.from('companies').select('*', { count: 'exact', head: true }).eq('is_featured', true),
     supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('is_featured', true),
     listPlanUpgradeRequests(),
@@ -44,14 +37,14 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
   };
 
   for (const row of invoicesResult.data ?? []) {
-    const position = (row.position as string) ?? '';
+    const chargeType = (row.charge_type as InvoiceChargeType) ?? 'candidate_placement';
     const fee = Number(row.commission_fee_mmk) || 0;
 
-    if (parseJobBoost(position)) {
+    if (chargeType === 'job_boost') {
       byLine.jobBoostMmk += fee;
-    } else if (parseFeaturedPlacementDurationDays(position) !== null) {
+    } else if (chargeType === 'featured_placement') {
       byLine.featuredPlacementMmk += fee;
-    } else if (position.startsWith(PLAN_UPGRADE_PREFIX)) {
+    } else if (chargeType === 'plan_upgrade') {
       byLine.planUpgradeMmk += fee;
     } else {
       byLine.candidatePlacementMmk += fee;

@@ -198,28 +198,31 @@ must include `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` in the same
 migration** — check `list_tables`'s `rls_enabled` field on the new table
 immediately after applying, every time, not just for staff.
 
-## `0034_scope_feedback_public_read_policy.sql` — written, NOT yet applied (2026-07-07)
+## `0033_add_invoice_charge_type.sql` and `0034_scope_feedback_public_read_policy.sql` — both applied (2026-07-07)
 
-CTO Technical Audit Phase 4 (RLS defense-in-depth). Queried `pg_policies`
-directly against production rather than assuming from `rls_enabled`
-alone: 16 tables have RLS enabled with zero policies (Postgres treats
-this as deny-all by default -- already correct, nothing to fix), and of
-the 8 tables with explicit policies, 7 are already correctly scoped.
-The one real gap: `feedback_public_read` has `USING (true)` -- every row
-readable by the anon role, including feedback a candidate never
-consented to feature and rows still pending/rejected in moderation, not
-just the approved+consented subset `getFeaturedTestimonials()` actually
-intends to expose. This app only ever queries via the service-role key
-(bypasses RLS entirely, confirmed by grepping for `NEXT_PUBLIC_SUPABASE`/
-client-side `createClient` calls), so the current live app is completely
-unaffected by this fix either way -- it only matters if the anon key
-is ever used client-side or leaks.
+Both written during the same CTO Technical Audit session and initially
+held back pending the repo owner's explicit authorization (a live-
+database change is a distinct, higher-risk category than a code change,
+correctly blocked by this session's safety guardrail from running on a
+general "execute the roadmap" delegation alone). The repo owner
+returned, reviewed both, and explicitly authorized applying them.
 
-**Not applied for the same reason as `0033`**: applying it directly to
-production was correctly blocked by this session's safety guardrail as
-a live-database change needing explicit authorization beyond a general
-"execute the roadmap" delegation. Unlike `0033`, no application code
-depends on this migration -- it's safe to apply whenever convenient,
-with no corresponding code branch to merge afterward. Apply via
-`supabase db push`, the dashboard SQL editor, or ask Claude to run it
-via the Supabase MCP `apply_migration` tool with explicit authorization.
+- **`0033`** (Phase 5, invoice schema cleanup): adds `invoices.charge_type`
+  (checked enum) + `invoices.metadata` (jsonb), replacing the old
+  "regex-parse a tag out of `position`" convention across
+  `db/invoices.ts`, `db/companies.ts`, `db/jobs.ts`, `db/revenue.ts`, and
+  the three request-approve routes. Applied via the Supabase MCP
+  `apply_migration` tool; verified live via `list_tables` (both columns
+  present, correct CHECK constraint) and a direct `SELECT` confirming the
+  one existing invoice backfilled to `charge_type = 'featured_placement'`,
+  `metadata = {"durationDays": 30}`. Merged via PR #107.
+- **`0034`** (Phase 4, RLS defense-in-depth): `feedback_public_read` had
+  `USING (true)` — every feedback row readable by the anon role,
+  including feedback never consented to be featured and rows still
+  pending/rejected in moderation. Scoped to
+  `featured_status = 'approved' AND consent_to_feature = true`, matching
+  what `getFeaturedTestimonials()` already filters for. Applied via the
+  Supabase MCP `apply_migration` tool; verified live via `pg_policies`
+  (`qual` now shows the scoped condition). Merged via PR #111. Current
+  app behavior was unaffected either way — this app only ever queries
+  via the service-role key, which bypasses RLS entirely.
