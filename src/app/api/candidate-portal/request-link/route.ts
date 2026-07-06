@@ -61,7 +61,16 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (err) {
-    await logFailure({ category: 'other', route: '/api/candidate-portal/request-link', message: 'Failed to issue/send portal login link', error: err });
+    // Same reasoning as the Company Portal route's identical catch block:
+    // SENTRY_DSN is unset in this deployment, so system_events is the only
+    // place this is actually visible -- include the message in context.
+    await logFailure({
+      category: 'other',
+      route:    '/api/candidate-portal/request-link',
+      message:  'Failed to issue/send portal login link',
+      error:    err,
+      context:  { errorMessage: err instanceof Error ? err.message : String(err) },
+    });
   }
 
   return NextResponse.json(GENERIC_RESPONSE);
