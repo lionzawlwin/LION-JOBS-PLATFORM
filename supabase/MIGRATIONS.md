@@ -226,3 +226,21 @@ returned, reviewed both, and explicitly authorized applying them.
   (`qual` now shows the scoped condition). Merged via PR #111. Current
   app behavior was unaffected either way — this app only ever queries
   via the service-role key, which bypasses RLS entirely.
+
+## `0037_add_job_alert_subscriptions.sql` — prepared, not applied (2026-07-07)
+
+Item #2 of the CTO big-upgrades roadmap (see
+`docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`, "Item #2
+in more detail"): `job_alert_subscriptions` table for candidates to save a
+search and get a daily digest of newly-posted matches. Search-criteria
+columns (`keyword`, `category`, `type`, `location`, `salary_min`)
+deliberately mirror `getJobsPaginated()`'s exact filter params
+(`src/lib/db/jobs.ts`) — no new filtering logic invented, the digest job
+(`src/lib/jobAlertDigest.ts`) reuses that function directly. Confirmed
+against the live schema via Supabase MCP `list_tables` before writing —
+column/id/RLS conventions match `job_requests` (`0022`) exactly: `TEXT`
+primary key, plain `TEXT` criteria columns with no `CHECK` constraint
+(same as `jobs.category`/`jobs.type`), RLS enabled with no policies
+(service-role-only access). **Not applied** — held for the repo owner's
+explicit go-ahead before `supabase db push`, same as every migration in
+this file since `0023`.

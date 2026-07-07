@@ -252,6 +252,15 @@ export const translations = {
     email_alerts_success:     "You're subscribed! New jobs will land in your inbox.",
     email_alerts_error:       'Could not subscribe. Please try again.',
 
+    // Save this search (Job Alert Subscriptions)
+    save_search_btn:          'Save this search',
+    save_search_title:        'Get emailed about new matches',
+    save_search_sub:          "We'll send you a daily digest when new jobs match this search.",
+    save_search_placeholder:  'Your email address',
+    save_search_submit:       'Save search',
+    save_search_success:      "Saved! We'll email you when new jobs match this search.",
+    save_search_error:        'Could not save this search. Please try again.',
+
     // Admin dashboard — tabs
     admin_tab_overview:    'Overview',
     admin_tab_candidates:  'Candidates',
@@ -1153,6 +1162,15 @@ export const translations = {
     email_alerts_btn:         'စာရင်းသွင်းပါ',
     email_alerts_success:     'စာရင်းသွင်းပြီးပါပြီ! အလုပ်အသစ်များ သင်၏ inbox တွင် ရောက်ပါမည်။',
     email_alerts_error:       'စာရင်းမသွင်းနိုင်ပါ။ ထပ်မံကြိုးစားပါ။',
+
+    // Save this search (Job Alert Subscriptions)
+    save_search_btn:          'ဤရှာဖွေမှုကို သိမ်းရန်',
+    save_search_title:        'ကိုက်ညီမှုအသစ်များအတွက် အီးမေးလ်ဖြင့် အသိပေးပါ',
+    save_search_sub:          'ဤရှာဖွေမှုနှင့် ကိုက်ညီသော အလုပ်အသစ်များရှိပါက နေ့စဉ် အီးမေးလ်ပို့ပေးပါမည်။',
+    save_search_placeholder:  'အီးမေးလ်လိပ်စာ',
+    save_search_submit:       'ရှာဖွေမှု သိမ်းရန်',
+    save_search_success:      'သိမ်းဆည်းပြီးပါပြီ! ကိုက်ညီသော အလုပ်အသစ်များရှိပါက အီးမေးလ်ပို့ပေးပါမည်။',
+    save_search_error:        'ရှာဖွေမှုကို မသိမ်းနိုင်ပါ။ ထပ်မံကြိုးစားပါ။',
 
     // Admin dashboard — tabs
     admin_tab_overview:    'ခြုံငုံသုံးသပ်ချက်',

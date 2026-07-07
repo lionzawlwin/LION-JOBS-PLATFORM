@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { buildJobAlertDigestEmail, type JobBrief } from '@/lib/emailTemplates';
 import type { ApplicationStatus } from '@/types';
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Lion Jobs Agency <noreply@lionjobs.co>';
@@ -210,6 +211,42 @@ export async function sendDirectContactOptInEmail(opts: {
       direct contact info. If you'd rather not, you don't need to do anything -- your information stays exactly
       as private as it is today.</p>
     `,
+  });
+  assertResendSuccess(result);
+}
+
+// Job Alert Subscriptions (CTO big-upgrades roadmap, Item #2): the daily
+// digest for one saved search, sent from runJobAlertDigest()
+// (src/lib/jobAlertDigest.ts), which is itself piggybacked onto the
+// existing daily /api/cron/job-alerts invocation rather than a new cron
+// job (Vercel Hobby-plan 2-cron-job cap). Same graceful-no-op pattern as
+// every other function here -- a missing RESEND_API_KEY (or any send
+// failure) must never block the digest loop itself; the caller wraps
+// this in try/catch per-subscription so one bad send doesn't stop the
+// rest of the batch.
+export async function sendJobAlertDigestEmail(opts: {
+  to: string;
+  searchLabel: string;
+  jobs: JobBrief[];
+  unsubscribeUrl: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn('[portalEmail] RESEND_API_KEY not set — cannot send job alert digest email.');
+    return;
+  }
+
+  const email = buildJobAlertDigestEmail({
+    searchLabel: opts.searchLabel,
+    jobs: opts.jobs,
+    unsubscribeUrl: opts.unsubscribeUrl,
+  });
+
+  const result = await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: email.subject,
+    html: email.html,
   });
   assertResendSuccess(result);
 }

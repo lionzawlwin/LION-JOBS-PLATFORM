@@ -154,6 +154,25 @@ export interface JobFilters {
   type: JobType | '';
 }
 
+// Job Alert Subscriptions (CTO big-upgrades roadmap, Item #2): a saved
+// search a candidate wants emailed about daily. Criteria fields
+// deliberately mirror JobFilters/GetJobsPaginatedOptions minus
+// salaryMax -- this is framed as a salary floor to be alerted above, not
+// a ceiling.
+export interface JobAlertSubscription {
+  id:               string;
+  email:            string;
+  keyword:          string | null;
+  category:         JobCategory | '' | null;
+  type:             JobType | '' | null;
+  location:         string | null;
+  salaryMin:        number | null;
+  unsubscribeToken: string;
+  active:           boolean;
+  lastSentAt:       string | null;
+  createdAt:        string;
+}
+
 export type CompanyStatus = 'Lead' | 'Active' | 'In-Contract' | 'Inactive';
 export type CompanyTier = 'smb' | 'enterprise';
 

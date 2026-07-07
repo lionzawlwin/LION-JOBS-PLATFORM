@@ -10,6 +10,7 @@ import { EmailAlerts } from '@/components/landing/EmailAlerts';
 import { RecentlyViewed } from '@/components/jobs/RecentlyViewed';
 import { SearchBar } from '@/components/jobs/SearchBar';
 import { JobFilters } from '@/components/jobs/JobFilters';
+import { SaveSearchButton } from '@/components/jobs/SaveSearchButton';
 import { JobGrid } from '@/components/jobs/JobGrid';
 import { useJobs, filterJobs } from '@/hooks/useJobs';
 import { useSavedJobs } from '@/hooks/useSavedJobs';
@@ -117,6 +118,9 @@ export function HomeClient({ initialJobs, initialTotal }: Props) {
             <SearchBar filters={filters} onChange={handleFilterChange} />
             <div className="border-t border-border/50 pt-3">
               <JobFilters filters={filters} onChange={handleFilterChange} total={displayJobs.length} />
+            </div>
+            <div className="border-t border-border/50 pt-3">
+              <SaveSearchButton filters={filters} />
             </div>
           </div>
 
