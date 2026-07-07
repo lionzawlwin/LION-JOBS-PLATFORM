@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash, Gauge, Check } from 'lucide-react';
+import { Loader2, AlertTriangle, ShieldCheck, ShieldAlert, RefreshCw, CheckCircle2, CircleAlert, CircleSlash, Gauge, Check, Timer } from 'lucide-react';
 import { Sparkline } from './TrendChart';
 import type { SystemEvent, CronStatus, FailureCategory } from '@/types';
 import type { CronDayStatus } from '@/lib/healthTrends';
+import type { RouteHealthSummary } from '@/lib/apiHealthSummary';
 
 type ResolvedFilter = 'unresolved' | 'resolved' | 'all';
 
@@ -72,6 +73,7 @@ export function SystemHealthView() {
   const [rateLimitHits24h, setRateLimitHits24h] = useState<number | null>(null);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [trend, setTrend] = useState<HealthTrend>(EMPTY_TREND);
+  const [apiHealth, setApiHealth] = useState<RouteHealthSummary[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,9 +81,10 @@ export function SystemHealthView() {
     try {
       const params = new URLSearchParams({ days: String(days), resolved: resolvedFilter });
       if (categoryFilter) params.set('category', categoryFilter);
-      const [eventsRes, integrationsRes] = await Promise.all([
+      const [eventsRes, integrationsRes, apiHealthRes] = await Promise.all([
         fetch(`/api/system-events?${params.toString()}`),
         fetch('/api/integrations-status'),
+        fetch('/api/api-health-checks?hours=24'),
       ]);
       if (!eventsRes.ok) {
         setError(true);
@@ -95,6 +98,10 @@ export function SystemHealthView() {
       if (integrationsRes.ok) {
         const integrationsData = await integrationsRes.json();
         setIntegrations(integrationsData.integrations ?? []);
+      }
+      if (apiHealthRes.ok) {
+        const apiHealthData = await apiHealthRes.json();
+        setApiHealth(apiHealthData.checks ?? []);
       }
     } catch {
       setError(true);
@@ -194,6 +201,42 @@ export function SystemHealthView() {
               </div>
             </div>
           ))
+        )}
+      </div>
+
+      {/* API/route health -- a periodic synthetic ping's latency/status
+          samples (src/lib/apiHealthCheck.ts, piggybacked on the daily
+          job-alerts cron), not the reactive error counts below. Answers
+          "is this route actually responding, and how fast" instead of
+          only "did something throw." */}
+      <div>
+        <h3 className="mb-3 text-sm font-bold text-foreground">API/Route Health (24h)</h3>
+        {apiHealth.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No synthetic health-check samples in this window yet.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {apiHealth.map((r) => (
+              <div key={r.route} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
+                {r.latestStatus === 'ok'
+                  ? <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                  : <ShieldAlert size={18} className="mt-0.5 shrink-0 text-red-600" />}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-mono text-sm font-semibold text-foreground" title={r.route}>{r.route}</p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Timer size={11} /> {r.latestLatencyMs}ms latest · {r.avgLatencyMs}ms avg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {fmtDateTime(r.latestCheckedAt)}
+                    {r.failCount > 0 && (
+                      <span className="ml-1.5 text-red-600 dark:text-red-400">
+                        · {r.failCount}/{r.sampleCount} failed
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

@@ -4,6 +4,7 @@ import { logFailure, logCronSuccess } from '@/lib/observability';
 import { runHealthCheck } from '@/lib/healthCheck';
 import { runCrmDigest } from '@/lib/crmAlerts';
 import { runJobAlertDigest } from '@/lib/jobAlertDigest';
+import { runApiHealthCheck } from '@/lib/apiHealthCheck';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
     // job, same reasoning as the two calls above (Vercel Hobby-plan
     // 2-cron-job cap).
     await runJobAlertDigest();
+    await runApiHealthCheck();
 
     const jobs = await getJobs();
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

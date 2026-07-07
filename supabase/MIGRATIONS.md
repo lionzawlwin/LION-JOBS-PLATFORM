@@ -227,20 +227,42 @@ returned, reviewed both, and explicitly authorized applying them.
   app behavior was unaffected either way — this app only ever queries
   via the service-role key, which bypasses RLS entirely.
 
-## `0037_add_job_alert_subscriptions.sql` — prepared, not applied (2026-07-07)
+## `0037_add_job_alert_subscriptions.sql` and `0038_add_api_health_checks.sql` — both applied (2026-07-07)
 
-Item #2 of the CTO big-upgrades roadmap (see
-`docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`, "Item #2
-in more detail"): `job_alert_subscriptions` table for candidates to save a
-search and get a daily digest of newly-posted matches. Search-criteria
-columns (`keyword`, `category`, `type`, `location`, `salary_min`)
-deliberately mirror `getJobsPaginated()`'s exact filter params
-(`src/lib/db/jobs.ts`) — no new filtering logic invented, the digest job
-(`src/lib/jobAlertDigest.ts`) reuses that function directly. Confirmed
-against the live schema via Supabase MCP `list_tables` before writing —
-column/id/RLS conventions match `job_requests` (`0022`) exactly: `TEXT`
-primary key, plain `TEXT` criteria columns with no `CHECK` constraint
-(same as `jobs.category`/`jobs.type`), RLS enabled with no policies
-(service-role-only access). **Not applied** — held for the repo owner's
-explicit go-ahead before `supabase db push`, same as every migration in
-this file since `0023`.
+Items #2 and #4 of the CTO big-upgrades roadmap (see
+`docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`), built
+concurrently on separate branches, both initially held as prepared-not-
+applied pending the repo owner's explicit authorization, same as `0033`/
+`0034` above. The repo owner returned, reviewed both PRs, and explicitly
+authorized applying them.
+
+- **`0037`** (Item #2, save-a-search job alerts): `job_alert_subscriptions`
+  table for candidates to save a search and get a daily digest of newly-
+  posted matches. Search-criteria columns (`keyword`, `category`, `type`,
+  `location`, `salary_min`) deliberately mirror `getJobsPaginated()`'s
+  exact filter params (`src/lib/db/jobs.ts`) — no new filtering logic
+  invented, the digest job (`src/lib/jobAlertDigest.ts`) reuses that
+  function directly. Column/id/RLS conventions match `job_requests`
+  (`0022`) exactly: `TEXT` primary key, plain `TEXT` criteria columns with
+  no `CHECK` constraint, RLS enabled with no policies (service-role-only
+  access). Applied via the Supabase MCP `apply_migration` tool; verified
+  live via `list_tables` (table present, all columns match, RLS enabled).
+  Merged via PR #122.
+- **`0038`** (Item #4, API/route health page): `api_health_checks` table
+  (`route`, `latency_ms`, `status`, `checked_at`) — design decided after
+  being deferred twice previously; deliberately a new table, not a
+  `system_events` reuse, since `system_events` is error-only semantics and
+  would be polluted with successful-request noise from a periodic health
+  ping. Written to only by a synthetic check (`src/lib/apiHealthCheck.ts`)
+  piggybacked on the existing daily `job-alerts` cron (same trick
+  `runHealthCheck()` already uses to stay within Vercel Hobby's
+  2-cron-job cap), pinging `/api/jobs`, `/dashboard`, and
+  `/api/system-events`. Applied via the Supabase MCP `apply_migration`
+  tool; verified live via `list_tables` (table present, RLS enabled).
+  Merged via PR #123.
+
+**Numbering note (resolved)**: `0038` was originally going to need a
+possible renumber depending on merge order (both branches picked their
+number independently, per the `0017`/`0018` and `0018`/`0019` precedent
+above) — zero table/column overlap between the two, so both numbers were
+kept as originally assigned; no renumbering was needed.
