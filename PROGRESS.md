@@ -1471,3 +1471,135 @@ any live database change, or merging anything to `main`. Consistent with
 the standing precedent already in this file from 2026-07-04 and
 2026-07-06 sessions asked to do the same kind of unsupervised "build
 everything" request.
+
+---
+
+# Continuation: portfolio review + Direct-Contact-Info Upsell Tier + Fast-Track Visibility opt-in (2026-07-07)
+
+Repo owner reviewed the overnight portfolio (above) the next morning and
+worked through it step by step across several rounds of explicit
+approval, same discipline throughout: feature branches, full test suites,
+`npx tsc --noEmit`, lint, and `npm run build` before every commit, no
+direct pushes to `main`, no live database change without an explicit
+go-ahead for that specific migration.
+
+**PR #114 and #115 merged** (candidate stage-change emails, overnight
+session log). Both production deployments verified via Vercel's commit
+status API and a `curl` smoke check (`/`, `/api/jobs`, `/company/portal`,
+`/api/company-portal/me` all responding as expected).
+
+**PR #116 — Company Portal hiring funnel** (item #3 of the portfolio).
+Before building, checked the existing code and found the portal already
+had a basic "Layer 14" stat-tile row -- upgraded it into a real funnel
+(Views → Applied → Shortlisted → Interview → Hired with per-stage
+conversion %) instead of duplicating it. `src/lib/portalAnalytics.ts`:
+pure, isomorphic funnel math shared identically by the server-side
+aggregate and the client-side per-job computation. Added a jobs-list
+sort control and Top Performer/Needs Attention badges, all derived
+client-side from data already fetched. 8 new unit tests. Deliberately
+not attempted: a historical trend chart -- `job.viewCount` is only a
+running total, a real trend needs a new table, flagged as a follow-on.
+
+**PR #117 — Direct-Contact-Info Upsell Tier design spec.** Grounded in
+infrastructure this repo already had: the existing anti-bypass legal
+clause (`agency_settings.anti_bypass_penalty_mmk`/`restriction_months`,
+`candidate_consents` consent_type `'anti_bypass'`) already penalizes
+unauthorized direct contact, so the spec designed the unlock tier as the
+agency selling an *authorized, paid exception* to that clause -- not
+disintermediating its own placement commission. Four explicit decisions
+flagged for sign-off (price, consent UX placement, business-model
+confirmation, retroactive-unlock scope).
+
+Repo owner confirmed the business model and answered all four: **5,000
+MMK per unlock**, consent via a checkbox at the final step of the
+application form, retroactive unlock allowed for historical applications.
+
+**PR #118 — Direct-Contact-Info Upsell Tier, built.** Migration
+`0035_add_contact_unlocks.sql` (new `contact_unlocks` table, one row per
+(application, company) with a unique index preventing double-charge;
+`agency_settings.contact_unlock_price_mmk`; `invoices.charge_type` and
+`system_events.category` both extended additively). Full vertical slice:
+`getApplicantsForJob()` extended with `directContactConsent`/
+`contactUnlockStatus`/`phone`/`email` (phone/email populate only when the
+function itself confirms a paid, consented unlock for the requesting
+company -- never trusts a caller-supplied flag, same discipline as the
+original Employer Applicant Visibility column whitelist); 5 new API
+routes; a consent checkbox on the application form; an unlock button in
+the Company Portal; a staff settings panel + request inbox on Billing.
+
+One mid-build design correction, caught before shipping: the original
+spec had the `contact_unlocks` row created at staff-approval time
+(mirroring Featured Placement/Job Boost). Realized this would let an
+employer click "Unlock" repeatedly with zero visible feedback before
+staff ever opened the inbox -- changed so the row is created at REQUEST
+time instead (status `pending`), and approval attaches an invoice to the
+existing row rather than inserting a new one.
+
+Also caught and fixed a real bug this feature would otherwise have
+introduced: `getRevenueSummary()` buckets paid invoices by `charge_type`;
+without its own bucket, contact-unlock revenue would have silently
+miscounted as candidate-placement revenue in the Commercial Revenue
+Overview panel. Added a `contactUnlockMmk` line.
+
+12 new/updated tests. Known, explicitly-flagged consequence of "consent
+on the application form" + "retroactive unlock allowed" together:
+applications submitted before this shipped have no consent on file (the
+checkbox didn't exist yet) -- correctly show as not-yet-enabled rather
+than silently bypassing consent for old rows.
+
+Repo owner approved: confirmed migrations `0033`/`0034` were already live
+(re-verified directly against the schema before touching anything, not
+assumed from memory) — applied **migration `0035`** live, verified via
+follow-up schema queries, then merged PR #118. Production deployment
+verified.
+
+**PR #119 — Fast-Track Visibility opt-in campaign.** Solves the
+historical-consent gap PR #118 flagged, per explicit instruction, rather
+than a silent consent bypass. `src/lib/consentLinks.ts`: signed,
+stateless, 30-day-TTL magic link, same HMAC pattern as `portalAuth.ts`'s
+session tokens but a distinct `purpose` field so a token minted here can
+never be replayed as a portal login token or vice versa, even sharing
+the same secret. Consent is granted **per candidate, not per
+application** -- one email, one click grants direct-contact consent for
+every application that candidate has that lacks it, so someone with 3
+historical applications gets one email, not three.
+`POST /api/opt-in-campaign/send`: staff-triggered batch send (25
+default, capped at 100), deliberately **not a new cron** (this repo is
+already at Vercel Hobby's 2-cron cap) -- only marks a candidate sent
+after their email actually succeeds, so a partial/failed batch is always
+safe to retry without double-emailing anyone. New OptInCampaignPanel on
+the Billing tab: eligible/sent counters, "Send next batch" button.
+Migration `0036` (`candidates.direct_contact_optin_campaign_sent_at`)
+prepared, not yet applied at PR-open time. 12 new tests.
+
+**CI caught a real gap before merge**: the route-protection check
+(Phase 27) correctly failed on `/api/consent/direct-contact-unlock` --
+intentionally public (an unauthenticated candidate clicking an emailed
+link, verified via the HMAC token instead of a session) but missing the
+required `PUBLIC ROUTE:` comment explaining why. Fixed in a follow-up
+commit on the same branch; re-ran the full verify suite before pushing.
+
+Repo owner approved: applied **migration `0036`** live, verified via a
+follow-up schema query, then merged PR #119. Production deployment
+verified.
+
+## Session end state (2026-07-07)
+
+All of PRs #114–#119 merged into `main`. All six migrations from this
+session (`0033`–`0036`, the latter two via this continuation) applied
+live and verified. No direct pushes to `main` at any point; every change
+went through a feature branch, full `tsc`/test/lint/build verification,
+and either explicit repo-owner review-and-merge or (for #118/#119's
+schema changes specifically) an explicit go-ahead before the live
+database mutation.
+
+**Explicitly acknowledged and documented per the repo owner's
+instruction**: the Fast-Track Visibility opt-in campaign (and the
+candidate-facing stage-change emails from the prior session) are fully
+built, tested, merged, and their schema is live -- but **actual email
+delivery to real candidates remains blocked** until the Resend sending
+domain (`lionjobsagency.com`, chosen 2026-07-06) is purchased and
+verified. Clicking "Send batch" today only reaches the Resend account's
+own registered address. See `CTO_HANDOVER.md`'s "Known open item" for
+the exact resume steps -- no code changes needed there, only the domain
+purchase + a Cloudflare API token from the repo owner.
