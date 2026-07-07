@@ -2,6 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { useTestimonials } from '@/hooks/useTestimonials';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function Stars({ count }: { count: number }) {
   return (
@@ -15,6 +16,7 @@ function Stars({ count }: { count: number }) {
 
 export function Testimonials() {
   const { testimonials, isLoading } = useTestimonials();
+  const { t } = useLanguage();
 
   // Layer 18: no fabricated fallback content. If no candidate has yet
   // consented + been approved to have their feedback featured, the
@@ -28,29 +30,29 @@ export function Testimonials() {
         {/* Header */}
         <div className="mb-10 text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">
-            Success Stories
+            {t('home_testimonials_eyebrow')}
           </p>
           <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-            Candidates Who Found Their Dream Job
+            {t('home_testimonials_heading')}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Real feedback from real candidates. Zero agency fee, always.
+            {t('home_testimonials_sub')}
           </p>
         </div>
 
         {/* Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
+          {testimonials.map((testimonial) => (
             <div
-              key={t.id}
+              key={testimonial.id}
               className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
             >
               {/* Stars */}
-              <Stars count={t.rating} />
+              <Stars count={testimonial.rating} />
 
               {/* Quote */}
               <blockquote className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                &ldquo;{t.quote}&rdquo;
+                &ldquo;{testimonial.quote}&rdquo;
               </blockquote>
 
               {/* Attribution -- deliberately no name: this comes from the
@@ -61,9 +63,9 @@ export function Testimonials() {
                   ★
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Verified candidate</p>
+                  <p className="text-sm font-semibold text-foreground">{t('home_testimonials_verified')}</p>
                   <p className="text-xs text-muted-foreground">
-                    Interviewed at {t.company}
+                    {t('home_testimonials_interviewed_at')} {testimonial.company}
                   </p>
                 </div>
               </div>
