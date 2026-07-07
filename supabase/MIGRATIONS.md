@@ -226,3 +226,33 @@ returned, reviewed both, and explicitly authorized applying them.
   (`qual` now shows the scoped condition). Merged via PR #111. Current
   app behavior was unaffected either way — this app only ever queries
   via the service-role key, which bypasses RLS entirely.
+
+## `0038_add_api_health_checks.sql` — PREPARED, NOT APPLIED (2026-07-07)
+
+`api_health_checks` table (`route`, `latency_ms`, `status`, `checked_at`) —
+item #4 of the 2026-07-07 CTO big-upgrades portfolio (System Health API/
+route health page), design decided in
+`docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`'s "Item #4
+in more detail" section after being deferred twice previously. Deliberately
+a new table, not a `system_events` reuse: `system_events` is error-only
+semantics and would be polluted with successful-request noise from a
+periodic health ping. Written to only by a synthetic check
+(`src/lib/apiHealthCheck.ts`) piggybacked on the existing daily
+`job-alerts` cron (same trick `runHealthCheck()` already uses to stay
+within Vercel Hobby's 2-cron-job cap), pinging `/api/jobs`, `/dashboard`,
+and `/api/system-events`.
+
+**Numbering note**: a concurrent, not-yet-merged session on branch
+`feat/job-alert-subscriptions` claimed `0037` for a `job_alert_subscriptions`
+table (not visible in this worktree's local `migrations/` listing at the
+time this file was written). This migration is numbered `0038` to avoid
+that collision, but the number may still need adjusting at merge/review
+time depending on which branch lands on `main` first — same known,
+acceptable collision point as the `0017`/`0018` and `0018`/`0019`
+renumbering notes above. Zero table/column overlap with
+`job_alert_subscriptions` either way, so no live-schema consequence
+regardless of merge order.
+
+**Not applied.** Same discipline as every other schema change in this
+project's recent history: prepared on a branch, not pushed to the live
+database, pending the repo owner's explicit go-ahead.
