@@ -431,6 +431,22 @@ export interface CronStatus {
   message: string;
 }
 
+// API/route health page (Phase 6 follow-up, item #4 of the 2026-07-07 CTO
+// big-upgrades portfolio): a periodic synthetic check's latency/status
+// samples, kept in a table separate from SystemEvent -- system_events is
+// error-only semantics (see FailureCategory/logFailure) and must not be
+// polluted with successful-request noise from a health ping that succeeds
+// every few minutes.
+export type ApiHealthStatus = 'ok' | 'fail';
+
+export interface ApiHealthCheck {
+  id: string;
+  route: string;
+  latencyMs: number;
+  status: ApiHealthStatus;
+  checkedAt: string;
+}
+
 export interface StatsHistoryEntry {
   snapshotDate: string;
   jobsCount: number;
