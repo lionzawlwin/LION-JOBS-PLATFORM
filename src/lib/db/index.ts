@@ -23,4 +23,5 @@ export * from './payments';
 export * from './revenue';
 export * from './contactUnlocks';
 export * from './optInCampaign';
+export * from './jobAlerts';
 export * from './apiHealthChecks';

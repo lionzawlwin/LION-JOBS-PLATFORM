@@ -3,6 +3,7 @@ import { getJobs } from '@/lib/db';
 import { logFailure, logCronSuccess } from '@/lib/observability';
 import { runHealthCheck } from '@/lib/healthCheck';
 import { runCrmDigest } from '@/lib/crmAlerts';
+import { runJobAlertDigest } from '@/lib/jobAlertDigest';
 import { runApiHealthCheck } from '@/lib/apiHealthCheck';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,11 @@ export async function GET(req: Request) {
   try {
     await runHealthCheck();
     await runCrmDigest();
+    // Job Alert Subscriptions (Item #2, CTO big-upgrades roadmap):
+    // piggybacked onto this same daily invocation rather than a new cron
+    // job, same reasoning as the two calls above (Vercel Hobby-plan
+    // 2-cron-job cap).
+    await runJobAlertDigest();
     await runApiHealthCheck();
 
     const jobs = await getJobs();

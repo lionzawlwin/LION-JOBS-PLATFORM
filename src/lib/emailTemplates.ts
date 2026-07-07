@@ -123,6 +123,55 @@ export function buildWeeklyDigestEmail(data: {
   };
 }
 
+// Job Alert Subscriptions (CTO big-upgrades roadmap, Item #2): the daily
+// digest sent to a candidate for one saved search. Reuses the same
+// baseStyles/job-card markup as buildWeeklyDigestEmail rather than
+// inventing a new template shape, but -- unlike every other template in
+// this file -- carries a real `href`, not `href="#"`, on its unsubscribe
+// link, since this feature's unsubscribe is a real single-purpose token,
+// not a placeholder.
+export function buildJobAlertDigestEmail(data: {
+  searchLabel:   string;
+  jobs:          JobBrief[];
+  unsubscribeUrl: string;
+}): { subject: string; html: string } {
+  const jobCards = data.jobs.slice(0, 10).map((j) => `
+    <div class="job-card">
+      <h3>${j.title}</h3>
+      <p>${j.company} &middot; ${j.location}</p>
+      <p><span class="tag">💰 ${j.salary}</span></p>
+    </div>
+  `).join('');
+
+  return {
+    subject: `${data.jobs.length} new ${data.jobs.length === 1 ? 'job matches' : 'jobs match'} your saved search`,
+    html: `
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>${baseStyles}</style></head><body>
+<div class="wrapper">
+  <div class="card">
+    <div class="header">
+      <h1>🦁 Lion Jobs — Job Alert</h1>
+      <p>New matches for your saved search</p>
+    </div>
+    <div class="body">
+      <h2>${data.jobs.length} new ${data.jobs.length === 1 ? 'role matches' : 'roles match'} "${data.searchLabel}"</h2>
+      <p>Here's what's new since your last alert:</p>
+
+      ${jobCards}
+
+      <a href="${SITE_URL}" class="btn">Browse All Jobs</a>
+    </div>
+    <div class="footer">
+      Lion Jobs Agency &middot; Myanmar<br>
+      <a href="${SITE_URL}" style="color:${BRAND};">${SITE_URL}</a><br><br>
+      <a href="${data.unsubscribeUrl}" style="color:#9ca3af;">Unsubscribe from this search alert</a>
+    </div>
+  </div>
+</div>
+</body></html>`,
+  };
+}
+
 export function buildCandidateAlertEmail(data: {
   contactPerson:  string;
   companyName:    string;
