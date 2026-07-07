@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createSessionToken, verifySessionToken } from './portalAuth';
 
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(),
+}));
+
 beforeAll(() => {
   process.env.PORTAL_SESSION_SECRET = 'test-secret-do-not-use-in-production';
 });
@@ -59,5 +63,44 @@ describe('createSessionToken / verifySessionToken', () => {
     expect(tokenA).not.toBe(tokenB);
     expect(verifySessionToken(tokenA, 'candidate')).toBe('cand-a');
     expect(verifySessionToken(tokenB, 'candidate')).toBe('cand-b');
+  });
+
+  it('still verifies correctly when a seatRole is attached (Layer 3, company-only)', () => {
+    const token = createSessionToken('company', 'comp-123', { seatRole: 'hiring_manager' });
+    expect(verifySessionToken(token, 'company')).toBe('comp-123');
+  });
+});
+
+describe('getCompanySeatRole', () => {
+  it('reads back the seatRole a session was created with', async () => {
+    const { cookies } = await import('next/headers');
+    const token = createSessionToken('company', 'comp-123', { seatRole: 'viewer' });
+    vi.mocked(cookies).mockResolvedValue({
+      get: (name: string) => (name === 'company_portal_session' ? { value: token } : undefined),
+    } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+    const { getCompanySeatRole } = await import('./portalAuth');
+    expect(await getCompanySeatRole()).toBe('viewer');
+  });
+
+  it('defaults to owner for a valid session with no seatRole claim (pre-Layer-3 token)', async () => {
+    const { cookies } = await import('next/headers');
+    const token = createSessionToken('company', 'comp-123');
+    vi.mocked(cookies).mockResolvedValue({
+      get: (name: string) => (name === 'company_portal_session' ? { value: token } : undefined),
+    } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+    const { getCompanySeatRole } = await import('./portalAuth');
+    expect(await getCompanySeatRole()).toBe('owner');
+  });
+
+  it('returns null when there is no valid company session', async () => {
+    const { cookies } = await import('next/headers');
+    vi.mocked(cookies).mockResolvedValue({
+      get: () => undefined,
+    } as unknown as Awaited<ReturnType<typeof cookies>>);
+
+    const { getCompanySeatRole } = await import('./portalAuth');
+    expect(await getCompanySeatRole()).toBeNull();
   });
 });
