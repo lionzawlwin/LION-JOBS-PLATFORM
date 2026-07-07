@@ -8,6 +8,12 @@ import { logFailure } from '@/lib/observability';
 // candidate-portal/verify and company-portal/verify's login links), and
 // deliberately not an error when the token is unknown/already used --
 // see deactivateJobAlertSubscriptionByToken()'s doc comment.
+//
+// PUBLIC ROUTE: clicked directly from an email client with no session --
+// the opaque unsubscribe_token in the URL is the entire auth mechanism,
+// same threat model as the migration's column comment describes (there is
+// no identity/session to protect beyond deactivating the one row the
+// token points at).
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   if (!token) {
