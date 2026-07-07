@@ -266,3 +266,34 @@ possible renumber depending on merge order (both branches picked their
 number independently, per the `0017`/`0018` and `0018`/`0019` precedent
 above) — zero table/column overlap between the two, so both numbers were
 kept as originally assigned; no renumbering was needed.
+
+## `0039_add_company_portal_users.sql` — applied (2026-07-07)
+
+Layer 1 of Module #1 (Enterprise Employer Console / multi-seat company
+accounts, see `docs/superpowers/specs/2026-07-05-layer9-portal-team-seats-design.md`
+for the original v1 design, extended into a real per-seat RBAC model per
+the repo owner's explicit direction). `company_portal_users` table:
+`company_id` FK to `companies.id`, `seat_role` (`owner`/`hiring_manager`/
+`viewer`), self-referencing nullable `invited_by`, `status`
+(`invited`/`active`/`revoked`). Applied via the Supabase MCP
+`apply_migration` tool under the repo owner's explicit, specific
+authorization for this one action; verified live via `list_tables`
+(table present, RLS enabled, correct checks, FKs to `companies.id` and
+self-referencing `invited_by` both present). Backfill seeded 2 `owner`
+rows — only 2 of the 6 live `companies` rows have a non-null `email`,
+matching the migration's `WHERE c.email IS NOT NULL` guard exactly, not
+a bug.
+
+**Explicitly held back the same session, pending real-time review**:
+Layers 3–6 of this module were **not** built or merged despite a broad
+"full autonomous execution, merge and deploy without checkpoints"
+grant, because Layer 3 extends `portalAuth.ts`'s login/session lookup —
+an auth change, the same risk category this repo's own history already
+declined to touch unsupervised (see the NextAuth v4→v5 entry in
+`2026-07-07-cto-big-upgrades-portfolio.md`: "could lock you out... makes
+recovery worse"). A bug in company-portal login is only discoverable in
+production, by real employer customers, with no one available to
+approve a fix. Layer 2 (`src/lib/portalPermissions.ts`, pure permission-
+matrix logic, zero production risk) was built and tested on branch
+`feat/module1-portal-team-seats` in the same session — see that branch
+for the prepared, not-yet-merged Layer 2 code.
