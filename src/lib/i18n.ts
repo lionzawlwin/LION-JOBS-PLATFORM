@@ -86,6 +86,13 @@ export const translations = {
     home_no_saved_sub:      'Click the bookmark icon on any job card to save it here.',
     home_browse_all_jobs:   'Browse All Jobs',
 
+    // Homepage Success Stories / testimonials section
+    home_testimonials_eyebrow:      'Success Stories',
+    home_testimonials_heading:      'Candidates Who Found Their Dream Job',
+    home_testimonials_sub:          'Real feedback from real candidates. Zero agency fee, always.',
+    home_testimonials_verified:     'Verified candidate',
+    home_testimonials_interviewed_at: 'Interviewed at',
+
     // Telegram job alerts
     alerts_channel_open: 'Channel Open',
 
@@ -987,6 +994,13 @@ export const translations = {
     home_no_saved_jobs:     'သိမ်းထားသော အလုပ် မရှိသေးပါ',
     home_no_saved_sub:      'အလုပ်ကတ်တစ်ခုချင်းစီရှိ bookmark အိုင်ကွန်ကို နှိပ်၍ ဤနေရာတွင် သိမ်းဆည်းနိုင်ပါသည်။',
     home_browse_all_jobs:   'အလုပ်အားလုံးကြည့်ရန်',
+
+    // Homepage Success Stories / testimonials section
+    home_testimonials_eyebrow:      'အောင်မြင်မှုဇာတ်လမ်းများ',
+    home_testimonials_heading:      'အိပ်မက်ဆိုင်ရာ အလုပ်ရရှိသွားသော လျှောက်ထားသူများ',
+    home_testimonials_sub:          'လျှောက်ထားသူအစစ်များထံမှ တကယ့်တုံ့ပြန်ချက်များ။ အေဂျင်စီအခကြေးငွေ လုံးဝမယူပါ။',
+    home_testimonials_verified:     'အတည်ပြုပြီး လျှောက်ထားသူ',
+    home_testimonials_interviewed_at: 'အင်တာဗျူးဖြေခဲ့သည့်နေရာ -',
 
     // Telegram job alerts
     alerts_channel_open: 'Channel ဖွင့်ပြီးပါပြီ',
