@@ -228,24 +228,37 @@ This document was originally written at Phase 10. Significant additions since:
   several rounds of "found a bug mid-testing, fixed it, kept going."
 
 See `PROGRESS.md` for the full phase-by-phase changelog with PR numbers and
-commit hashes. As of 2026-07-07: PRs #106, #107, #108, #109, #110, #111
-all merged (lint debt paydown, invoice `charge_type`/`metadata` migration,
-KV-backed rate limiter, route-handler integration tests, Candidate Portal
-i18n, RLS policy fix) — both previously-blocked migrations (`0033`,
-`0034`) are live. One new PR open, not yet merged: **#114** (candidate
-stage-change email notifications — Shortlisted/Interview/Hired — built in
-an overnight session per `docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md`,
-which also proposes a ranked menu of further upgrades for review).
+commit hashes. As of 2026-07-07: PRs #106 through #119 all merged
+(lint debt paydown; invoice `charge_type`/`metadata`; KV-backed rate
+limiter; route-handler integration tests; Candidate Portal i18n; RLS
+policy fix; Company Portal hiring funnel; Direct-Contact-Info Upsell
+Tier; Fast-Track Visibility opt-in campaign). Migrations `0033` through
+`0036` are all live and verified directly against the schema (not
+assumed from git history) — `contact_unlocks` table, `agency_settings`
+gained `contact_unlock_price_mmk`, `invoices.charge_type`/
+`system_events.category` both extended to include `contact_unlock`, and
+`candidates` gained `direct_contact_optin_campaign_sent_at`.
+`docs/superpowers/specs/2026-07-07-cto-big-upgrades-portfolio.md` and
+`docs/superpowers/specs/2026-07-07-direct-contact-unlock-tier-design.md`
+have the full design reasoning; PROGRESS.md's "Continuation" entry has
+the full build/merge/migration log for all of it.
 
-**Known open item, currently PAUSED**: the Resend account has no
-verified sending domain, so no transactional email can currently reach
-anyone except the account's own registered address. Repo owner has
-**chosen `lionjobsagency.com`** as the sending domain but has not yet
-purchased it (blocked on their own payment card — to be completed
-later). `scripts/verify-resend-domain.mjs` is already written and
-committed; resuming this needs only the domain purchase + a Cloudflare
-API token from the repo owner, no further code changes. Full resume
-steps in PROGRESS.md's "Domain decision + Resend setup — PAUSED" entry.
+**Known open item, currently PAUSED — blocks two shipped features, not
+just one**: the Resend account has no verified sending domain, so no
+transactional email can currently reach anyone except the account's own
+registered address. This affects: (1) portal magic-link emails, as
+before, and (2) two newly-merged features that are fully built, tested,
+and live in the schema but **cannot actually deliver to real recipients
+yet** — the candidate stage-change notification emails (Shortlisted/
+Interview/Hired) and the Fast-Track Visibility opt-in campaign (the
+one-time historical-consent-backfill email with its magic link). Both
+will start working automatically the moment this is resolved; neither
+needs further code changes. Repo owner has **chosen `lionjobsagency.com`**
+as the sending domain but has not yet purchased it (blocked on their own
+payment card — to be completed later). `scripts/verify-resend-domain.mjs`
+is already written and committed; resuming this needs only the domain
+purchase + a Cloudflare API token from the repo owner. Full resume steps
+in PROGRESS.md's "Domain decision + Resend setup — PAUSED" entry.
 
 ## Where to find more history
 
