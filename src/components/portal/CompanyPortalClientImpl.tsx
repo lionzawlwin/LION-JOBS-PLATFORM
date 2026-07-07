@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
 import { useJobApplicants } from '@/hooks/useJobApplicants';
-import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles, Languages, ChevronDown, ChevronUp, Download, User } from 'lucide-react';
+import { cumulativeFunnelCounts, computeHiringFunnel, type FunnelStageKey, type HiringFunnelStage } from '@/lib/portalAnalytics';
+import { Loader2, Building2, Briefcase, FileText, FileSignature, LogOut, MapPin, ArrowUpCircle, Check, Eye, Sparkles, Languages, ChevronDown, ChevronUp, Download, User, TrendingUp, ArrowUpDown, AlertTriangle } from 'lucide-react';
 
 interface JobSummary {
   id: string;
@@ -50,7 +51,18 @@ interface InsightsSummary {
   fillRate: number | null;
   avgMatchScore: number | null;
   avgDaysToFirstApplicantHired: number | null;
+  funnel: HiringFunnelStage[];
 }
+
+const FUNNEL_LABEL_KEY: Record<FunnelStageKey, TranslationKey> = {
+  views:       'cp_col_views',
+  applied:     'ov_stage_applied',
+  shortlisted: 'ov_stage_shortlisted',
+  interview:   'ov_stage_interview',
+  hired:       'ov_stage_hired',
+};
+
+type JobSortKey = 'recent' | 'views' | 'applicants' | 'conversion' | 'attention';
 
 interface MeResponse {
   company: {
@@ -80,13 +92,30 @@ const STAGE_KEY: Record<string, TranslationKey> = {
 };
 
 // Employer Applicant Visibility -- name + resume/CV only, no contact info
-// (the repo owner's explicit decision: the agency stays the required
-// intermediary for actually reaching a candidate). Only ever mounted
+// by default (the repo owner's explicit decision: the agency stays the
+// required intermediary for actually reaching a candidate). Direct-
+// Contact-Info Upsell Tier (2026-07-07) is the one paid, opt-in exception
+// to that -- see getApplicantsForJob()'s own comment. Only ever mounted
 // while its job row is expanded, so this is the one place per session
 // that fetches a given job's applicant list.
 function ApplicantList({ jobId }: { jobId: string }) {
   const { t } = useLanguage();
-  const { applicants, loading } = useJobApplicants(jobId);
+  const { applicants, contactUnlockPriceMmk, loading, mutate } = useJobApplicants(jobId);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function handleUnlockRequest(applicationId: string) {
+    setBusyId(applicationId);
+    try {
+      const res = await fetch('/api/company-portal/contact-unlock-requests', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jobId, applicationId }),
+      });
+      if (res.ok) await mutate();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (loading) {
     return <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>;
@@ -99,23 +128,48 @@ function ApplicantList({ jobId }: { jobId: string }) {
   return (
     <ul className="mt-2 flex flex-col gap-1.5">
       {applicants.map((a) => (
-        <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><User size={12} /></span>
-            <span className="truncate font-medium text-foreground">{a.name}</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE_CLASSES[a.stage] ?? ''}`}>
-              {t(STAGE_KEY[a.stage])}
-            </span>
+        <li key={a.id} className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><User size={12} /></span>
+              <span className="truncate font-medium text-foreground">{a.name}</span>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_BADGE_CLASSES[a.stage] ?? ''}`}>
+                {t(STAGE_KEY[a.stage])}
+              </span>
+            </div>
+            {a.cvUrl && (
+              <a
+                href={a.cvUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <Download size={11} /> {t('cp_view_resume')}
+              </a>
+            )}
           </div>
-          {a.cvUrl && (
-            <a
-              href={a.cvUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+
+          {/* Direct-Contact-Info Upsell Tier -- one of four states */}
+          {a.contactUnlockStatus === 'paid' ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+              <span><strong>{t('cp_unlocked_phone_label')}:</strong> {a.phone}</span>
+              {a.email && <span><strong>{t('cp_unlocked_email_label')}:</strong> {a.email}</span>}
+            </div>
+          ) : a.contactUnlockStatus === 'pending' ? (
+            <p className="text-[11px] text-muted-foreground">{t('cp_unlock_requested')}</p>
+          ) : a.directContactConsent ? (
+            <button
+              onClick={() => handleUnlockRequest(a.id)}
+              disabled={busyId === a.id}
+              className="flex w-fit items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-60 dark:border-brand-700/30 dark:bg-brand-900/20 dark:text-brand-300"
             >
-              <Download size={11} /> {t('cp_view_resume')}
-            </a>
+              {busyId === a.id
+                ? <Loader2 size={11} className="animate-spin" />
+                : t('cp_unlock_contact_cta').replace('{price}', contactUnlockPriceMmk.toLocaleString())
+              }
+            </button>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">{t('cp_unlock_not_enabled')}</p>
           )}
         </li>
       ))}
@@ -137,6 +191,40 @@ export function CompanyPortalClientImpl() {
   const [boostingJobId, setBoostingJobId] = useState<string | null>(null);
   const [boostedJobIds, setBoostedJobIds] = useState<Set<string>>(new Set());
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [jobSort, setJobSort] = useState<JobSortKey>('recent');
+
+  // Item #3 of the 2026-07-07 CTO Big Upgrades Portfolio: per-job funnel +
+  // conversion, computed client-side from data already in this response
+  // (job.viewCount + job.applicantCounts) via the same pure function the
+  // aggregate funnel above uses -- no extra fetch, one implementation.
+  const jobsWithFunnel = useMemo(() => {
+    if (!data) return [];
+    return data.jobs.map((job) => {
+      const funnel = computeHiringFunnel(cumulativeFunnelCounts(job.viewCount, job.applicantCounts));
+      const viewToApplyRate = funnel[1].conversionFromPrevious; // views -> applied
+      const totalApplicants = funnel[1].count;
+      const needsAttention = job.viewCount >= 10 && totalApplicants === 0;
+      return { job, viewToApplyRate, totalApplicants, needsAttention };
+    });
+  }, [data]);
+
+  const topPerformerJobId = useMemo(() => {
+    const withApplicants = jobsWithFunnel.filter((j) => j.totalApplicants > 0 && j.viewToApplyRate !== null);
+    if (withApplicants.length < 2) return null; // "top" is meaningless with 0-1 comparable jobs
+    return withApplicants.reduce((best, cur) => (cur.viewToApplyRate! > best.viewToApplyRate! ? cur : best)).job.id;
+  }, [jobsWithFunnel]);
+
+  const sortedJobs = useMemo(() => {
+    const copy = [...jobsWithFunnel];
+    switch (jobSort) {
+      case 'views':       return copy.sort((a, b) => b.job.viewCount - a.job.viewCount);
+      case 'applicants':  return copy.sort((a, b) => b.totalApplicants - a.totalApplicants);
+      case 'conversion':  return copy.sort((a, b) => (b.viewToApplyRate ?? -1) - (a.viewToApplyRate ?? -1));
+      case 'attention':   return copy.sort((a, b) => Number(b.needsAttention) - Number(a.needsAttention));
+      case 'recent':
+      default:            return copy; // API already returns jobs most-recent-first
+    }
+  }, [jobsWithFunnel, jobSort]);
 
   // Fires once per real login (the ?login=success param verify/route.ts
   // adds), not on every subsequent page view of the same session --
@@ -369,23 +457,83 @@ export function CompanyPortalClientImpl() {
 
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-            <Briefcase size={16} /> {t('cp_positions_title')} ({data.jobs.length})
+            <TrendingUp size={16} /> {t('cp_funnel_title')}
           </h2>
+          <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
+            {(() => {
+              const maxCount = Math.max(...data.insights.funnel.map((s) => s.count), 1);
+              return data.insights.funnel.map((stage) => {
+                const pct = Math.round((stage.count / maxCount) * 100);
+                return (
+                  <div key={stage.key} className="flex items-center gap-3">
+                    <span className="w-20 shrink-0 text-xs font-medium text-foreground">{t(FUNNEL_LABEL_KEY[stage.key])}</span>
+                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-brand-600 transition-all duration-700 ease-out"
+                        style={{ width: `${stage.count > 0 ? Math.max(pct, 4) : 0}%` }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 text-right text-xs font-bold tabular-nums text-foreground">{stage.count}</span>
+                    <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                      {stage.conversionFromPrevious !== null
+                        ? t('cp_funnel_conversion_pct').replace('{pct}', String(Math.round(stage.conversionFromPrevious * 100)))
+                        : '—'}
+                    </span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+              <Briefcase size={16} /> {t('cp_positions_title')} ({data.jobs.length})
+            </h2>
+            {data.jobs.length > 1 && (
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <ArrowUpDown size={12} />
+                {t('cp_sort_label')}
+                <select
+                  value={jobSort}
+                  onChange={(e) => setJobSort(e.target.value as JobSortKey)}
+                  className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground"
+                >
+                  <option value="recent">{t('cp_sort_recent')}</option>
+                  <option value="views">{t('cp_sort_views')}</option>
+                  <option value="applicants">{t('cp_sort_applicants')}</option>
+                  <option value="conversion">{t('cp_sort_conversion')}</option>
+                  <option value="attention">{t('cp_sort_attention')}</option>
+                </select>
+              </label>
+            )}
+          </div>
           {data.jobs.length === 0 ? (
             <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
               {t('cp_positions_empty')}
             </p>
           ) : (
             <div className="space-y-2">
-              {data.jobs.map((job) => (
+              {sortedJobs.map(({ job, viewToApplyRate, needsAttention }) => (
                 <div key={job.id} className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-foreground">
                         {job.title}
                         {job.isFeatured && (
                           <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
                             <Sparkles size={9} /> {t('cp_job_featured_badge')}
+                          </span>
+                        )}
+                        {topPerformerJobId === job.id && (
+                          <span className="flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                            <TrendingUp size={9} /> {t('cp_top_performer_badge')}
+                          </span>
+                        )}
+                        {needsAttention && (
+                          <span className="flex items-center gap-0.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                            <AlertTriangle size={9} /> {t('cp_needs_attention_badge')}
                           </span>
                         )}
                       </p>
@@ -399,6 +547,11 @@ export function CompanyPortalClientImpl() {
                       <div><p className="font-bold text-emerald-600">{job.applicantCounts.Hired}</p><p className="text-muted-foreground">{t('ov_stage_hired')}</p></div>
                     </div>
                   </div>
+                  {viewToApplyRate !== null && (
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      {t('cp_stat_view_to_apply_pct').replace('{pct}', String(Math.round(viewToApplyRate * 100)))}
+                    </p>
+                  )}
                   <div className="mt-2 border-t border-border/50 pt-2">
                     <button
                       onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}

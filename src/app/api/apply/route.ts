@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { appendCandidate, updateCandidateCvUrl, saveAiScore } from '@/lib/db';
+import { appendCandidate, updateCandidateCvUrl, saveAiScore, recordConsent } from '@/lib/db';
 import { createCandidateFolder, uploadFileToDrive } from '@/lib/drive';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
 import { scoreCandidateAgainstJob, extractTextFromBase64 } from '@/lib/ai/cvAnalyzer';
@@ -36,6 +36,10 @@ const applySchema = z
     languages:       z.string().optional(),
     skills:          z.string().optional(),
     portfolioUrl:    z.string().optional(),
+    // Direct-Contact-Info Upsell Tier (2026-07-07): opt-in captured at the
+    // final step of this same form, default false/absent -- see
+    // ApplicationForm.tsx's consentDirectContactUnlock checkbox.
+    consentDirectContactUnlock: z.boolean().optional(),
   })
   .refine(
     (d) =>
@@ -83,6 +87,7 @@ export async function POST(req: NextRequest) {
     expectedSalary, desiredCategory,
     noticePeriod, cityLocation, education, experienceYears,
     currentCompany, currentSalary, languages, skills, portfolioUrl,
+    consentDirectContactUnlock,
   } = parsed.data;
 
   const candidateNotes = desiredCategory ? `Category: ${desiredCategory}` : undefined;
@@ -108,6 +113,30 @@ export async function POST(req: NextRequest) {
       { error: 'Could not save your application. Please try again or contact us directly.' },
       { status: 502 },
     );
+  }
+
+  // ── 1b. Direct-Contact-Info Upsell Tier consent (best-effort) ─────
+  // A failure here must never fail the application itself -- the
+  // application row already exists at this point. terms_version is its
+  // own independent 'v1', not tied to agencySettings.termsVersion (the
+  // anti-bypass legal terms), since this is a simple opt-in, not a
+  // versioned legal document.
+  if (consentDirectContactUnlock && applicationId) {
+    try {
+      await recordConsent({
+        applicationId,
+        termsVersion: 'v1',
+        consentType:  'direct_contact_unlock',
+      });
+    } catch (err) {
+      await logFailure({
+        category: 'other',
+        route:    '/api/apply',
+        message:  'Failed to record direct-contact-unlock consent (non-critical — application saved)',
+        error:    err,
+        context:  { applicationId },
+      });
+    }
   }
 
   // ── 2. Upload CV directly to Google Drive ─────────────────────────

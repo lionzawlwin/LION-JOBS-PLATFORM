@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { RevenueSummary, InvoiceChargeType } from '@/types';
-import { listPlanUpgradeRequests, listFeaturedPlacementRequests, listJobBoostRequests } from './systemEvents';
+import { listPlanUpgradeRequests, listFeaturedPlacementRequests, listJobBoostRequests, listContactUnlockRequests } from './systemEvents';
 
 // Commercial/Revenue Overview (Billing tab). Every figure here is derived
 // from data that already exists for other reasons (Paid invoices, the
@@ -10,13 +10,14 @@ import { listPlanUpgradeRequests, listFeaturedPlacementRequests, listJobBoostReq
 // previously this parsed a tag back out of Invoice.position, since
 // invoices had no `type` column.
 export async function getRevenueSummary(): Promise<RevenueSummary> {
-  const [invoicesResult, featuredCountResult, boostedCountResult, planUpgradeRequests, featuredPlacementRequests, jobBoostRequests] = await Promise.all([
+  const [invoicesResult, featuredCountResult, boostedCountResult, planUpgradeRequests, featuredPlacementRequests, jobBoostRequests, contactUnlockRequests] = await Promise.all([
     supabase.from('invoices').select('charge_type, commission_fee_mmk').eq('status', 'Paid'),
     supabase.from('companies').select('*', { count: 'exact', head: true }).eq('is_featured', true),
     supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('is_featured', true),
     listPlanUpgradeRequests(),
     listFeaturedPlacementRequests(),
     listJobBoostRequests(),
+    listContactUnlockRequests(),
   ]);
 
   if (invoicesResult.error) {
@@ -34,6 +35,7 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
     planUpgradeMmk:        0,
     featuredPlacementMmk:  0,
     jobBoostMmk:           0,
+    contactUnlockMmk:      0,
   };
 
   for (const row of invoicesResult.data ?? []) {
@@ -46,12 +48,14 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
       byLine.featuredPlacementMmk += fee;
     } else if (chargeType === 'plan_upgrade') {
       byLine.planUpgradeMmk += fee;
+    } else if (chargeType === 'contact_unlock') {
+      byLine.contactUnlockMmk += fee;
     } else {
       byLine.candidatePlacementMmk += fee;
     }
   }
 
-  const totalPaidMmk = byLine.candidatePlacementMmk + byLine.planUpgradeMmk + byLine.featuredPlacementMmk + byLine.jobBoostMmk;
+  const totalPaidMmk = byLine.candidatePlacementMmk + byLine.planUpgradeMmk + byLine.featuredPlacementMmk + byLine.jobBoostMmk + byLine.contactUnlockMmk;
 
   return {
     totalPaidMmk,
@@ -62,6 +66,7 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
       planUpgrade:       planUpgradeRequests.length,
       featuredPlacement: featuredPlacementRequests.length,
       jobBoost:          jobBoostRequests.length,
+      contactUnlock:     contactUnlockRequests.length,
     },
   };
 }

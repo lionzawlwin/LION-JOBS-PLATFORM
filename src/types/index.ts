@@ -100,12 +100,23 @@ export interface Candidate {
 // surface via a future refactor of the full Candidate query. See the repo
 // owner's explicit decision on this boundary (name + resume only, no
 // contact info -- the agency stays the required intermediary for contact).
+export type ContactUnlockStatus = 'none' | 'pending' | 'paid';
+
 export interface EmployerVisibleApplicant {
   id: string;
   name: string;
   stage: ApplicationStatus;
   appliedAt: string;
   cvUrl: string | null;
+  // Direct-Contact-Info Upsell Tier (2026-07-07). directContactConsent is
+  // the candidate's own opt-in (captured at application time); phone/email
+  // are populated ONLY when contactUnlockStatus === 'paid' for the
+  // requesting company -- getApplicantsForJob() enforces this at the
+  // query layer, same discipline as the rest of this type's fields.
+  directContactConsent: boolean;
+  contactUnlockStatus: ContactUnlockStatus;
+  phone: string | null;
+  email: string | null;
 }
 
 export interface B2bLead {
@@ -304,6 +315,9 @@ export interface AgencySettings {
   // tab's JobBoostSettingsPanel, PATCH /api/job-boost-settings.
   jobBoostPriceMmk: number;
   jobBoostDurationDays: number;
+  // Direct-Contact-Info Upsell Tier pricing -- no duration, unlike the two
+  // above, since an unlock doesn't expire.
+  contactUnlockPriceMmk: number;
 }
 
 export interface ConsentRecord {
@@ -321,7 +335,7 @@ export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue';
 // former parse*() functions, migration 0033). `position` itself is kept --
 // it's still the human-readable line-item text -- charge_type/metadata
 // are what code should branch on now.
-export type InvoiceChargeType = 'candidate_placement' | 'plan_upgrade' | 'featured_placement' | 'job_boost';
+export type InvoiceChargeType = 'candidate_placement' | 'plan_upgrade' | 'featured_placement' | 'job_boost' | 'contact_unlock';
 
 export interface PlanUpgradeInvoiceMetadata {
   planName: string;
@@ -332,6 +346,9 @@ export interface FeaturedPlacementInvoiceMetadata {
 export interface JobBoostInvoiceMetadata {
   jobId: string;
   durationDays: number;
+}
+export interface ContactUnlockInvoiceMetadata {
+  applicationId: string;
 }
 
 export interface Invoice {
@@ -349,7 +366,7 @@ export interface Invoice {
   issuedAt: string;
   createdAt: string;
   chargeType: InvoiceChargeType;
-  metadata: PlanUpgradeInvoiceMetadata | FeaturedPlacementInvoiceMetadata | JobBoostInvoiceMetadata | null;
+  metadata: PlanUpgradeInvoiceMetadata | FeaturedPlacementInvoiceMetadata | JobBoostInvoiceMetadata | ContactUnlockInvoiceMetadata | null;
 }
 
 // Commercial/Revenue Overview dashboard (Billing tab). Paid-invoice totals
@@ -367,6 +384,7 @@ export interface RevenueSummary {
     planUpgradeMmk: number;
     featuredPlacementMmk: number;
     jobBoostMmk: number;
+    contactUnlockMmk: number;
   };
   activeFeaturedCompanies: number;
   activeBoostedJobs: number;
@@ -374,6 +392,7 @@ export interface RevenueSummary {
     planUpgrade: number;
     featuredPlacement: number;
     jobBoost: number;
+    contactUnlock: number;
   };
 }
 
@@ -390,7 +409,7 @@ export interface Payment {
   createdAt: string;
 }
 
-export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade' | 'featured_placement' | 'job_boost';
+export type FailureCategory = 'webhook' | 'ai_scoring' | 'invoicing' | 'cron' | 'other' | 'rate_limit' | 'plan_upgrade' | 'featured_placement' | 'job_boost' | 'contact_unlock';
 export type EventLevel = 'error' | 'info';
 
 export interface SystemEvent {

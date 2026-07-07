@@ -21,3 +21,5 @@ export * from './clientHealth';
 export * from './accountPlans';
 export * from './payments';
 export * from './revenue';
+export * from './contactUnlocks';
+export * from './optInCampaign';

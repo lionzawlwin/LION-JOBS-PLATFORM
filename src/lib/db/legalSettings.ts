@@ -12,6 +12,7 @@ const DEFAULTS: AgencySettings = {
   featuredPlacementDurationDays:  30,
   jobBoostPriceMmk:               20000,
   jobBoostDurationDays:           14,
+  contactUnlockPriceMmk:          5000,
 };
 
 function mapToSettings(row: Record<string, unknown>): AgencySettings {
@@ -26,6 +27,7 @@ function mapToSettings(row: Record<string, unknown>): AgencySettings {
     featuredPlacementDurationDays: Number(row.featured_placement_duration_days ?? DEFAULTS.featuredPlacementDurationDays),
     jobBoostPriceMmk:              Number(row.job_boost_price_mmk ?? DEFAULTS.jobBoostPriceMmk),
     jobBoostDurationDays:          Number(row.job_boost_duration_days ?? DEFAULTS.jobBoostDurationDays),
+    contactUnlockPriceMmk:         Number(row.contact_unlock_price_mmk ?? DEFAULTS.contactUnlockPriceMmk),
   };
 }
 
@@ -54,6 +56,7 @@ export async function updateAgencySettings(data: Partial<{
   featuredPlacementDurationDays: number;
   jobBoostPriceMmk:              number;
   jobBoostDurationDays:          number;
+  contactUnlockPriceMmk:         number;
 }>): Promise<void> {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.defaultCommissionRatePct    !== undefined) update.default_commission_rate_pct = data.defaultCommissionRatePct;
@@ -66,6 +69,7 @@ export async function updateAgencySettings(data: Partial<{
   if (data.featuredPlacementDurationDays !== undefined) update.featured_placement_duration_days = data.featuredPlacementDurationDays;
   if (data.jobBoostPriceMmk              !== undefined) update.job_boost_price_mmk = data.jobBoostPriceMmk;
   if (data.jobBoostDurationDays          !== undefined) update.job_boost_duration_days = data.jobBoostDurationDays;
+  if (data.contactUnlockPriceMmk         !== undefined) update.contact_unlock_price_mmk = data.contactUnlockPriceMmk;
 
   const { error } = await supabase.from('agency_settings').update(update).eq('id', 'default');
   if (error) throw new Error(`Failed to update agency settings: ${error.message}`);
