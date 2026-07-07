@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getCompanyByEmail } from '@/lib/db';
+import { getCompanyByEmail, getActiveCompanyPortalUserByEmail } from '@/lib/db';
 import { issueLoginToken } from '@/lib/portalAuth';
 import { sendPortalLoginEmail } from '@/lib/portalEmail';
 import { checkRateLimit, getClientIp } from '@/lib/apiSecurity';
@@ -54,9 +54,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const company = await getCompanyByEmail(email);
-    if (company) {
-      const token = await issueLoginToken('company', company.id, email);
+    // Layer 3 (Module #1, multi-seat portal accounts): a seat row takes
+    // priority over the legacy companies.email match, so an invited
+    // hiring_manager/viewer logs in as their own seat rather than never
+    // resolving. Every company that has always had a single login already
+    // got a seeded 'owner' seat row in migration 0039, so this changes
+    // nothing for them -- same companyId either path resolves to.
+    const seatUser = await getActiveCompanyPortalUserByEmail(email);
+    const companyId = seatUser?.companyId ?? (await getCompanyByEmail(email))?.id ?? null;
+    if (companyId) {
+      const token = await issueLoginToken('company', companyId, email);
       await sendPortalLoginEmail({
         to: email,
         verifyApiPath: '/api/company-portal/verify',

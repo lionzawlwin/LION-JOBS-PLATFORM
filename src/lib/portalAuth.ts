@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { supabase } from '@/lib/supabase';
+import type { PortalSeatRole } from '@/lib/portalPermissions';
 
 /**
  * Shared magic-link + session auth for the Company Portal and Candidate
@@ -114,11 +115,20 @@ export async function consumeLoginToken(rawToken: string): Promise<ConsumedToken
  * to one small function instead of a general-purpose JWT library's much
  * larger attack surface.
  */
-export function createSessionToken(subjectType: PortalSubjectType, subjectId: string): string {
+export function createSessionToken(
+  subjectType: PortalSubjectType,
+  subjectId: string,
+  extra?: { seatRole?: PortalSeatRole },
+): string {
   const payload = JSON.stringify({
     subjectType,
     subjectId,
     exp: Date.now() + SESSION_TTL_S * 1000,
+    // seatRole is company-only (Layer 3, multi-seat portal accounts) --
+    // omitted entirely for candidate tokens and for company tokens where
+    // the caller doesn't pass one, so existing callers/tests that don't
+    // know about seats are completely unaffected.
+    ...(extra?.seatRole ? { seatRole: extra.seatRole } : {}),
   });
   const payloadB64 = Buffer.from(payload, 'utf8').toString('base64url');
   const signature = createHmac('sha256', getSessionSecret()).update(payloadB64).digest('base64url');
@@ -179,4 +189,27 @@ export async function getPortalSubjectId(subjectType: PortalSubjectType): Promis
   const store = await cookies();
   const token = store.get(PORTAL_COOKIE_NAMES[subjectType])?.value;
   return verifySessionToken(token, subjectType);
+}
+
+/**
+ * Reads the seatRole out of the current request's company portal session,
+ * if any. Defaults to 'owner' for a session that verifies but carries no
+ * seatRole claim -- covers any session issued before this deploy (still
+ * valid within its 7-day TTL) and matches those companies' actual
+ * pre-Layer-3 access level exactly. Returns null only if there's no valid
+ * company session at all (same case getPortalSubjectId('company') would
+ * return null for).
+ */
+export async function getCompanySeatRole(): Promise<PortalSeatRole | null> {
+  const store = await cookies();
+  const token = store.get(PORTAL_COOKIE_NAMES.company)?.value;
+  if (!verifySessionToken(token, 'company')) return null;
+
+  const payloadB64 = token!.split('.')[0];
+  try {
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8')) as { seatRole?: PortalSeatRole };
+    return payload.seatRole ?? 'owner';
+  } catch {
+    return 'owner';
+  }
 }
